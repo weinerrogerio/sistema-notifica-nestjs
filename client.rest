@@ -1,0 +1,33 @@
+@baseUrl = http://localhost:3000
+
+### AppControllerGetHello
+
+# @name RecadosController
+GET {{baseUrl}}
+
+###
+# QUERY URL
+GET {{baseUrl}}/???/
+?limit=10
+&offset=10
+Authorization: 'bearer token'
+
+###
+# Upload XML
+POST http://localhost:3000/import/upload
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; name="file"; filename="teste.xml"
+Content-Type: application/xml
+
+#< ./sistema-notifica-api/teste.xml>
+file=@./sistema-notifica-api/teste.xml
+--MyBoundary--
+
+
+###
+POST http://localhost:3000/import/upload
+Content-Type: multipart/form-data
+
+file=@./sistema-notifica-api/teste.xml
