@@ -6,21 +6,32 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('apresentante')
-export class Apresentante {
+@Entity()
+export class LogNotificacao {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  nome: string;
+  email_enviado: boolean;
 
   @Column()
-  cod_apresentante: string;
+  data_envio: Date;
+
+  @Column()
+  lido: boolean;
+
+  //relacionamentos devedor:log(1:N)
+  @Column()
+  fk_id_devedor: number;
+
+  //relacionamentos protesto:log(1:N)
+  @Column()
+  fk_id_protest: number;
 
   //data de criação (data_registro)
   @CreateDateColumn()
   createdAt?: Date;
-  //data de atualização (data_registro)
+  //data de atualização ()
   @UpdateDateColumn()
   updatedAt?: Date;
 }

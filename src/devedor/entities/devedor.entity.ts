@@ -3,9 +3,10 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('devedor')
 export class Devedor {
   @PrimaryGeneratedColumn()
   id: number;
@@ -22,14 +23,21 @@ export class Devedor {
   @Column()
   devedor_pj: boolean;
 
+  //fazer logica relação muitos para um com doc protesto
+  /* @Column()
+  fk_doc_protesto: number;  
+ */
+
   /* //muitos para um
     @ManyToOne(() => Pessoa, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
     //especifica a coluna "de" que armazena o ID da pessoa que enviou o recado
     @JoinColumn({ name: 'de' })
     de: Pessoa;
    */
+  //data de criação (data_registro)
   @CreateDateColumn()
   createdAt?: Date;
-  @CreateDateColumn()
+  //data de atualização (data_registro)
+  @UpdateDateColumn()
   updatedAt?: Date;
 }

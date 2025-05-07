@@ -6,16 +6,17 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('apresentante')
-export class Apresentante {
+@Entity()
+export class DocProtestoCredor {
   @PrimaryGeneratedColumn()
   id: number;
 
+  // criar as chaves estrangeiras docProtesto:docProteto_credor (1:n)
   @Column()
-  nome: string;
-
+  fk_doc_protesto: number;
+  // criar as chaves estrangeiras
   @Column()
-  cod_apresentante: string;
+  fk_credor: number;
 
   //data de criação (data_registro)
   @CreateDateColumn()

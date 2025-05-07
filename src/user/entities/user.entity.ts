@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('apresentante')
-export class Apresentante {
+@Entity('user')
+export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -15,7 +15,13 @@ export class Apresentante {
   nome: string;
 
   @Column()
-  cod_apresentante: string;
+  email: string;
+
+  @Column()
+  contato: string;
+
+  @Column()
+  password: string;
 
   //data de criação (data_registro)
   @CreateDateColumn()

@@ -5,9 +5,10 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('doc_protesto')
 export class DocProtesto {
   @PrimaryGeneratedColumn()
   id: number;
@@ -36,8 +37,10 @@ export class DocProtesto {
   @JoinColumn({ name: 'de' })
   de: Pessoa;
  */
+  //data de criação (data_registro)
   @CreateDateColumn()
   createdAt?: Date;
-  @CreateDateColumn()
+  //data de atualização (data_registro)
+  @UpdateDateColumn()
   updatedAt?: Date;
 }

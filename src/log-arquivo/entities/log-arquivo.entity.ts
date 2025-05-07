@@ -6,16 +6,20 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('apresentante')
-export class Apresentante {
+@Entity()
+export class LogArquivo {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  nome: string;
+  arquivo_importado: string;
 
   @Column()
-  cod_apresentante: string;
+  data_importacao: Date;
+
+  //fazer relacionamento com user:log (1:n) --> quem importou
+  @Column()
+  fk_id_user: number;
 
   //data de criação (data_registro)
   @CreateDateColumn()
