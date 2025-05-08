@@ -1,5 +1,0 @@
-### Upload XML
-POST http://localhost:3000/import/upload
-Content-Type: multipart/form-data
-
-file=@./sistema-notifica-api/teste.xml

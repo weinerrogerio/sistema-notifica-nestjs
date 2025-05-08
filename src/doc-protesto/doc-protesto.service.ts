@@ -1,11 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { CreateDocProtestoDto } from './dto/create-doc-protesto.dto';
 import { UpdateDocProtestoDto } from './dto/update-doc-protesto.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DocProtesto } from './entities/doc-protesto.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class DocProtestoService {
-  create(createDocProtestoDto: CreateDocProtestoDto) {
-    return 'This action adds a new docProtesto';
+  constructor(
+    @InjectRepository(DocProtesto)
+    private readonly docProtestoRepository: Repository<DocProtesto>,
+  ) {}
+  //ATENÇÃO: para salvar tem de existir um apresntenta pois ele associa o protesto ao apresentante
+  //relacionamento apresentante:doc-protesto(1:n)
+  async create(createDocProtestoDto: CreateDocProtestoDto) {
+    try {
+      const newDocProtestoDto = {
+        data_apresentacao: createDocProtestoDto.data_apresentacao,
+        num_distribuicao: createDocProtestoDto.num_distribuicao,
+        data_distribuicao: createDocProtestoDto.data_distribuicao,
+        cart_protesto: createDocProtestoDto.cart_protesto,
+        num_titulo: createDocProtestoDto.num_titulo,
+        vencimento: createDocProtestoDto.vencimento,
+      };
+      const newDocProtesto =
+        this.docProtestoRepository.create(newDocProtestoDto);
+      await this.docProtestoRepository.save(newDocProtesto);
+      return newDocProtesto;
+    } catch (error) {
+      console.log(error);
+      // aqui podemos fazer logica para conferir tirulos importados anteriormente
+    }
   }
 
   findAll() {
@@ -17,6 +42,8 @@ export class DocProtestoService {
   }
 
   update(id: number, updateDocProtestoDto: UpdateDocProtestoDto) {
+    console.log(updateDocProtestoDto);
+
     return `This action updates a #${id} docProtesto`;
   }
 

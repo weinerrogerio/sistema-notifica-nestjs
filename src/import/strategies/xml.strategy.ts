@@ -19,15 +19,28 @@ export class XmlImportStrategy implements ImportStrategy {
     try {
       const jsonObj = parser.parse(xml);
       console.log('Arquivo convertido com sucesso:', jsonObj);
-      console.log(jsonObj.Workbook?.Worksheet?.Table);
-      console.log(jsonObj.Workbook?.Worksheet?.Table?.Row[0].Cell[0]); // Nomes das colunas --> DESCOSIDERAR para salvar no banco
+      console.log(jsonObj.Workbook?.Worksheet?.Table?.Row);
+      //console.log(jsonObj.Workbook?.Worksheet?.Table?.Row[0].Cell[0]); // Nomes das colunas --> DESCOSIDERAR para salvar no banco
       console.log(jsonObj.Workbook?.Worksheet?.Table?.Row[1].Cell[0]);
       console.log(jsonObj.Workbook?.Worksheet?.Table?.Row[2].Cell[0]);
+
+      //ATENÇÃO:verificar a existencia ta tabela
+      /* return jsonObj.Workbook?.Worksheet?.Table?.row; */
+
+      /* const rows = jsonObj.Workbook?.Worksheet?.Table?.Row ?? [];
+      const dados = rows.slice(1).map((row) => {
+        return {
+          campo1: row.Cell[0]?.Data,
+          campo2: row.Cell[1]?.Data,
+          campo3: row.Cell[2]?.Data,
+        };
+      }); 
+
+      console.log(dados);*/
 
       // Aqui você faria a lógica de salvar os dados no banco
     } catch (error) {
       console.log('ERRO AQUI');
-
       console.error('Erro ao processar XML:', error);
       throw error;
     }

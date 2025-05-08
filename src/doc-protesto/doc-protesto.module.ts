@@ -9,5 +9,6 @@ import { DocProtesto } from './entities/doc-protesto.entity';
   imports: [TypeOrmModule.forFeature([DocProtesto])],
   controllers: [DocProtestoController],
   providers: [DocProtestoService],
+  exports: [DocProtestoService],
 })
 export class DocProtestoModule {}

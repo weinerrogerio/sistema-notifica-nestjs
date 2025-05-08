@@ -17,7 +17,7 @@ export class DocProtesto {
   data_apresentacao: Date;
 
   @Column()
-  num_distribuicao: number;
+  num_distribuicao: string;
 
   @Column()
   data_distribuicao: Date;

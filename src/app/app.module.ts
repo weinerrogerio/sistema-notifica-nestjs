@@ -4,6 +4,10 @@ import { AppService } from './app.service';
 import { ImportModule } from 'src/import/import.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
+import { UserModule } from 'src/user/user.module';
+import { LogUsersModule } from 'src/log-users/log-users.module';
+import { DevedorModule } from 'src/devedor/devedor.module';
+import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
       synchronize: true, //sincroniza as entidades com o banco de dados
     }),
     DocProtestoModule,
+    DevedorModule,
+    LogNotificacaoModule,
+    UserModule,
+    LogUsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
