@@ -16,8 +16,8 @@
   <AllowPNG/>
  </OfficeDocumentSettings>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>4215</WindowHeight>
-  <WindowWidth>15135</WindowWidth>
+  <WindowHeight>11865</WindowHeight>
+  <WindowWidth>28800</WindowWidth>
   <WindowTopX>32767</WindowTopX>
   <WindowTopY>32767</WindowTopY>
   <ProtectStructure>False</ProtectStructure>
@@ -195,7 +195,7 @@
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="15.75">
     <Cell><Data ss:Type="String">Prefeitura do Município de Curitiba</Data></Cell>
-    <Cell><Data ss:Type="Number">133</Data></Cell>
+    <Cell><Data ss:Type="Number">132</Data></Cell>
     <Cell><Data ss:Type="String">1° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
     <Cell><Data ss:Type="String">29/11/2022</Data></Cell>
     <Cell><Data ss:Type="Number">4564862</Data></Cell>
@@ -237,13 +237,18 @@
      x:Right="0.511811024" x:Top="0.78740157499999996"/>
    </PageSetup>
    <Unsynced/>
+   <Print>
+    <ValidPrinterInfo/>
+    <PaperSizeIndex>9</PaperSizeIndex>
+    <HorizontalResolution>600</HorizontalResolution>
+    <VerticalResolution>600</VerticalResolution>
+   </Print>
    <Selected/>
-   <LeftColumnVisible>13</LeftColumnVisible>
    <Panes>
     <Pane>
      <Number>3</Number>
      <ActiveRow>6</ActiveRow>
-     <ActiveCol>12</ActiveCol>
+     <ActiveCol>1</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
