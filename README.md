@@ -60,13 +60,15 @@ $ npm run test:cov
 
 ## Resources
 
-
 ```bash
-#instalação bibliotecas para desenvolvimento 
+#instalação bibliotecas para desenvolvimento
 $ npm i @nestjs/typeorm typeorm pg
 
-
 $ npm i class-validator
+
+$ npm i diacritics
+
+$ npm install date-fns --save
 ```
 
 ## Support

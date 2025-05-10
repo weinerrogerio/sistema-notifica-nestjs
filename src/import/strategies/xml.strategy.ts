@@ -46,11 +46,6 @@ export class XmlImportStrategy implements ImportStrategy {
     const jsonObj = parser.parse(xml);
     const rows = jsonObj.Workbook?.Worksheet?.Table?.Row ?? [];
 
-    if (rows.length < 2) {
-      console.warn('O XML não contém dados suficientes.');
-      return;
-    }
-
     function normalizeKey(str: string): string {
       return removeAcentos(str)
         .toLowerCase()
@@ -85,9 +80,11 @@ export class XmlImportStrategy implements ImportStrategy {
         // percorre cada célula respeitando o ss:Index
         cells.forEach((cell) => {
           const index = cell.Index ? cell.Index - 1 : currentCol;
+
           const key = headers[index] ?? `coluna_${index + 1}`;
 
           let valor = '';
+
           if (cell?.Data) {
             valor =
               typeof cell.Data === 'object'
@@ -109,6 +106,7 @@ export class XmlImportStrategy implements ImportStrategy {
         return rowData;
       });
 
-    console.log('Dados estruturados:', dados);
+    //console.log('Dados estruturados:', dados);
+    return dados;
   }
 }

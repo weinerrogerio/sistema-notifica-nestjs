@@ -4,6 +4,7 @@ import { ImportController } from './import.controller';
 import { CsvImportStrategy } from './strategies/csv.strategy';
 import { XmlImportStrategy } from './strategies/xml.strategy';
 import { ImportStrategy } from './strategies/import.strategy';
+import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
 
 @Module({
   controllers: [ImportController],
@@ -21,5 +22,6 @@ import { ImportStrategy } from './strategies/import.strategy';
       inject: [CsvImportStrategy, XmlImportStrategy],
     },
   ],
+  imports: [DocProtestoModule],
 })
 export class ImportModule {}
