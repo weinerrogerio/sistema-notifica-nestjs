@@ -10,10 +10,9 @@ export class XmlImportStrategy implements ImportStrategy {
     return mimeType === 'application/xml' || mimeType === 'text/xml';
   }
 
-  async import(buffer: Buffer): Promise<void> {
-    /* const xml = buffer.toString('utf-8');
-    const parsed = await xml2js.parseStringPromise(xml); */
+  async importOriginal(buffer: Buffer): Promise<void> {
     const xml = buffer.toString('utf-8');
+    console.log(xml);
 
     /* const parser = new XMLParser();
     try {
@@ -36,7 +35,18 @@ export class XmlImportStrategy implements ImportStrategy {
       console.error('Erro ao processar XML:', error);
       throw error;
     } */
+  }
 
+  // ss:index --> indica o index do cabeçalho ou seja a coluna a qual o dado pertence!!!!!
+  ///* FAZER STRING DE OBJETOS
+  // OBJETO DEVE TER A MESMA QUANTIDADE DE COLUNAS (JA OBTIDAS EM HEADER - Extrair Cabeçalhos)
+  // INJETAR OSDADOSNESSE ARRAY - SE A CELL TIVER SS.index PULAR OS CAMPOS TEA CHEGAR NESSE INDEX
+  // POR EX: SRRAY TEM 5 CAMPOS VAZIOS 0,1 JA FOI PREENCHIDO,
+  // (AGORA APONTAMOS PRO 2 DO ARRAY) SE SS.index = 3 PULAR 2 E PREENCHER 3 E SEGUIR A SEQUENCIA
+  // E REPETIR LOGICA ATE A ULTIMA COLUNA E PODER PREENCHER TODOS OS CAMPOS DO ARRAY*/
+
+  async import(buffer: Buffer): Promise<Record<string, string>[]> {
+    const xml = buffer.toString('utf-8');
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '',
@@ -49,64 +59,77 @@ export class XmlImportStrategy implements ImportStrategy {
     function normalizeKey(str: string): string {
       return removeAcentos(str)
         .toLowerCase()
-        .replace(/[^\w\s]/gi, '') // remove pontuação
-        .replace(/\s+/g, '_'); // substitui espaços por underline
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s+/g, '_');
     }
 
-    // Extrai cabeçalhos
+    // 1. Extrair Cabeçalhos
     const headerCells = Array.isArray(rows[0]?.Cell) ? rows[0].Cell : [];
-    const headers: string[] = [];
+    const headerMap: Record<number, string> = {};
 
-    let colIndex = 0;
-    headerCells.forEach((cell) => {
-      const index = cell.Index ? cell.Index - 1 : colIndex;
-      const raw =
-        typeof cell.Data === 'object' ? cell.Data['#text'] : cell.Data;
-      const value = raw?.trim() ?? `coluna_${index + 1}`;
-      headers[index] = normalizeKey(value);
-      colIndex = index + 1;
+    headerCells.forEach((cell, idx) => {
+      // Usa 'ss:Index' se disponível, caso contrário usa o índice atual + 1
+      const cellIndex = cell['ss:Index'] ? cell['ss:Index'] - 1 : idx;
+
+      // Extrai o valor do cabeçalho
+      let headerValue;
+      if (typeof cell.Data === 'object' && cell.Data['#text']) {
+        headerValue = cell.Data['#text'].trim();
+      } else if (cell.Data) {
+        headerValue = cell.Data.toString().trim();
+      } else {
+        headerValue = `coluna_${cellIndex + 1}`;
+      }
+
+      // Normaliza o nome do cabeçalho
+      headerMap[cellIndex] = normalizeKey(headerValue);
     });
 
-    // Extrai os dados
-    const dados = rows
+    // 2. Processar linhas de dados
+    const dados: Record<string, string>[] = rows
       .slice(1)
-      .filter((row) => Array.isArray(row?.Cell)) // descarta apenas linhas *sem nenhuma célula*
+      .filter((row) => Array.isArray(row?.Cell))
       .map((row) => {
         const rowData: Record<string, string> = {};
         const cells = Array.isArray(row.Cell) ? row.Cell : [];
 
-        let currentCol = 0;
-
-        // percorre cada célula respeitando o ss:Index
-        cells.forEach((cell) => {
-          const index = cell.Index ? cell.Index - 1 : currentCol;
-
-          const key = headers[index] ?? `coluna_${index + 1}`;
-
-          let valor = '';
-
-          if (cell?.Data) {
-            valor =
-              typeof cell.Data === 'object'
-                ? (cell.Data['#text'] ?? '')
-                : cell.Data;
-          }
-
-          rowData[key] = valor.toString().trim();
-          currentCol = index + 1;
+        // Inicializa todos os campos com string vazia
+        Object.values(headerMap).forEach((header) => {
+          rowData[header] = '';
         });
 
-        // preenche colunas ausentes com string vazia (garante alinhamento completo)
-        headers.forEach((header) => {
-          if (!(header in rowData)) {
-            rowData[header] = '';
+        let currentIndex = 0;
+
+        cells.forEach((cell) => {
+          // Se tem 'ss:Index', use-o para posicionar corretamente
+          if (cell['ss:Index']) {
+            currentIndex = cell['ss:Index'] - 1;
           }
+
+          // Extrai o valor da célula
+          let cellValue = '';
+          if (
+            typeof cell.Data === 'object' &&
+            cell.Data['#text'] !== undefined
+          ) {
+            cellValue = cell.Data['#text']?.toString().trim() || '';
+          } else if (cell.Data !== undefined) {
+            cellValue = cell.Data?.toString().trim() || '';
+          }
+
+          // Pega o cabeçalho correspondente a este índice
+          const header = headerMap[currentIndex];
+          if (header) {
+            rowData[header] = cellValue;
+          }
+
+          // Avança para a próxima coluna
+          currentIndex++;
         });
 
         return rowData;
       });
 
-    //console.log('Dados estruturados:', dados);
     return dados;
   }
 }

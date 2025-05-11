@@ -69,6 +69,8 @@ $ npm i class-validator
 $ npm i diacritics
 
 $ npm install date-fns --save
+
+$ npm i csv-parse
 ```
 
 ## Support

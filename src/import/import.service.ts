@@ -84,7 +84,7 @@ export class ImportService {
 
         console.log(newDocProtesto);
 
-        //await this.docProtestoService.create(newDocProtesto);
+        await this.docProtestoService.create(newDocProtesto);
       }
     } catch (err) {
       console.error('Erro ao iterar pelos dados:', err);

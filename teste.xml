@@ -17,8 +17,8 @@
   <AllowPNG/>
  </OfficeDocumentSettings>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>7365</WindowHeight>
-  <WindowWidth>20490</WindowWidth>
+  <WindowHeight>7545</WindowHeight>
+  <WindowWidth>21360</WindowWidth>
   <WindowTopX>32767</WindowTopX>
   <WindowTopY>32767</WindowTopY>
   <ProtectStructure>False</ProtectStructure>
@@ -93,7 +93,7 @@
     <Cell ss:StyleID="s63"><Data ss:Type="String">Data protocolo</Data></Cell>
     <Cell ss:StyleID="s63"><Data ss:Type="String">Data remessa</Data></Cell>
     <Cell ss:StyleID="s63"><Data ss:Type="String">Agência/Código cedente</Data></Cell>
-    <Cell ss:StyleID="s63"/>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">Cedente</Data></Cell>
     <Cell ss:StyleID="s63"><Data ss:Type="String">Sacador</Data></Cell>
     <Cell ss:StyleID="s63"><Data ss:Type="String">Documento sacador</Data></Cell>
     <Cell ss:StyleID="s63"><Data ss:Type="String">Devedor</Data></Cell>
@@ -249,8 +249,8 @@
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveRow>3</ActiveRow>
-     <ActiveCol>7</ActiveCol>
+     <ActiveRow>7</ActiveRow>
+     <ActiveCol>8</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
