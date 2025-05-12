@@ -46,14 +46,28 @@ export class ImportService {
       await this.docProtestoService.create(item); // ou docProtestoService, etc.
     }
   } */
-  // essa função nao tem de estar necessáriamente fora de importFile()
+  //MUDAR ESSA FUNÇÃO PARA OUTRO MODULO (COMO UTITIES...)PARA USAR EM OUTROS MÓDULOS
   private parseDateBrToIso(dateStr: string): Date | null {
     if (!dateStr) return null;
+
+    // Verifica se a data já está no formato ISO (inclui 'T' ou termina com 'Z')
+    if (dateStr.includes('T') || dateStr.endsWith('Z')) {
+      const parsedDate = new Date(dateStr);
+      return this.isValidDate(parsedDate) ? parsedDate : null;
+    }
+
     try {
+      // Se não for ISO, tenta parsear no formato brasileiro
       return parse(dateStr, 'dd/MM/yyyy', new Date());
-    } catch {
+    } catch (error) {
+      console.log(error);
       return null;
     }
+  }
+
+  //MUDAR ESSA FUNÇÃO PARA OUTRO MODULO (COMO UTITIES...)PARA USAR EM OUTROS MÓDULOS
+  private isValidDate(value: any): boolean {
+    return value instanceof Date && !isNaN(value.getTime());
   }
   async importFile(file: Express.Multer.File) {
     const strategy = this.strategies.find((s) => s.canHandle(file.mimetype));
@@ -70,19 +84,25 @@ export class ImportService {
 
     try {
       for (const dado of dados) {
-        console.log(dado); // ou console.log(JSON.stringify(dado))
+        const data_vencimento = this.isValidDate(dado.vencimento)
+          ? new Date(dado.vencimento)
+          : this.parseDateBrToIso(dado.vencimento);
 
-        //FAZER A VALIDAÇÃO DOS DADOS ANTES DE GRAVAR !!!
+        const data_apresentacao = this.isValidDate(dado.data_protocolo)
+          ? new Date(dado.data_protocolo)
+          : this.parseDateBrToIso(dado.data_protocolo);
+
+        console.log(this.parseDateBrToIso(dado.data_protocolo));
+
+        //FAZER A VALIDAÇÃO DOS DADOS ANTES DE GRAVAR !!! --- DADOS VAZIOS OU NULL?
         const newDocProtesto = {
-          vencimento: this.parseDateBrToIso(dado.vencimento),
-          data_apresentacao: this.parseDateBrToIso(dado.data_protocolo),
+          vencimento: data_vencimento,
+          data_apresentacao: data_apresentacao,
           num_distribuicao: dado.protocolo,
           data_distribuicao: this.parseDateBrToIso(dado.data_remessa),
           cart_protesto: dado.cartorio,
           num_titulo: dado.numero_do_titulo,
         };
-
-        console.log(newDocProtesto);
 
         await this.docProtestoService.create(newDocProtesto);
       }
