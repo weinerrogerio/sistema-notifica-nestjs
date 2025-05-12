@@ -29,6 +29,10 @@ export class DocProtestoService {
       return newDocProtesto;
     } catch (error) {
       console.log(error);
+      throw new Error(
+        'Falha ao processar os dados importados para Documento de protesto.',
+      );
+
       // aqui podemos fazer logica para conferir tirulos importados anteriormente
     }
   }

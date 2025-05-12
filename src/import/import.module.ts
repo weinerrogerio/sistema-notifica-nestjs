@@ -5,6 +5,7 @@ import { CsvImportStrategy } from './strategies/csv.strategy';
 import { XmlImportStrategy } from './strategies/xml.strategy';
 import { ImportStrategy } from './strategies/import.strategy';
 import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
+import { DevedorModule } from '@app/devedor/devedor.module';
 
 @Module({
   controllers: [ImportController],
@@ -22,6 +23,6 @@ import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
       inject: [CsvImportStrategy, XmlImportStrategy],
     },
   ],
-  imports: [DocProtestoModule],
+  imports: [DocProtestoModule, DevedorModule],
 })
 export class ImportModule {}
