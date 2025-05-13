@@ -6,6 +6,7 @@ import { XmlImportStrategy } from './strategies/xml.strategy';
 import { ImportStrategy } from './strategies/import.strategy';
 import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
 import { DevedorModule } from '@app/devedor/devedor.module';
+import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
 
 @Module({
   controllers: [ImportController],
@@ -23,6 +24,6 @@ import { DevedorModule } from '@app/devedor/devedor.module';
       inject: [CsvImportStrategy, XmlImportStrategy],
     },
   ],
-  imports: [DocProtestoModule, DevedorModule],
+  imports: [DocProtestoModule, DevedorModule, LogNotificacaoModule],
 })
 export class ImportModule {}

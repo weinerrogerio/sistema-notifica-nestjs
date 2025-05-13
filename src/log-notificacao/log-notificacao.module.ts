@@ -8,5 +8,6 @@ import { LogNotificacao } from './entities/log-notificacao.entity';
   imports: [TypeOrmModule.forFeature([LogNotificacao])],
   controllers: [LogNotificacaoController],
   providers: [LogNotificacaoService],
+  exports: [LogNotificacaoService],
 })
 export class LogNotificacaoModule {}

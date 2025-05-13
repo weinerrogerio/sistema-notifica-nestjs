@@ -14,10 +14,10 @@ export class Devedor {
   @Column()
   nome: string;
 
-  @Column()
+  @Column({ unique: true })
   doc_devedor: string;
 
-  @Column()
+  @Column({ nullable: true })
   email: string;
 
   @Column()

@@ -17,8 +17,8 @@
   <AllowPNG/>
  </OfficeDocumentSettings>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>11865</WindowHeight>
-  <WindowWidth>28800</WindowWidth>
+  <WindowHeight>4215</WindowHeight>
+  <WindowWidth>15135</WindowWidth>
   <WindowTopX>32767</WindowTopX>
   <WindowTopY>32767</WindowTopY>
   <ProtectStructure>False</ProtectStructure>
@@ -207,7 +207,7 @@
     <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE CURITIBA</Data></Cell>
     <Cell><Data ss:Type="String">123.456.789-09</Data></Cell>
     <Cell><Data ss:Type="String">SANTA INTERMEDIACOES DE CONSORCIOS - EIRELI</Data></Cell>
-    <Cell><Data ss:Type="String">123.456.789-09</Data></Cell>
+    <Cell><Data ss:Type="String">89.674.486/0001-57</Data></Cell>
     <Cell><Data ss:Type="String">AV. CANDIDO DE ABREU 000526 LJ 13 TRO ANDAR</Data></Cell>
     <Cell><Data ss:Type="String">80530905</Data></Cell>
     <Cell><Data ss:Type="String">CENTRO CIVICO</Data></Cell>
@@ -249,8 +249,8 @@
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveRow>1</ActiveRow>
-     <ActiveCol>12</ActiveCol>
+     <ActiveRow>10</ActiveRow>
+     <ActiveCol>11</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
