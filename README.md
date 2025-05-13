@@ -62,6 +62,8 @@ $ npm run test:cov
 
 ```bash
 #instalação bibliotecas para desenvolvimento
+$ npm i @nestjs/typeorm typeorm pg class-validator diacritics csv-parse @brazilian-utils/brazilian-utils
+
 $ npm i @nestjs/typeorm typeorm pg
 
 $ npm i class-validator
@@ -71,6 +73,9 @@ $ npm i diacritics
 $ npm install date-fns --save
 
 $ npm i csv-parse
+
+$ npm install --save @brazilian-utils/brazilian-utils
+//https://brazilian-utils.com.br/#/pt-br/getting-started
 ```
 
 ## Support

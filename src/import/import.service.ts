@@ -1,12 +1,18 @@
 import { isValidDate, parseDateBrToIso } from '@app/common';
 
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 import { CreateImportDto } from './dto/create-import.dto';
 import { UpdateImportDto } from './dto/update-import.dto';
 import { ImportStrategy } from './strategies/import.strategy';
 import { DocProtestoService } from 'src/doc-protesto/doc-protesto.service';
 import { DevedorService } from '@app/devedor/devedor.service';
+import { isValidCNPJ, isValidCPF } from '@brazilian-utils/brazilian-utils';
 
 @Injectable()
 export class ImportService {
@@ -52,9 +58,25 @@ export class ImportService {
       throw new Error('O resultado da importação não é um array.');
     }
 
+    for (let i = 0; i < dados.length; i++) {
+      const dado = dados[i];
+      const isCpfValid = isValidCPF(dado.documento);
+      const isCnpjValid = isValidCNPJ(dado.documento);
+      // Se não for nem CPF válido nem CNPJ válido, lança erro
+      if (!isCpfValid && !isCnpjValid) {
+        throw new BadRequestException(
+          `Linha ${i + 1}: Documento inválido (${dado.documento}) para devedor: ${dado.devedor}`,
+        );
+      }
+      // outras validações aqui
+    }
+
     // SALVANDO DADOS NO BANCO
     try {
+      //MUDAR AQUI --> DADOS OF DADOS INTERA EM N VEZES N -->ERRO: ARRAY TEM 5 ELEMENTOS, VAI NTERAR 25 VEZES -> ERRO
       for (const dado of dados) {
+        console.log(dado);
+
         const data_vencimento = isValidDate(dado.vencimento)
           ? new Date(dado.vencimento)
           : parseDateBrToIso(dado.vencimento);
@@ -67,9 +89,7 @@ export class ImportService {
           ? new Date(dado.data_remessa)
           : parseDateBrToIso(dado.data_remessa);
 
-        console.log(dados);
-
-        // SALVANDO DADOS DE DOCUMENTO DE PROTESTO NO BANCO
+        // SALVANDO  DE DOCUMENTO DE PROTESTO NO BANCO
         //eslint-disable-next-line
         const newDocProtesto = {
           vencimento: data_vencimento,
@@ -82,7 +102,6 @@ export class ImportService {
         //await this.docProtestoService.create(newDocProtesto);
 
         // SALVANDO DADOS DE DOCUMENTO DE DEVEDOR NO BANCO
-
         const newDevedor = {
           nome: dado.devedor,
           doc_devedor: dado.documento,
@@ -94,8 +113,11 @@ export class ImportService {
       }
     } catch (err) {
       console.error('Erro ao iterar pelos dados:', err);
-      throw new Error('Falha ao processar os dados importados.');
+      //throw new Error('Falha ao processar os dados importados.');
+      throw new InternalServerErrorException(
+        'Falha ao salvar os dados no banco de dados.',
+      );
     }
-    return dados;
+    //return dados;
   }
 }
