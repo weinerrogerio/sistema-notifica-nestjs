@@ -18,9 +18,6 @@ export class DevedorService {
         doc_devedor: createDevedorDto?.doc_devedor,
         devedor_pj: createDevedorDto?.devedor_pj,
       };
-      // util para simplesmente salvar
-      //return await this.devedorRepository.save(newDevedorDto);
-      //util para salvar e retornar (validar antes de salvar)
       const newDevedor = this.devedorRepository.create(newDevedorDto);
       await this.devedorRepository.save(newDevedor);
       return newDevedor;
@@ -40,7 +37,6 @@ export class DevedorService {
       );
       // Se o devedor já existe, retorna ele
       if (existingDevedor) {
-        console.log('DEVEDOR EXISTENTE', existingDevedor);
         return existingDevedor;
       }
       // Se não existe, cria um novo
@@ -49,8 +45,6 @@ export class DevedorService {
         doc_devedor: createDevedorDto?.doc_devedor,
         devedor_pj: createDevedorDto?.devedor_pj,
       };
-      /*  const newDevedor = this.devedorRepository.create(newDevedorDto);
-      await this.devedorRepository.save(newDevedor); */
       const newDevedor = this.create(newDevedorDto);
       return newDevedor;
     } catch (error) {

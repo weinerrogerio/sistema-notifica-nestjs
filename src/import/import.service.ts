@@ -147,17 +147,10 @@ export class ImportService {
           cedente: dado.cedente,
           doc_credor: dado.documento_sacador,
         };
-        const savedCredor = await this.credorService.findOrCreate(newCredor);
+        const savedCredor = await this.credorService.create(newCredor);
 
-        //   ----------------  SALVANDO LOG DOCPROTESTO E CREDOR - RELAÇÃO N:N ----------------------
-        /* const newLogNotificacao = {
-          email_enviado: false,
-          data_envio: new Date(),
-          lido: false,
-          fk_id_protest: savedDocProtesto.id,
-          fk_id_devedor: savedDevedor.id,
-        };
-        await this.logNotificacaoService.create(newLogNotificacao); */
+        //   -------  SALVANDO LOG DOCPROTESTO E CREDOR - RELAÇÃO N:N ----------------------
+
         const newRelacaoProtestoCredor = {
           fk_doc_protesto: savedDocProtesto.id,
           fk_credor: savedCredor.id,

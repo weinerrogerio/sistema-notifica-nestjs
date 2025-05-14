@@ -25,15 +25,14 @@ export class DocProtestoService {
       };
       const newDocProtesto =
         this.docProtestoRepository.create(newDocProtestoDto);
-      await this.docProtestoRepository.save(newDocProtesto);
-      return newDocProtesto;
+      return await this.docProtestoRepository.save(newDocProtesto);
     } catch (error) {
       console.log(error);
       throw new Error(
         'Falha ao processar os dados importados para Documento de protesto.',
       );
 
-      // aqui podemos fazer logica para conferir tirulos importados anteriormente
+      // aqui podemos fazer logica para conferir titulos importados anteriormente
     }
   }
 

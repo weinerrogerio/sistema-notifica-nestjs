@@ -15,14 +15,16 @@ export class CredorService {
     @InjectRepository(Credor)
     private credorRepository: Repository<Credor>,
   ) {}
+
+  //ALERTA: ARRUMAR A CRIANÇÃO DE CREDOR --> SACADOR E CEDENTE NÃO É IGUAL A CREDOR!!!!!!!
   async create(createCredorDto: CreateCredorDto) {
     try {
-      const newCredor = {
+      const newCredorDto = {
         cedente: createCredorDto.cedente,
         sacador: createCredorDto.sacador,
         doc_credor: createCredorDto.doc_credor,
       };
-      await this.credorRepository.save(newCredor);
+      const newCredor = await this.credorRepository.save(newCredorDto);
       return newCredor;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
@@ -54,9 +56,10 @@ export class CredorService {
     }
   }
   async findOneByDoc(doc_credor: string) {
-    return await this.credorRepository.findOne({
+    const credor = await this.credorRepository.findOne({
       where: { doc_credor: doc_credor },
     });
+    return credor;
   }
 
   findAll() {

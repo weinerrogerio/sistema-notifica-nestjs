@@ -14,11 +14,13 @@ export class DocProtestoCredorService {
 
   async create(createDocProtestoCredorDto: CreateDocProtestoCredorDto) {
     try {
-      const newDocProtestoCredor = this.docProtestoCredorRepository.create({
+      const newDocProtestoCredorDto = {
         fk_doc_protesto: createDocProtestoCredorDto.fk_doc_protesto,
         fk_credor: createDocProtestoCredorDto.fk_credor,
-      });
-
+      };
+      const newDocProtestoCredor = this.docProtestoCredorRepository.create(
+        newDocProtestoCredorDto,
+      );
       return await this.docProtestoCredorRepository.save(newDocProtestoCredor);
     } catch (error) {
       throw new BadRequestException(
