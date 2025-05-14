@@ -1,11 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateDocProtestoCredorDto } from './dto/create-doc-protesto_credor.dto';
 import { UpdateDocProtestoCredorDto } from './dto/update-doc-protesto_credor.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { DocProtestoCredor } from './entities/doc-protesto_credor.entity';
 
 @Injectable()
 export class DocProtestoCredorService {
-  create(createDocProtestoCredorDto: CreateDocProtestoCredorDto) {
-    return 'This action adds a new docProtestoCredor';
+  constructor(
+    @InjectRepository(DocProtestoCredor)
+    private docProtestoCredorRepository: Repository<DocProtestoCredor>,
+  ) {}
+
+  async create(createDocProtestoCredorDto: CreateDocProtestoCredorDto) {
+    try {
+      const newDocProtestoCredor = this.docProtestoCredorRepository.create({
+        fk_doc_protesto: createDocProtestoCredorDto.fk_doc_protesto,
+        fk_credor: createDocProtestoCredorDto.fk_credor,
+      });
+
+      return await this.docProtestoCredorRepository.save(newDocProtestoCredor);
+    } catch (error) {
+      throw new BadRequestException(
+        'Erro ao relacionar n:n docProtesto e credor',
+        error,
+      );
+    }
   }
 
   findAll() {
@@ -17,6 +37,8 @@ export class DocProtestoCredorService {
   }
 
   update(id: number, updateDocProtestoCredorDto: UpdateDocProtestoCredorDto) {
+    console.log(updateDocProtestoCredorDto);
+
     return `This action updates a #${id} docProtestoCredor`;
   }
 

@@ -11,13 +11,13 @@ export class Credor {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  cedente: string;
-
-  @Column()
+  @Column({ nullable: true })
   sacador: string;
 
-  @Column()
+  @Column({ nullable: true })
+  cedente: string;
+
+  @Column({ nullable: false })
   doc_credor: string;
 
   //data de criação (data_registro)

@@ -16,14 +16,21 @@ import { ImportStrategy } from './strategies/import.strategy';
 import { DocProtestoService } from 'src/doc-protesto/doc-protesto.service';
 import { DevedorService } from '@app/devedor/devedor.service';
 import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.service';
+import { CredorService } from '@app/credor/credor.service';
+import { ApresentanteService } from '@app/apresentante/apresentante.service';
+import { DocProtestoCredorService } from '@app/doc-protesto_credor/doc-protesto_credor.service';
 
 @Injectable()
 export class ImportService {
   constructor(
-    @Inject('IMPORT_STRATEGIES') private readonly strategies: ImportStrategy[],
+    @Inject('IMPORT_STRATEGIES')
+    private readonly strategies: ImportStrategy[],
     private readonly docProtestoService: DocProtestoService,
     private readonly devedorService: DevedorService,
+    private readonly credorService: CredorService,
+    private readonly apresentanteService: ApresentanteService,
     private readonly logNotificacaoService: LogNotificacaoService,
+    private readonly relacaoProtestoCredorService: DocProtestoCredorService,
   ) {}
 
   create(createImportDto: CreateImportDto) {
@@ -75,15 +82,6 @@ export class ImportService {
       // outras validações aqui
     }
 
-    /* // Remover máscara de CPF
-    const cpfFormatado = '123.456.789-09';
-    const cpfSemFormato = onlyNumbers(cpfFormatado);
-    console.log(cpfSemFormato); // Saída: 12345678909
-
-    // Remover máscara de CNPJ
-    const cnpjFormatado = '12.345.678/0001-95';
-    const cnpjSemFormato = onlyNumbers(cnpjFormatado);
-    console.log(cnpjSemFormato); // Saída: 12345678000195 */
     // SALVANDO DADOS NO BANCO
     try {
       for (const dado of dados) {
@@ -101,7 +99,18 @@ export class ImportService {
           ? new Date(dado.data_remessa)
           : parseDateBrToIso(dado.data_remessa);
 
-        // SALVANDO  DE DOCUMENTO DE PROTESTO NO BANCO
+        // ----------------------  SALVANDO APRESENTANTE ----------------------
+        const newApresentante = {
+          nome: dado.apresentante,
+          cod_apresentante: dado.codigo,
+        };
+        console.log(newApresentante);
+
+        /* const savedApresentante = */ await this.apresentanteService.findOrCreate(
+          newApresentante,
+        );
+
+        //   ------------ SALVANDO DADOS DE DOCUMENTO DE PROTESTO NO BANCO -------------
         const newDocProtesto = {
           vencimento: data_vencimento,
           data_apresentacao: data_apresentacao,
@@ -113,15 +122,16 @@ export class ImportService {
         const savedDocProtesto =
           await this.docProtestoService.create(newDocProtesto);
 
-        // SALVANDO DADOS DE DOCUMENTO DE DEVEDOR NO BANCO
+        //  --------------- SALVANDO DADOS DEVEDOR NO BANCO  ----------------------
         const newDevedor = {
           nome: dado.devedor,
+          //remover mascara--> onlyNumbers
           doc_devedor: onlyNumbers(dado.documento),
           devedor_pj: isValidCNPJ(dado.documento),
         };
-        const savedDevedor = await this.devedorService.create(newDevedor);
+        const savedDevedor = await this.devedorService.findOrCreate(newDevedor);
 
-        // SALVANDO LOG DE NOTIFICACAO
+        //  ---------SALVANDO LOG DE NOTIFICACAO - RELAÇÃO N:N  ------------------
         const newLogNotificacao = {
           email_enviado: false,
           data_envio: new Date(),
@@ -130,25 +140,32 @@ export class ImportService {
           fk_id_devedor: savedDevedor.id,
         };
         await this.logNotificacaoService.create(newLogNotificacao);
-        console.log(newLogNotificacao);
 
-        console.log(newDevedor);
+        //   ----------------------  SALVANDO CREDOR ----------------------
+        const newCredor = {
+          sacador: dado.sacador,
+          cedente: dado.cedente,
+          doc_credor: dado.documento_sacador,
+        };
+        const savedCredor = await this.credorService.findOrCreate(newCredor);
 
-        /* try {
-      const newPessoaDto = {
-        nome: createPessoaDto.nome,
-        email: createPessoaDto.email,
-        passwordhash: createPessoaDto.password,
-      };
-      const newPessoa = this.pessoaRepository.create(newPessoaDto);
-      await this.pessoaRepository.save(newPessoa);
-      return newPessoa;
-    } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-        throw new ConflictException('Email ja cadastrado');
-      }
-      throw error;
-    } */
+        //   ----------------  SALVANDO LOG DOCPROTESTO E CREDOR - RELAÇÃO N:N ----------------------
+        /* const newLogNotificacao = {
+          email_enviado: false,
+          data_envio: new Date(),
+          lido: false,
+          fk_id_protest: savedDocProtesto.id,
+          fk_id_devedor: savedDevedor.id,
+        };
+        await this.logNotificacaoService.create(newLogNotificacao); */
+        const newRelacaoProtestoCredor = {
+          fk_doc_protesto: savedDocProtesto.id,
+          fk_credor: savedCredor.id,
+        };
+        await this.relacaoProtestoCredorService.create(
+          newRelacaoProtestoCredor,
+        );
+        //
       }
     } catch (err) {
       console.error('Erro ao iterar pelos dados:', err);

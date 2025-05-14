@@ -8,6 +8,8 @@ import { UserModule } from 'src/user/user.module';
 import { LogUsersModule } from 'src/log-users/log-users.module';
 import { DevedorModule } from 'src/devedor/devedor.module';
 import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module';
+import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
+import { CredorModule } from '@app/credor/credor.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module
     }),
     DocProtestoModule,
     DevedorModule,
+    DocProtestoCredorModule,
+    CredorModule,
     LogNotificacaoModule,
     UserModule,
     LogUsersModule,

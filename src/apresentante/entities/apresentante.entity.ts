@@ -11,10 +11,10 @@ export class Apresentante {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   nome: string;
 
-  @Column()
+  @Column({ unique: true })
   cod_apresentante: string;
 
   //data de criação (data_registro)

@@ -7,6 +7,9 @@ import { ImportStrategy } from './strategies/import.strategy';
 import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
 import { DevedorModule } from '@app/devedor/devedor.module';
 import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
+import { CredorModule } from '@app/credor/credor.module';
+import { ApresentanteModule } from '@app/apresentante/apresentante.module';
+import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
 
 @Module({
   controllers: [ImportController],
@@ -24,6 +27,13 @@ import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.modul
       inject: [CsvImportStrategy, XmlImportStrategy],
     },
   ],
-  imports: [DocProtestoModule, DevedorModule, LogNotificacaoModule],
+  imports: [
+    DocProtestoModule,
+    DevedorModule,
+    LogNotificacaoModule,
+    CredorModule,
+    ApresentanteModule,
+    DocProtestoCredorModule,
+  ],
 })
 export class ImportModule {}

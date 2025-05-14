@@ -1,11 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateApresentanteDto } from './dto/create-apresentante.dto';
 import { UpdateApresentanteDto } from './dto/update-apresentante.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Apresentante } from './entities/apresentante.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ApresentanteService {
-  create(createApresentanteDto: CreateApresentanteDto) {
-    return 'This action adds a new apresentante';
+  constructor(
+    @InjectRepository(Apresentante)
+    private readonly apresentanteRepository: Repository<Apresentante>,
+  ) {}
+  async create(createApresentanteDto: CreateApresentanteDto) {
+    try {
+      const newApresentante = {
+        nome: createApresentanteDto.nome,
+        cod_apresentante: createApresentanteDto.cod_apresentante,
+      };
+      return await this.apresentanteRepository.save(newApresentante);
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
+        throw new BadRequestException(error);
+      }
+      throw error;
+    }
+  }
+  async findOrCreate(createApresentanteDto: CreateApresentanteDto) {
+    //verifica se existe
+    const existingApresentante = await this.findOneByDoc(
+      createApresentanteDto.cod_apresentante,
+    );
+    // se exite retorna o apresentante
+    if (existingApresentante) {
+      return existingApresentante;
+    }
+    // se nao existe cria um novo
+
+    return this.create(createApresentanteDto);
+  }
+
+  async findOneByDoc(doc_apresentante: string) {
+    const apresentante = await this.apresentanteRepository.findOne({
+      where: { cod_apresentante: doc_apresentante },
+    });
+    return apresentante;
   }
 
   findAll() {
@@ -17,6 +55,8 @@ export class ApresentanteService {
   }
 
   update(id: number, updateApresentanteDto: UpdateApresentanteDto) {
+    console.log(updateApresentanteDto);
+
     return `This action updates a #${id} apresentante`;
   }
 
