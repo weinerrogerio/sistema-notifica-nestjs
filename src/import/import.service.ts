@@ -150,7 +150,6 @@ export class ImportService {
         const savedCredor = await this.credorService.create(newCredor);
 
         //   -------  SALVANDO LOG DOCPROTESTO E CREDOR - RELAÇÃO N:N ----------------------
-
         const newRelacaoProtestoCredor = {
           fk_doc_protesto: savedDocProtesto.id,
           fk_credor: savedCredor.id,
@@ -158,7 +157,7 @@ export class ImportService {
         await this.relacaoProtestoCredorService.create(
           newRelacaoProtestoCredor,
         );
-        //
+        // FAZER LOG-ARQUIVO AQUI --> guardar logs de sessões de determinados usuários que fizeram uploads
       }
     } catch (err) {
       console.error('Erro ao iterar pelos dados:', err);

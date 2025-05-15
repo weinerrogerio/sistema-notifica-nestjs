@@ -62,11 +62,11 @@ $ npm run test:cov
 
 ```bash
 #instalação bibliotecas para desenvolvimento
-$ npm i @nestjs/typeorm typeorm pg class-validator diacritics csv-parse @brazilian-utils/brazilian-utils
+$ npm i @nestjs/typeorm typeorm pg class-validator class-transformer diacritics csv-parse @brazilian-utils/brazilian-utils bcryptjs
 
 $ npm i @nestjs/typeorm typeorm pg
 
-$ npm i class-validator
+$ npm install class-validator class-transformer
 
 $ npm i diacritics
 
@@ -76,6 +76,11 @@ $ npm i csv-parse
 
 $ npm install --save @brazilian-utils/brazilian-utils
 //https://brazilian-utils.com.br/#/pt-br/getting-started
+
+$ npm i bcryptjs
+
+#opcional - "...deprecated @types/bcryptjs@3.0.0: This is a stub types definition. bcryptjs provides its own type definitions..."
+$ npm i -D @types/bcryptjs
 ```
 
 ## Support

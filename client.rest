@@ -28,3 +28,41 @@ Content-Type: application/json
 
 ###
  
+
+ ###
+##EXIBE TODOS
+{{baseUrl}}/user/
+
+###
+##CRIA USER
+POST {{baseUrl}}/user/
+Content-Type: application/json
+
+{
+   "nome":"user1",
+   "email": "emailuser1@email.com",
+   "contato": "41997653623",
+   "password": "12345",
+   "admin": true
+}
+
+
+###
+## UPDATE
+PATCH  {{baseUrl}}/user/4/
+Content-Type: application/json
+
+{
+   "password": "duarte30"
+}
+
+
+###   
+## DELETA
+DELETE {{baseUrl}}/user/3/
+
+
+
+###
+## AUTH
+POST {{baseUrl}}/auth/

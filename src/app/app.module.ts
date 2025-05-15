@@ -10,6 +10,7 @@ import { DevedorModule } from 'src/devedor/devedor.module';
 import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module';
 import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
 import { CredorModule } from '@app/credor/credor.module';
+import { AuthModule } from '@app/auth/auth.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CredorModule } from '@app/credor/credor.module';
     LogNotificacaoModule,
     UserModule,
     LogUsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -11,22 +11,25 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   nome: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   contato: string;
 
   @Column()
-  password: string;
+  password_hash: string;
+
+  @Column({ default: false })
+  admin: boolean;
 
   //data de criação (data_registro)
   @CreateDateColumn()
-  createdAt?: Date;
+  createdAt: Date;
   //data de atualização (data_registro)
   @UpdateDateColumn()
-  updatedAt?: Date;
+  updatedAt: Date;
 }

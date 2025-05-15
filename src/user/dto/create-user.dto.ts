@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsString,
@@ -23,4 +24,7 @@ export class CreateUserDto {
   @MinLength(4)
   @MaxLength(20)
   password: string;
+
+  @IsBoolean()
+  admin: boolean;
 }
