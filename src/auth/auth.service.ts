@@ -23,27 +23,26 @@ export class AuthService {
   ) {}
   async login(loginDto: LoginDto) {
     const user = await this.user.findOneBy({ nome: loginDto.nome });
-
+    // verificando se o user existe
     if (!user) {
       throw new UnauthorizedException('user não autorizado');
     }
-
+    // verificando se a senha esta correta
     const passwordIsValid = await this.hashingService.compare(
       loginDto.password,
       user.password_hash,
     );
-
     if (!passwordIsValid) {
       throw new UnauthorizedException('Senha inválida');
     }
 
-    // Assinando o token - não precisa passar as opções novamente
-    // pois já foram configuradas no módulo
+    // Assinando o token
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       name: user.nome,
     });
 
+    // retorna o token
     return { accessToken };
   }
 }
