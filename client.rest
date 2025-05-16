@@ -66,3 +66,13 @@ DELETE {{baseUrl}}/user/3/
 ###
 ## AUTH
 POST {{baseUrl}}/auth/
+
+###
+## LOGIN - AUTH
+POST  {{baseUrl}}/auth/
+Content-Type: application/json
+
+{
+   "nome":"user1",
+   "password": "12345"
+}
