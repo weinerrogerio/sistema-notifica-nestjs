@@ -62,7 +62,7 @@ $ npm run test:cov
 
 ```bash
 #instalação bibliotecas para desenvolvimento
-$ npm i @nestjs/config @nestjs/typeorm typeorm pg class-validator class-transformer diacritics csv-parse @brazilian-utils/brazilian-utils bcryptjs
+$ npm i @nestjs/typeorm typeorm pg class-validator class-transformer diacritics csv-parse @brazilian-utils/brazilian-utils bcryptjs @nestjs/config @nestjs/jwt
 
 $ npm i @nestjs/typeorm typeorm pg
 
@@ -82,7 +82,11 @@ $ npm i bcryptjs
 #opcional - "...deprecated @types/bcryptjs@3.0.0: This is a stub types definition. bcryptjs provides its own type definitions..."
 $ npm i -D @types/bcryptjs
 
-$ npm i @nestjs/config
+$ npm i @nestjs/config --save
+
+$ npm i @nestjs/jwt --save
+
+$ npm i jsonwebtoken --save
 ```
 
 ## Support
