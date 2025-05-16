@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { HashingService } from './hashing/hashing.service';
 import jwtConfig from './config/jwt.config';
 import { ConfigType } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -18,18 +19,15 @@ export class AuthService {
     private readonly hashingService: HashingService,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    /* private readonly jwtService: JwtService, */
+    private readonly jwtService: JwtService,
   ) {}
   async login(loginDto: LoginDto) {
-    //let passwordIsValid = false;
-    //let throwError = true;
     const user = await this.user.findOneBy({ nome: loginDto.nome });
 
     if (!user) {
       throw new UnauthorizedException('user não autorizado');
     }
 
-    //checar senha - se correto retorna true
     const passwordIsValid = await this.hashingService.compare(
       loginDto.password,
       user.password_hash,
@@ -39,7 +37,13 @@ export class AuthService {
       throw new UnauthorizedException('Senha inválida');
     }
 
-    //depois fazer o token e entregar para o susuário
-    return { message: 'Login efetuado com sucesso' };
+    // Assinando o token - não precisa passar as opções novamente
+    // pois já foram configuradas no módulo
+    const accessToken = await this.jwtService.signAsync({
+      sub: user.id,
+      name: user.nome,
+    });
+
+    return { accessToken };
   }
 }

@@ -48,17 +48,17 @@ Content-Type: application/json
 
 
 ###
-## UPDATE
+## UPDATE USER
 PATCH  {{baseUrl}}/user/4/
 Content-Type: application/json
 
 {
-   "password": "duarte30"
+   "password": "12345"
 }
 
 
 ###   
-## DELETA
+## DELETA USER
 DELETE {{baseUrl}}/user/3/
 
 
