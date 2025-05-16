@@ -1,4 +1,6 @@
 @baseUrl = http://localhost:3000
+#@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJ1c2VyMSIsImlhdCI6MTc0NzQyMDk2MiwiZXhwIjoxNzQ3NDI0NTYyLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAifQ.tyUWvRdC4MUXFclFhOFgxyvffCoVgFzKQ4SCGEnH9oY
+@authToken = {{authenticate.response.body.accessToken}}
 
 ### AppControllerGetHello
 
@@ -26,16 +28,17 @@ Content-Type: application/json
     "vencimento": "2024-10-22T03:15:00.000Z"
 }
 
-###
- 
 
- ###
+
+###-------------------------------------------------------
 ##EXIBE TODOS
 {{baseUrl}}/user/
+Authorization: Bearer {{authToken}}
 
 ###
 ##CRIA USER
 POST {{baseUrl}}/user/
+#Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -56,19 +59,20 @@ Content-Type: application/json
    "password": "12345"
 }
 
-
 ###   
 ## DELETA USER
 DELETE {{baseUrl}}/user/3/
 
 
 
-###
+
+### ---------------------------------------------------------
 ## AUTH
 POST {{baseUrl}}/auth/
 
 ###
 ## LOGIN - AUTH
+# @name authenticate
 POST  {{baseUrl}}/auth/
 Content-Type: application/json
 
