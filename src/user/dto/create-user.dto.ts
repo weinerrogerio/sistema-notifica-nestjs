@@ -1,7 +1,9 @@
+import { Role } from '@app/common/enums/role.enum';
 import {
-  IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -25,6 +27,10 @@ export class CreateUserDto {
   @MaxLength(20)
   password: string;
 
-  @IsBoolean()
-  admin: boolean;
+  /*  @IsBoolean()
+  admin: boolean; */
+
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
 }

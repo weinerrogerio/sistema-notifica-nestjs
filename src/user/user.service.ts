@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { HashingService } from '@app/auth/hashing/hashing.service';
+import { Role } from '@app/common/enums/role.enum';
 
 //BcryptService
 
@@ -29,6 +30,7 @@ export class UserService {
         contato: createUserDto?.contato,
         //passwordHash: createUserDto?.password,
         password_hash: passwordHash,
+        role: createUserDto.role || Role.USER,
       };
       const newUser = this.userRepository.create(newUserDto);
       await this.userRepository.save(newUser);
