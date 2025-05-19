@@ -7,6 +7,7 @@ import { HashingService } from './hashing/hashing.service';
 import jwtConfig from './config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { LogUsersService } from '@app/log-users/log-users.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly jwtService: JwtService,
+    private readonly logUsersService: LogUsersService,
   ) {}
   async login(loginDto: LoginDto) {
     const user = await this.user.findOneBy({ nome: loginDto.nome });
@@ -39,6 +41,8 @@ export class AuthService {
       throw new UnauthorizedException('Senha inválida');
     }
 
+    await this.logUsersService.createLoginEntry(user.id);
+
     // Incluindo role no payload do JWT
     const payload = {
       sub: user.id,
@@ -51,5 +55,11 @@ export class AuthService {
 
     // retorna o token
     return { accessToken };
+  }
+
+  async logout(userId: number) {
+    // Atualiza o registro de login com a data de logout
+    await this.logUsersService.updateLogoutEntry(userId);
+    return { message: 'Logout realizado com sucesso' };
   }
 }

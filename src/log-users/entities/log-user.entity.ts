@@ -14,7 +14,7 @@ export class LogUser {
   @Column()
   log_in: Date;
 
-  @Column()
+  @Column({ nullable: true })
   log_out: Date;
 
   //relacionamento user:log (1:n)
