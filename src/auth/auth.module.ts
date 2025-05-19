@@ -8,6 +8,11 @@ import { User } from '@app/user/entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { UserModule } from '@app/user/user.module';
+/* import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { APP_GUARD } from '@nestjs/core'; */
 
 //moduleo global--> utilizado em todos os modulos
 @Global()
@@ -30,6 +35,7 @@ import { JwtModule } from '@nestjs/jwt';
         };
       },
     }),
+    UserModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -38,6 +44,7 @@ import { JwtModule } from '@nestjs/jwt';
       useClass: BcryptService,
     },
     AuthService,
+    JwtStrategy,
   ],
   exports: [HashingService, JwtModule, ConfigModule],
 })

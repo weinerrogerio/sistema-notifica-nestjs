@@ -25,8 +25,11 @@ export class AuthService {
     const user = await this.user.findOneBy({ nome: loginDto.nome });
     // verificando se o user existe
     if (!user) {
-      throw new UnauthorizedException('user não autorizado');
+      throw new UnauthorizedException('Credenciais Inválidas');
     }
+    // Atualiza o último login --> modificar userService para logUserService !!!
+    //await this.userService.updateLastLogin(user.id);
+
     // verificando se a senha esta correta
     const passwordIsValid = await this.hashingService.compare(
       loginDto.password,
@@ -36,11 +39,15 @@ export class AuthService {
       throw new UnauthorizedException('Senha inválida');
     }
 
-    // Assinando o token
-    const accessToken = await this.jwtService.signAsync({
+    // Incluindo role no payload do JWT
+    const payload = {
       sub: user.id,
       name: user.nome,
-    });
+      role: user.role,
+    };
+
+    // Assinando o token
+    const accessToken = await this.jwtService.signAsync({ payload });
 
     // retorna o token
     return { accessToken };
