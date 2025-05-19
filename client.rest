@@ -73,7 +73,7 @@ POST {{baseUrl}}/auth/
 ###
 ## NOVO USER - COMUM - NÃO ADM
 POST {{baseUrl}}/auth/register
-#Authorization: Bearer {{authToken}}
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -88,10 +88,16 @@ Content-Type: application/json
 ###
 ## LOGIN - AUTH
 # @name authenticate
-POST  {{baseUrl}}/auth/
+POST  {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-   "nome":"user1",
-   "password": "12345"
+   "nome":"admin",
+   "password": "123456"
 }
+
+
+###
+## LOGOUT - AUTH
+POST  {{baseUrl}}/auth/logout/
+Authorization: Bearer {{authToken}}

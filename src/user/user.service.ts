@@ -20,6 +20,12 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     private readonly hashingService: HashingService,
   ) {}
+
+  async findByRole(role: Role): Promise<User[]> {
+    return this.userRepository.find({
+      where: { role },
+    });
+  }
   async create(createUserDto: CreateUserDto) {
     const passwordHash = await this.hashingService.hash(createUserDto.password);
 

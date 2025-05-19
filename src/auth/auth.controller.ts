@@ -1,9 +1,10 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '@app/user/dto/create-user.dto';
 import { Role } from '@app/common/enums/role.enum';
 import { UserService } from '@app/user/user.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 /*
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -18,6 +19,14 @@ export class AuthController {
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    // Assume que o usuário id está em req.user.payload.sub após autenticação JWT
+    const userId = req?.['payload']?.sub;
+    return this.authService.logout(userId);
   }
 
   @Post('register')
