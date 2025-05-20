@@ -26,14 +26,12 @@ export class UserController {
   @Post()
   @Roles(Role.ADMIN) // Apenas administradores podem criar novos usuários
   create(@Body() createUserDto: CreateUserDto) {
-    console.log('create');
     return this.userService.create(createUserDto);
   }
 
   @Get()
   @Roles(Role.ADMIN) // Apenas administradores podem listar todos os usuários
   findAll() {
-    console.log('findAll', Role.ADMIN);
     return this.userService.findAll();
   }
 
@@ -43,22 +41,16 @@ export class UserController {
   async findOne(@Param('id') id: string, @Request() req) {
     // Obtém o payload do token JWT
     const userPayload = req.REQUEST_TOKEN_PAYLOAD_KEY;
-
-    // Importante: Verifique se o payload está no formato correto
-    // Se você não corrigiu o formato do token, pode ser necessário acessar userPayload.payload
     const userRole = userPayload.role;
     const userId = userPayload.sub;
-
     // Se for admin, pode acessar qualquer usuário
     if (userRole === Role.ADMIN) {
       return this.userService.findOne(+id);
     }
-
     // Se for usuário comum, só pode ver seus próprios dados
     if (userId === +id) {
       return this.userService.findOne(+id);
     }
-
     // Caso contrário, não tem permissão
     throw new ForbiddenException(
       'Você não tem permissão para acessar os dados de outro usuário',
@@ -67,14 +59,28 @@ export class UserController {
 
   @Patch(':id')
   @Roles(Role.ADMIN) // Apenas administradores podem atualizar usuários
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    console.log(updateUserDto);
-    return this.userService.update(+id, updateUserDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+  ) {
+    const userId = req?.['REQUEST_TOKEN_PAYLOAD_KEY']?.sub;
+    return this.userService.update(+id, updateUserDto, userId);
   }
 
+  //"DELETA" um usuario --> desativa o usuário
   @Delete(':id')
   @Roles(Role.ADMIN) // Apenas administradores podem excluir usuários
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  remove(@Param('id') id: string, @Request() req) {
+    const userPayload = req.REQUEST_TOKEN_PAYLOAD_KEY;
+    return this.userService.remove(+id, userPayload.sub);
+  }
+
+  //Reativa um usuário
+  @Patch('reactivate/:id')
+  @Roles(Role.ADMIN) // Apenas administradores podem reativar usuários
+  reactivate(@Param('id') id: string, @Request() req) {
+    const userPayload = req.REQUEST_TOKEN_PAYLOAD_KEY;
+    return this.userService.updateReactivateUser(+id, userPayload.sub);
   }
 }

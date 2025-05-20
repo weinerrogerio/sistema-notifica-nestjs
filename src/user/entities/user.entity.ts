@@ -27,8 +27,8 @@ export class User {
   @Column({ type: 'enum', enum: Role, default: Role.USER })
   role: Role;
 
-  /* @Column({ default: false })
-  admin: boolean; */
+  @Column({ default: true })
+  is_active: boolean;
 
   //data de criação (data_registro)
   @CreateDateColumn()

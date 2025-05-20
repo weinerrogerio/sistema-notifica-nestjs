@@ -12,6 +12,7 @@ import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_c
 import { CredorModule } from '@app/credor/credor.module';
 import { AuthModule } from '@app/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { LogEventAdminUserModule } from '@app/log_event_admin_user/log_event_admin_user.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ConfigModule } from '@nestjs/config';
     LogNotificacaoModule,
     UserModule,
     LogUsersModule,
+    LogEventAdminUserModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
