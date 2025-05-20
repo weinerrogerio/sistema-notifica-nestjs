@@ -31,36 +31,45 @@ Content-Type: application/json
 
 
 ###-------------------------------------------------------
-##EXIBE TODOS
-{{baseUrl}}/user/
+## EXIBE TODOS
+GET {{baseUrl}}/user/
 Authorization: Bearer {{authToken}}
 
 ###
+## EXIBE UM USER - ADMIN PODE ER DADOS DE TODOS/ USER SO PODE VER O SEU
+GET {{baseUrl}}/user/4
+Authorization: Bearer {{authToken}}
+
+
+
+###
 ##CRIA USER
-POST {{baseUrl}}/user/register/
-#Authorization: Bearer {{authToken}}
+POST {{baseUrl}}/user/
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "nome":"user1",
-   "email": "emailuser1@email.com",
+   "nome":"user2",
+   "email": "emailuser2@email.com",
    "contato": "41997653623",
-   "password": "12345"
+   "password": "123456"
 }
 
 
 ###
 ## UPDATE USER
 PATCH  {{baseUrl}}/user/4/
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "password": "12345"
+   "password": "abcdef"
 }
 
 ###   
 ## DELETA USER
-DELETE {{baseUrl}}/user/3/
+DELETE {{baseUrl}}/user/5/
+Authorization: Bearer {{authToken}}
 
 
 
@@ -93,6 +102,7 @@ Content-Type: application/json
 
 {
    "nome":"admin",
+   //"nome": "user1",
    "password": "123456"
 }
 
