@@ -29,6 +29,10 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Credenciais Inválidas');
     }
+    // Verificar se o usuário está ativo (is_active===true)
+    if (user.is_active === false) {
+      throw new UnauthorizedException('Usuário desativado');
+    }
     // Atualiza o último login --> modificar userService para logUserService !!!
     //await this.userService.updateLastLogin(user.id);
 

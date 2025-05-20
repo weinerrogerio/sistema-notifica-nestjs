@@ -52,25 +52,30 @@ Content-Type: application/json
    "nome":"user2",
    "email": "emailuser2@email.com",
    "contato": "41997653623",
-   "password": "123456"
+   "password": "abcdef"
 }
 
 
 ###
 ## UPDATE USER
-PATCH  {{baseUrl}}/user/4/
+PATCH  {{baseUrl}}/user/6/
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "password": "abcdef"
+   "password": "123456"
 }
 
 ###   
-## DELETA USER
-DELETE {{baseUrl}}/user/5/
+## DELETA USER --> desativa user
+DELETE {{baseUrl}}/user/6/
 Authorization: Bearer {{authToken}}
 
+
+### 
+## REATIVA user
+PATCH {{baseUrl}}/user/reactivate/6/
+Authorization: Bearer {{authToken}}
 
 
 
