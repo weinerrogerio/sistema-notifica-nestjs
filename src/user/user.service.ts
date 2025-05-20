@@ -27,6 +27,8 @@ export class UserService {
     });
   }
   async create(createUserDto: CreateUserDto) {
+    console.log('CHAMANDO CREATE USER DE SERVICE');
+
     const passwordHash = await this.hashingService.hash(createUserDto.password);
 
     try {

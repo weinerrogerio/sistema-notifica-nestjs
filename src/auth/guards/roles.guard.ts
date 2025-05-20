@@ -17,7 +17,15 @@ export class RolesGuard implements CanActivate {
       return true; // Se não houver roles definidas, permite o acesso
     }
 
-    const { user } = context.switchToHttp().getRequest();
-    return requiredRoles.some((role) => user.role === role);
+    const request = context.switchToHttp().getRequest();
+    // Usa a chave REQUEST_TOKEN_PAYLOAD_KEY onde o payload do token está armazenado
+    const userPayload = request['REQUEST_TOKEN_PAYLOAD_KEY'];
+
+    // Verifica se existe o payload e se ele tem a propriedade role
+    if (!userPayload || !userPayload.role) {
+      return false; // Acesso negado se não houver payload ou role
+    }
+
+    return requiredRoles.some((role) => userPayload.role === role);
   }
 }
