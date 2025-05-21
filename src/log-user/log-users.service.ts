@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateLogUserDto } from './dto/create-log-user.dto';
-import { UpdateLogUserDto } from './dto/update-log-user.dto';
 import { LogUser } from './entities/log-user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from '@app/user/user.service';
@@ -15,11 +14,18 @@ export class LogUsersService {
   ) {}
 
   async createLoginEntry(userId: number) {
-    const user = await this.userService.findOne(userId);
+    // Primeiro, fechamos qualquer sessão ativa que o usuário possa ter
+    await this.closeActiveSession(userId);
+
+    // Calculamos quando o token vai expirar baseado na configuração do JWT
+    const tokenExpiryDate = this.calculateTokenExpiry();
+
+    const user = await this.userService.findOneById(userId);
     if (!user) throw new Error('Usuário nao encontrado');
     const logUser = {
       log_in: new Date(),
       fk_id_user: user.id,
+      token_expiry_date: tokenExpiryDate,
     };
     return await this.logUserRepository.save(logUser);
   }
@@ -35,14 +41,16 @@ export class LogUsersService {
         createdAt: 'DESC', // Pega o mais recente
       },
     });
-
     if (!lastLoginEntry) {
       return null;
     }
-
     // Atualiza a data de logout
-    lastLoginEntry.log_out = new Date();
-    return this.logUserRepository.save(lastLoginEntry);
+    const logOut = {
+      log_out: new Date(),
+      session_end_type: 'Explicito',
+    };
+    //lastLoginEntry.log_out = new Date();
+    return this.logUserRepository.save(logOut);
   }
 
   create(createLogUserDto: CreateLogUserDto) {
@@ -59,13 +67,27 @@ export class LogUsersService {
     return `This action returns a #${id} logUser`;
   }
 
-  update(id: number, updateLogUserDto: UpdateLogUserDto) {
-    console.log(updateLogUserDto);
+  private async closeActiveSession(userId: number): Promise<void> {
+    const activeSessions = await this.logUserRepository.find({
+      where: {
+        fk_id_user: userId,
+        log_out: null,
+      },
+    });
 
-    return `This action updates a #${id} logUser`;
+    for (const session of activeSessions) {
+      session.log_out = new Date();
+      session.session_end_type = 'implícito'; // Registramos que o logout foi implícito
+      await this.logUserRepository.save(session);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} logUser`;
+  private calculateTokenExpiry(): Date {
+    // Assumindo que o token expira em 24 horas (1d --> 86400s)
+    // Obter o valor JWT_TTL do ambiente e converter para número
+    const jwtTtlSeconds = parseInt(process.env.JWT_TTL || '86400', 10);
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + jwtTtlSeconds); // Ajuste conforme sua configuração de expiração
+    return expiryDate;
   }
 }

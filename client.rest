@@ -41,7 +41,6 @@ GET {{baseUrl}}/user/4
 Authorization: Bearer {{authToken}}
 
 
-
 ###
 ##CRIA USER
 POST {{baseUrl}}/user/
@@ -49,10 +48,10 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "nome":"user2",
-   "email": "emailuser2@email.com",
+   "nome":"user4",
+   "email": "emailuser4@email.com",
    "contato": "41997653623",
-   "password": "abcdef"
+   "password": "123456"
 }
 
 
@@ -85,7 +84,7 @@ POST {{baseUrl}}/auth/
 
 
 ###
-## NOVO USER - COMUM - NÃO ADM
+## NOVO USER - COMUM - NÃO ADM -- RETIRAR DEPOIS !!!
 POST {{baseUrl}}/auth/register
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
@@ -106,8 +105,8 @@ POST  {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-   "nome":"admin",
-   //"nome": "user1",
+   //"nome":"admin",
+   "nome": "user1",
    "password": "123456"
 }
 

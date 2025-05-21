@@ -7,7 +7,7 @@ import { HashingService } from './hashing/hashing.service';
 import jwtConfig from './config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { LogUsersService } from '@app/log-users/log-users.service';
+import { LogUsersService } from '@app/log-user/log-users.service';
 
 @Injectable()
 export class AuthService {

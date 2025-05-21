@@ -30,13 +30,24 @@ async function bootstrap() {
 
     if (existingAdmins.length === 0) {
       // Cria o usuário admin
-      await userService.create({
-        nome: adminName,
-        email: adminEmail,
-        password: adminPassword,
-        contato: adminContato,
-        role: Role.ADMIN,
-      });
+      await userService.create(
+        {
+          nome: adminName,
+          email: adminEmail,
+          password: adminPassword,
+          contato: adminContato,
+          role: Role.ADMIN,
+        },
+        {
+          sub: 1,
+          email: adminEmail,
+          role: Role.ADMIN,
+          iat: 1,
+          exp: 1,
+          iss: '',
+          aud: '',
+        },
+      );
 
       console.log('Usuário admin criado com sucesso!');
       console.log(`

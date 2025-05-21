@@ -5,7 +5,7 @@ import { ImportModule } from 'src/import/import.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocProtestoModule } from 'src/doc-protesto/doc-protesto.module';
 import { UserModule } from 'src/user/user.module';
-import { LogUsersModule } from 'src/log-users/log-users.module';
+import { LogUsersModule } from '@app/log-user/log-users.module';
 import { DevedorModule } from 'src/devedor/devedor.module';
 import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module';
 import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
