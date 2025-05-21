@@ -11,15 +11,19 @@ export class LogUser {
   @PrimaryGeneratedColumn()
   id: number;
 
+  //relacionamento user:log (1:n)
+  @Column()
+  fk_id_user: number;
+
   @Column()
   log_in: Date;
 
   @Column({ nullable: true })
   log_out: Date;
 
-  //relacionamento user:log (1:n)
-  @Column()
-  fk_id_user: number;
+  // Tipo de encerramento da sessão: 'explícito' (usuário clicou em logout) ou 'implícito' (token expirou)
+  @Column({ nullable: true, default: null })
+  session_end_type: string;
 
   //data de criação (data_registro)
   @CreateDateColumn()

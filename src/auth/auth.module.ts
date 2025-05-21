@@ -10,7 +10,7 @@ import jwtConfig from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserModule } from '@app/user/user.module';
-import { LogUsersModule } from '@app/log-users/log-users.module';
+import { LogUsersModule } from '@app/log-user/log-users.module';
 /* import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { APP_GUARD } from '@nestjs/core'; */

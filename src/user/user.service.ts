@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { HashingService } from '@app/auth/hashing/hashing.service';
 import { Role } from '@app/common/enums/role.enum';
 import { LogEventAdminUserService } from '@app/log_event_admin_user/log_event_admin_user.service';
+import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
 
 //BcryptService
 
@@ -29,22 +30,26 @@ export class UserService {
       where: { role },
     });
   }
-  async create(createUserDto: CreateUserDto) {
-    console.log('CHAMANDO CREATE USER DE SERVICE');
-
+  async create(createUserDto: CreateUserDto, tokenPayload: TokenPayloadDto) {
+    const userId = tokenPayload.sub;
     const passwordHash = await this.hashingService.hash(createUserDto.password);
-
     try {
       const newUserDto = {
         nome: createUserDto?.nome,
         email: createUserDto?.email,
         contato: createUserDto?.contato,
-        //passwordHash: createUserDto?.password,
         password_hash: passwordHash,
         role: createUserDto.role || Role.USER,
       };
       const newUser = this.userRepository.create(newUserDto);
       await this.userRepository.save(newUser);
+      // Registro de evento de criação
+      await this.logEventUserService.createLogEntry({
+        fk_id_user: userId, // ID do admin executando a ação
+        fk_id_target: newUser.id,
+        event: 'CREATE',
+        descricao: 'Criação de usuário',
+      });
       return newUser;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
@@ -64,37 +69,39 @@ export class UserService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, tokenPayload: TokenPayloadDto) {
+    const user = await this.userRepository.findOneBy({
+      id,
+    });
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+    if (!user.is_active) {
+      //Usuário desativado === excluido
+      throw new NotFoundException(`Usuário não encontrado`);
+    }
+    if (tokenPayload.sub !== user.id) {
+      throw new ForbiddenException('Acesso negado - Usuário diferente');
+    }
+    return user;
+  }
+
+  async findOneById(id: number) {
     const user = await this.userRepository.findOneBy({
       id,
     });
     if (!user) {
       throw new NotFoundException('user não encontrado');
     }
-    if (!user.is_active) {
-      //Usuário desativado === excluido
-      console.log('USUARIO DESATIVADO');
-      throw new NotFoundException(`Usuário não encontrado`);
-    }
     return user;
   }
 
-  //ARRUMAR ESSA FUNÇÃO--> FIND BY ID SEM VERIFICAÇAÕ DE ATIVO
-  async updateReactivateUser(id: number, userId: number) {
-    const user = await this.findOne(id);
-    user.is_active = true;
-    await this.userRepository.save(user);
-    // Registrar em log_event_user aqui
-    await this.logEventUserService.createLogEntry({
-      fk_id_user: userId, // ID do admin executando a ação
-      fk_id_target: id,
-      event: 'UPDATE',
-      descricao: 'Usuário reativado',
-    });
-    return user;
-  }
-
-  async update(id: number, updateUserDto: UpdateUserDto, userId: number) {
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+    tokenPayload: TokenPayloadDto,
+  ) {
+    const userId = tokenPayload.sub;
     const existingUser = await this.userRepository.findOneBy({ id });
     if (!existingUser) {
       throw new NotFoundException(`Usuário não encontrado`);
@@ -128,8 +135,27 @@ export class UserService {
     });
     return user;
   }
-  async remove(id: number, userId: number) {
-    const user = await this.findOne(id);
+
+  //REATIVA UM USER --> desativado->ativado
+  async updateReactivateUser(id: number, tokenPayload: TokenPayloadDto) {
+    const userId = tokenPayload.sub;
+    const user = await this.findOneById(id);
+    user.is_active = true;
+    await this.userRepository.save(user);
+    // Registrar em log_event_user aqui
+    await this.logEventUserService.createLogEntry({
+      fk_id_user: userId, // ID do admin executando a ação
+      fk_id_target: id,
+      event: 'UPDATE',
+      descricao: 'Usuário reativado',
+    });
+    return user;
+  }
+
+  //DESATIVA UM USER --> ativo->desativado
+  async remove(id: number, tokenPayload: TokenPayloadDto) {
+    const userId = tokenPayload.sub;
+    const user = await this.findOneById(id);
     // Marcar como inativo em vez de excluir
     user.is_active = false;
     // Registrar em log_event_user aqui

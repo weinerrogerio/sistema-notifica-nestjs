@@ -1,8 +1,6 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { CreateUserDto } from '@app/user/dto/create-user.dto';
-import { Role } from '@app/common/enums/role.enum';
 import { UserService } from '@app/user/user.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 /*
@@ -29,10 +27,11 @@ export class AuthController {
     return this.authService.logout(userId);
   }
 
-  @Post('register')
+  //rota aberta para registro de usuário -- APENAS PARA TESTE
+  /* @Post('register')
   register(@Body() createUserDto: CreateUserDto) {
     // Forçar role de USER para registro público
     createUserDto.role = Role.USER;
     return this.userService.create(createUserDto);
-  }
+  } */
 }

@@ -18,8 +18,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       issuer: configService.get<string>('jwt.issuer'),
     });
   }
+
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   async validate(payload: any) {
-    const user = await this.userService.findOne(payload.sub);
+    const user = await this.userService.findOneById(payload.sub);
     if (!user) {
       throw new UnauthorizedException();
     }
