@@ -1,15 +1,10 @@
-import { isValidDate, parseDateBrToIso } from '@app/common';
+// src/import/import.service.ts (Refatorado)
 import {
   BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  isValidCNPJ,
-  isValidCPF,
-  onlyNumbers,
-} from '@brazilian-utils/brazilian-utils';
 import { CreateImportDto } from './dto/create-import.dto';
 import { UpdateImportDto } from './dto/update-import.dto';
 import { ImportStrategy } from './strategies/import.strategy';
@@ -19,6 +14,23 @@ import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.serv
 import { CredorService } from '@app/credor/credor.service';
 import { ApresentanteService } from '@app/apresentante/apresentante.service';
 import { DocProtestoCredorService } from '@app/doc-protesto_credor/doc-protesto_credor.service';
+import { LogArquivoService } from '@app/log-arquivo/log-arquivo.service';
+import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
+import { StatusImportacao } from '@app/log-arquivo/enum/log-arquivo.enum';
+
+// Importar as utilities criadas
+import {
+  ImportValidationUtil,
+  ImportError,
+} from '../utilities/import-validation.util';
+import {
+  ImportProcessorUtil,
+  ProcessingResult,
+} from '../utilities/import-processor.util';
+import {
+  LogManagerUtil,
+  LogImportacaoData,
+} from '../utilities/log-manager.util';
 
 @Injectable()
 export class ImportService {
@@ -31,6 +43,7 @@ export class ImportService {
     private readonly apresentanteService: ApresentanteService,
     private readonly logNotificacaoService: LogNotificacaoService,
     private readonly relacaoProtestoCredorService: DocProtestoCredorService,
+    private readonly logArquivoService: LogArquivoService,
   ) {}
 
   create(createImportDto: CreateImportDto) {
@@ -48,7 +61,6 @@ export class ImportService {
 
   update(id: number, updateImportDto: UpdateImportDto) {
     console.log(updateImportDto);
-
     return `This action updates a #${id} import`;
   }
 
@@ -56,116 +68,256 @@ export class ImportService {
     return `This action removes a #${id} import`;
   }
 
-  async importFile(file: Express.Multer.File) {
-    const strategy = this.strategies.find((s) => s.canHandle(file.mimetype));
-    if (!strategy) {
-      throw new BadRequestException(
-        `Formato de arquivo não suportado. ${file.mimetype}`,
+  async importFile(file: Express.Multer.File, tokenPayload: TokenPayloadDto) {
+    const startTime = Date.now();
+    let logImportacao: LogImportacaoData | null = null;
+    let savedLogImportacao = null;
+
+    try {
+      // 1. VALIDAÇÃO INICIAL DO ARQUIVO
+      const strategy = this.findImportStrategy(file.mimetype);
+      if (!strategy) {
+        logImportacao = LogManagerUtil.createUnsupportedFileTypeLog(
+          file,
+          tokenPayload.sub,
+        );
+        savedLogImportacao = await this.logArquivoService.create(logImportacao);
+        throw new BadRequestException(
+          `Formato de arquivo não suportado: ${file.mimetype}`,
+        );
+      }
+
+      // 2. IMPORTAÇÃO DOS DADOS
+      const dados = await strategy.import(file.buffer);
+
+      // 3. VALIDAÇÃO DOS DADOS IMPORTADOS
+      const validationResult = ImportValidationUtil.validateImportData(dados);
+
+      if (!validationResult.isValid && dados.length === 0) {
+        logImportacao = LogManagerUtil.createEmptyFileLog(
+          file,
+          tokenPayload.sub,
+        );
+        savedLogImportacao = await this.logArquivoService.create(logImportacao);
+        throw new BadRequestException(
+          'Arquivo não contém dados para importação.',
+        );
+      }
+
+      // 4. CRIAR LOG INICIAL
+      logImportacao = LogManagerUtil.createInitialLog(file, tokenPayload.sub);
+      LogManagerUtil.updateLogWithValidation(
+        logImportacao,
+        dados.length,
+        validationResult.errors,
+      );
+
+      // 5. VERIFICAR SE TODOS OS REGISTROS TÊM ERROS DE VALIDAÇÃO
+      if (
+        LogManagerUtil.isCompleteValidationFailure(
+          validationResult.errors,
+          dados.length,
+        )
+      ) {
+        savedLogImportacao = await this.logArquivoService.create(logImportacao);
+        throw new BadRequestException(
+          'Todos os registros contêm erros de validação.',
+        );
+      }
+
+      // 6. PROCESSAR REGISTROS VÁLIDOS
+      const processingResult = await this.processValidRecords(
+        dados,
+        validationResult.errors,
+      );
+
+      // 7. ATUALIZAR LOG COM RESULTADOS FINAIS
+      const duracao = ImportProcessorUtil.formatDuration(
+        Date.now() - startTime,
+      );
+      LogManagerUtil.updateLogWithProcessingResults(
+        logImportacao,
+        processingResult.registrosProcessados,
+        processingResult.errosProcessamento,
+        validationResult.errors,
+        duracao,
+      );
+
+      // 8. SALVAR LOG FINAL
+      savedLogImportacao = await this.logArquivoService.create(logImportacao);
+
+      // 9. VERIFICAR SE HOUVE FALHA COMPLETA
+      const totalErros =
+        validationResult.errors.length +
+        processingResult.errosProcessamento.length;
+      if (
+        LogManagerUtil.isCompleteProcessingFailure(
+          processingResult.registrosProcessados,
+          totalErros,
+        )
+      ) {
+        throw new InternalServerErrorException(
+          'Falha ao processar todos os registros.',
+        );
+      }
+
+      // 10. RETORNAR RESULTADO DE SUCESSO
+      return this.createSuccessResponse(
+        savedLogImportacao.id,
+        dados.length,
+        processingResult.registrosProcessados,
+        totalErros,
+        logImportacao.status,
+      );
+    } catch (err) {
+      console.error('Erro ao processar importação:', err);
+      return await this.handleImportError(
+        err,
+        startTime,
+        logImportacao,
+        savedLogImportacao,
       );
     }
-    const dados = await strategy.import(file.buffer);
+  }
 
-    if (!Array.isArray(dados)) {
-      throw new Error('O resultado da importação não é um array.');
-    }
+  /**
+   * Encontra a estratégia de importação apropriada para o tipo de arquivo
+   */
+  private findImportStrategy(mimetype: string): ImportStrategy | undefined {
+    return this.strategies.find((s) => s.canHandle(mimetype));
+  }
+
+  /**
+   * Processa apenas os registros que passaram na validação
+   */
+  private async processValidRecords(
+    dados: any[],
+    errosValidacao: ImportError[],
+  ): Promise<ProcessingResult> {
+    let registrosProcessados = 0;
+    const errosProcessamento: ImportError[] = [];
 
     for (let i = 0; i < dados.length; i++) {
       const dado = dados[i];
-      const isCpfValid = isValidCPF(dado.documento);
-      const isCnpjValid = isValidCNPJ(dado.documento);
-      // Se não for nem CPF válido nem CNPJ válido, lança erro
-      if (!isCpfValid && !isCnpjValid) {
-        throw new BadRequestException(
-          `Linha ${i + 1}: Documento inválido (${dado.documento}) para devedor: ${dado.devedor}`,
+      const linha = i + 1;
+
+      try {
+        // Pular registros com erro de validação
+        if (!ImportProcessorUtil.canProcessRecord(errosValidacao, linha)) {
+          continue;
+        }
+
+        await this.processIndividualRecord(dado);
+        registrosProcessados++;
+      } catch (err) {
+        console.error(`Erro ao processar linha ${linha}:`, err);
+        errosProcessamento.push(
+          ImportProcessorUtil.createProcessingError(linha, err, dado),
         );
       }
-      // outras validações aqui
     }
 
-    // SALVANDO DADOS NO BANCO
-    try {
-      for (const dado of dados) {
-        console.log(dado);
+    return {
+      registrosProcessados,
+      errosProcessamento,
+    };
+  }
 
-        const data_vencimento = isValidDate(dado.vencimento)
-          ? new Date(dado.vencimento)
-          : parseDateBrToIso(dado.vencimento);
+  /**
+   * Processa um registro individual salvando no banco de dados
+   */
+  private async processIndividualRecord(dado: any): Promise<void> {
+    console.log('Processando registro:', dado);
 
-        const data_apresentacao = isValidDate(dado.data_protocolo)
-          ? new Date(dado.data_protocolo)
-          : parseDateBrToIso(dado.data_protocolo);
+    // Processar e validar dados do registro
+    const processedData = ImportProcessorUtil.processRecord(dado);
 
-        const data_distribuicao = isValidDate(dado.data_remessa)
-          ? new Date(dado.data_remessa)
-          : parseDateBrToIso(dado.data_remessa);
+    // Salvar apresentante
+    await this.apresentanteService.findOrCreate(processedData.apresentante);
 
-        // ----------------------  SALVANDO APRESENTANTE ----------------------
-        const newApresentante = {
-          nome: dado.apresentante,
-          cod_apresentante: dado.codigo,
-        };
-        console.log(newApresentante);
+    // Salvar documento de protesto
+    const savedDocProtesto = await this.docProtestoService.create(
+      processedData.docProtesto,
+    );
+    console.log('savedDocProtesto:', savedDocProtesto);
 
-        /* const savedApresentante = */ await this.apresentanteService.findOrCreate(
-          newApresentante,
-        );
+    // Salvar devedor
+    const savedDevedor = await this.devedorService.findOrCreate(
+      processedData.devedor,
+    );
+    console.log('savedDevedor:', savedDevedor);
 
-        //   ------------ SALVANDO DADOS DE DOCUMENTO DE PROTESTO NO BANCO -------------
-        const newDocProtesto = {
-          vencimento: data_vencimento,
-          data_apresentacao: data_apresentacao,
-          num_distribuicao: dado.protocolo,
-          data_distribuicao: data_distribuicao,
-          cart_protesto: dado.cartorio,
-          num_titulo: dado.numero_do_titulo,
-        };
-        const savedDocProtesto =
-          await this.docProtestoService.create(newDocProtesto);
+    // Salvar log de notificação
+    const newLogNotificacao = {
+      ...processedData.logNotificacao,
+      fk_id_protest: savedDocProtesto.id,
+      fk_id_devedor: savedDevedor.id,
+    };
+    await this.logNotificacaoService.create(newLogNotificacao);
 
-        //  --------------- SALVANDO DADOS DEVEDOR NO BANCO  ----------------------
-        const newDevedor = {
-          nome: dado.devedor,
-          //remover mascara--> onlyNumbers
-          doc_devedor: onlyNumbers(dado.documento),
-          devedor_pj: isValidCNPJ(dado.documento),
-        };
-        const savedDevedor = await this.devedorService.findOrCreate(newDevedor);
+    // Salvar credor
+    const savedCredor = await this.credorService.create(processedData.credor);
+    console.log('savedCredor:', savedCredor);
 
-        //  ---------SALVANDO LOG DE NOTIFICACAO - RELAÇÃO N:N  ------------------
-        const newLogNotificacao = {
-          email_enviado: false,
-          data_envio: new Date(),
-          lido: false,
-          fk_id_protest: savedDocProtesto.id,
-          fk_id_devedor: savedDevedor.id,
-        };
-        await this.logNotificacaoService.create(newLogNotificacao);
+    // Salvar relação protesto-credor
+    const newRelacaoProtestoCredor = {
+      fk_doc_protesto: savedDocProtesto.id,
+      fk_credor: savedCredor.id,
+    };
+    await this.relacaoProtestoCredorService.create(newRelacaoProtestoCredor);
+  }
 
-        //   ----------------------  SALVANDO CREDOR ----------------------
-        const newCredor = {
-          sacador: dado.sacador,
-          cedente: dado.cedente,
-          doc_credor: dado.documento_sacador,
-        };
-        const savedCredor = await this.credorService.create(newCredor);
+  /**
+   * Lida com erros durante a importação
+   */
+  private async handleImportError(
+    err: any,
+    startTime: number,
+    logImportacao: LogImportacaoData | null,
+    savedLogImportacao: any,
+  ): Promise<never> {
+    const duracao = ImportProcessorUtil.formatDuration(Date.now() - startTime);
 
-        //   -------  SALVANDO LOG DOCPROTESTO E CREDOR - RELAÇÃO N:N ----------------------
-        const newRelacaoProtestoCredor = {
-          fk_doc_protesto: savedDocProtesto.id,
-          fk_credor: savedCredor.id,
-        };
-        await this.relacaoProtestoCredorService.create(
-          newRelacaoProtestoCredor,
-        );
-        // FAZER LOG-ARQUIVO AQUI --> guardar logs de sessões de determinados usuários que fizeram uploads
+    // Se ainda não salvou no banco, salvar agora com erro
+    if (!savedLogImportacao && logImportacao) {
+      LogManagerUtil.updateLogWithCriticalError(logImportacao, err, duracao);
+
+      try {
+        await this.logArquivoService.create(logImportacao);
+      } catch (logError) {
+        console.error('Erro ao salvar log de importação:', logError);
       }
-    } catch (err) {
-      console.error('Erro ao iterar pelos dados:', err);
-      //throw new Error('Falha ao processar os dados importados.');
-      throw new InternalServerErrorException(
-        'Falha ao salvar os dados no banco de dados.',
-      );
     }
-    //return dados;
+
+    // Re-lançar o erro original se for BadRequestException ou InternalServerErrorException
+    if (
+      err instanceof BadRequestException ||
+      err instanceof InternalServerErrorException
+    ) {
+      throw err;
+    }
+
+    throw new InternalServerErrorException('Falha ao importar arquivo.');
+  }
+
+  /**
+   * Cria resposta de sucesso padronizada
+   */
+  private createSuccessResponse(
+    logId: number,
+    totalRegistros: number,
+    registrosProcessados: number,
+    registrosComErro: number,
+    status: StatusImportacao,
+  ) {
+    return {
+      success: true,
+      message: `Importação concluída. ${registrosProcessados} registros processados com sucesso.`,
+      logId,
+      totalRegistros,
+      registrosProcessados,
+      registrosComErro,
+      status,
+    };
   }
 }
