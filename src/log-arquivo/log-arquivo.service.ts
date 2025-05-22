@@ -5,6 +5,8 @@ import { UpdateLogArquivoDto } from './dto/update-log-arquivo.dto';
 @Injectable()
 export class LogArquivoService {
   create(createLogArquivoDto: CreateLogArquivoDto) {
+    console.log(createLogArquivoDto);
+
     return 'This action adds a new logArquivo';
   }
 
@@ -17,6 +19,7 @@ export class LogArquivoService {
   }
 
   update(id: number, updateLogArquivoDto: UpdateLogArquivoDto) {
+    console.log(updateLogArquivoDto);
     return `This action updates a #${id} logArquivo`;
   }
 
