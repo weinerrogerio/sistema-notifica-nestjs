@@ -24,17 +24,14 @@ export class AuthService {
     private readonly logUsersService: LogUsersService,
   ) {}
   async login(loginDto: LoginDto) {
-    const user = await this.user.findOneBy({ nome: loginDto.nome });
+    const user = await this.user.findOneBy({
+      nome: loginDto.nome,
+      is_active: true,
+    });
     // verificando se o user existe
     if (!user) {
-      throw new UnauthorizedException('Credenciais Inválidas');
+      throw new UnauthorizedException('User unauthorized');
     }
-    // Verificar se o usuário está ativo (is_active===true)
-    if (user.is_active === false) {
-      throw new UnauthorizedException('Usuário desativado');
-    }
-    // Atualiza o último login --> modificar userService para logUserService !!!
-    //await this.userService.updateLastLogin(user.id);
 
     // verificando se a senha esta correta
     const passwordIsValid = await this.hashingService.compare(
@@ -45,6 +42,7 @@ export class AuthService {
       throw new UnauthorizedException('Senha inválida');
     }
 
+    // Atualiza o último login --> melhorar essa verificação de logout
     await this.logUsersService.createLoginEntry(user.id);
 
     // Incluindo role no payload do JWT

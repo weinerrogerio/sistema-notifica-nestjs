@@ -10,6 +10,7 @@ import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.modul
 import { CredorModule } from '@app/credor/credor.module';
 import { ApresentanteModule } from '@app/apresentante/apresentante.module';
 import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
+import { LogArquivoModule } from '@app/log-arquivo/log-arquivo.module';
 
 @Module({
   controllers: [ImportController],
@@ -34,6 +35,7 @@ import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_c
     CredorModule,
     ApresentanteModule,
     DocProtestoCredorModule,
+    LogArquivoModule,
   ],
 })
 export class ImportModule {}

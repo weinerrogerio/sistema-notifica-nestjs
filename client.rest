@@ -105,8 +105,8 @@ POST  {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-   //"nome":"admin",
-   "nome": "user1",
+   "nome":"admin",
+   //"nome": "user1",
    "password": "123456"
 }
 

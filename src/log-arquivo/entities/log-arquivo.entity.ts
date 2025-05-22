@@ -1,30 +1,60 @@
+// log-arquivo/entities/log-importacao.entity.ts
 import {
-  Column,
-  CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
+import { User } from '../../user/entities/user.entity'; // ajuste o caminho conforme sua estrutura
+import { StatusImportacao } from '../enum/log-arquivo.enum';
 
-@Entity()
-export class LogArquivo {
+@Entity('log_importacao')
+export class LogImportacaoArquivo {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  arquivo_importado: string;
+  // alterar para unique --> nao pode importar o mesmo arquivo mais de uma vez
+  @Column({ type: 'varchar', length: 255 })
+  nome_arquivo: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50 })
+  mimetype: string;
+
+  @Column({ type: 'bigint' })
+  tamanho_arquivo: number; // em bytes
+
+  @Column({
+    type: 'enum',
+    enum: StatusImportacao,
+    default: StatusImportacao.SUCESSO,
+  })
+  status: StatusImportacao;
+
+  @Column({ type: 'int', default: 0 })
+  total_registros: number;
+
+  @Column({ type: 'int', default: 0 })
+  registros_processados: number;
+
+  @Column({ type: 'int', default: 0 })
+  registros_com_erro: number;
+
+  @Column({ type: 'text', nullable: true })
+  detalhes_erro: string; // JSON com detalhes dos erros
+
+  @CreateDateColumn()
   data_importacao: Date;
 
-  //fazer relacionamento com user:log (1:n) --> quem importou
-  @Column()
-  fk_id_user: number;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  duracao: string; // formato: "00:01:23"
 
-  //data de criação (data_registro)
-  @CreateDateColumn()
-  createdAt?: Date;
-  //data de atualização (data_registro)
-  @UpdateDateColumn()
-  updatedAt?: Date;
+  // Relacionamento com usuário
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'fk_usuario' })
+  usuario: User;
+
+  @Column()
+  fk_usuario: number;
 }

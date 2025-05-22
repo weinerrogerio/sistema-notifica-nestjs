@@ -1,8 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { LogArquivoService } from './log-arquivo.service';
 import { CreateLogArquivoDto } from './dto/create-log-arquivo.dto';
 import { UpdateLogArquivoDto } from './dto/update-log-arquivo.dto';
 
+// ADAPTAR ROTAS FECHADAS --> guards
 @Controller('log-arquivo')
 export class LogArquivoController {
   constructor(private readonly logArquivoService: LogArquivoService) {}
@@ -23,7 +32,10 @@ export class LogArquivoController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLogArquivoDto: UpdateLogArquivoDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateLogArquivoDto: UpdateLogArquivoDto,
+  ) {
     return this.logArquivoService.update(+id, updateLogArquivoDto);
   }
 

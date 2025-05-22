@@ -1,11 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { CreateLogArquivoDto } from './dto/create-log-arquivo.dto';
 import { UpdateLogArquivoDto } from './dto/update-log-arquivo.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { LogImportacaoArquivo } from './entities/log-arquivo.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class LogArquivoService {
+  constructor(
+    @InjectRepository(LogImportacaoArquivo)
+    private readonly logArquivoRepository: Repository<LogImportacaoArquivo>,
+  ) {}
   create(createLogArquivoDto: CreateLogArquivoDto) {
-    return 'This action adds a new logArquivo';
+    const newLogArquivo = {
+      ...createLogArquivoDto,
+    };
+    this.logArquivoRepository.save(newLogArquivo);
   }
 
   findAll() {
@@ -17,6 +27,8 @@ export class LogArquivoService {
   }
 
   update(id: number, updateLogArquivoDto: UpdateLogArquivoDto) {
+    console.log(updateLogArquivoDto);
+
     return `This action updates a #${id} logArquivo`;
   }
 
