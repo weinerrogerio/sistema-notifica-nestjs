@@ -1,4 +1,3 @@
-// log-arquivo/entities/log-importacao.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,7 +9,7 @@ import {
 import { User } from '../../user/entities/user.entity'; // ajuste o caminho conforme sua estrutura
 import { StatusImportacao } from '../enum/log-arquivo.enum';
 
-@Entity('log_importacao')
+@Entity('log_arquivo_import')
 export class LogImportacaoArquivo {
   @PrimaryGeneratedColumn()
   id: number;
