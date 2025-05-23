@@ -43,6 +43,9 @@
    <Font ss:FontName="Calibri" ss:Size="12" ss:Color="#000000"/>
    <NumberFormat ss:Format="Short Date"/>
   </Style>
+  <Style ss:ID="s66">
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="12" ss:Color="#000000"/>
+  </Style>
  </Styles>
  <Worksheet ss:Name="Sheet1">
   <Table ss:ExpandedColumnCount="38" ss:ExpandedRowCount="7103" x:FullColumns="1"
@@ -205,7 +208,7 @@
     <Cell><Data ss:Type="Number">656</Data></Cell>
     <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE PINHAIS</Data></Cell>
     <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE PINHAIS</Data></Cell>
-    <Cell><Data ss:Type="String">04.628.307/0001-92</Data></Cell>
+    <Cell ss:StyleID="s66"><Data ss:Type="String">04.628.307/0001-92</Data></Cell>
     <Cell><Data ss:Type="String">SANTA INTERMEDIACOES DE CONSORCIOS - EIRELI</Data></Cell>
     <Cell><Data ss:Type="String">89.674.486/0001-57</Data></Cell>
     <Cell><Data ss:Type="String">AV. CANDIDO DE ABREU 000526 LJ 13 TRO ANDAR</Data></Cell>
@@ -249,8 +252,8 @@
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveRow>4</ActiveRow>
-     <ActiveCol>9</ActiveCol>
+     <ActiveRow>3</ActiveRow>
+     <ActiveCol>10</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>

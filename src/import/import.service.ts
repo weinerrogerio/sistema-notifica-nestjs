@@ -1,11 +1,4 @@
-import { isValidDate, parseDateBrToIso } from '@app/common';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { isValidCNPJ, onlyNumbers } from '@brazilian-utils/brazilian-utils';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateImportDto } from './dto/create-import.dto';
 import { UpdateImportDto } from './dto/update-import.dto';
 import { ImportStrategy } from './strategies/import.strategy';
@@ -17,6 +10,7 @@ import { ApresentanteService } from '@app/apresentante/apresentante.service';
 import { DocProtestoCredorService } from '@app/doc-protesto_credor/doc-protesto_credor.service';
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
 import { DataValidation } from '@app/utilities/import-validation.util';
+import { TransformationResult } from '@app/utilities/csvDataTransform';
 
 @Injectable()
 export class ImportService {
@@ -30,9 +24,34 @@ export class ImportService {
     private readonly logNotificacaoService: LogNotificacaoService,
     private readonly relacaoProtestoCredorService: DocProtestoCredorService,
     private readonly dataValidation: DataValidation,
+    private readonly transformationResult: TransformationResult,
   ) {}
 
+  create(createImportDto: CreateImportDto) {
+    console.log(createImportDto);
+    return 'This action adds a new import';
+  }
+
+  findAll() {
+    return `This action returns all import`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} import`;
+  }
+
+  update(id: number, updateImportDto: UpdateImportDto) {
+    console.log(updateImportDto);
+    return `This action updates a #${id} import`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} import`;
+  }
+
   async importFile(file: Express.Multer.File, tokenPayload: TokenPayloadDto) {
+    console.log('tokenPayload: ', tokenPayload);
+
     //Escolha da estrategia
     const strategy = this.strategies.find((s) => s.canHandle(file.mimetype));
     if (!strategy) {
@@ -41,99 +60,29 @@ export class ImportService {
       );
     }
     //importando o arquivo
-    const dados = await strategy.import(file.buffer);
+    //const dados = await strategy.import(file.buffer);
+    // Importando o arquivo - mantém como Record<string, string>[]
+    const dadosImportados: Record<string, string>[] = await strategy.import(
+      file.buffer,
+    );
+    console.log('dadosImportados::::  ', dadosImportados);
 
-    const erros = this.dataValidation.validate(dados);
-    // SALVANDO DADOS NO BANCO
-    if (!erros) {
-      this.importPersistance.service.create();
-    }
+    // Validação dos dados (a validação aceita Record<string, string>[])
+    const validationResult =
+      await this.dataValidation.validate(dadosImportados);
+    console.log('validationResult::: ', validationResult);
 
-    try {
-      for (const dado of dados) {
-        console.log(dado);
+    // se os dados nao são validos e podem ser formatados (como data, mascaras de documento e valores...)
+    // então passa por um formatador dependendo da estrategia,
+    // nesse caso o csvDataTransform. Algo como:
+    const dataFormated =
+      this.transformationResult.tranformCsvData(dadosImportados);
+    console.log('dataFormated: ', dataFormated);
 
-        const data_vencimento = isValidDate(dado.vencimento)
-          ? new Date(dado.vencimento)
-          : parseDateBrToIso(dado.vencimento);
+    // se não prossegue para a persistência...
 
-        const data_apresentacao = isValidDate(dado.data_protocolo)
-          ? new Date(dado.data_protocolo)
-          : parseDateBrToIso(dado.data_protocolo);
-
-        const data_distribuicao = isValidDate(dado.data_remessa)
-          ? new Date(dado.data_remessa)
-          : parseDateBrToIso(dado.data_remessa);
-
-        // ----------------------  SALVANDO APRESENTANTE ----------------------
-        const newApresentante = {
-          nome: dado.apresentante,
-          cod_apresentante: dado.codigo,
-        };
-        console.log(newApresentante);
-
-        /* const savedApresentante = */ await this.apresentanteService.findOrCreate(
-          newApresentante,
-        );
-
-        //   ------------ SALVANDO DADOS DE DOCUMENTO DE PROTESTO NO BANCO -------------
-        const newDocProtesto = {
-          vencimento: data_vencimento,
-          data_apresentacao: data_apresentacao,
-          num_distribuicao: dado.protocolo,
-          data_distribuicao: data_distribuicao,
-          cart_protesto: dado.cartorio,
-          num_titulo: dado.numero_do_titulo,
-        };
-        const savedDocProtesto =
-          await this.docProtestoService.create(newDocProtesto);
-
-        //  --------------- SALVANDO DADOS DEVEDOR NO BANCO  ----------------------
-        const newDevedor = {
-          nome: dado.devedor,
-          //remover mascara--> onlyNumbers
-          doc_devedor: onlyNumbers(dado.documento),
-          devedor_pj: isValidCNPJ(dado.documento),
-        };
-        const savedDevedor = await this.devedorService.findOrCreate(newDevedor);
-
-        //  ---------SALVANDO LOG DE NOTIFICACAO - RELAÇÃO N:N  ------------------
-        const newLogNotificacao = {
-          email_enviado: false,
-          data_envio: new Date(),
-          lido: false,
-          fk_id_protest: savedDocProtesto.id,
-          fk_id_devedor: savedDevedor.id,
-        };
-        await this.logNotificacaoService.create(newLogNotificacao);
-
-        //   ----------------------  SALVANDO CREDOR ----------------------
-        const newCredor = {
-          sacador: dado.sacador,
-          cedente: dado.cedente,
-          doc_credor: dado.documento_sacador,
-        };
-        const savedCredor = await this.credorService.create(newCredor);
-
-        //   -------  SALVANDO LOG DOCPROTESTO E CREDOR - RELAÇÃO N:N ----------------------
-
-        const newRelacaoProtestoCredor = {
-          fk_doc_protesto: savedDocProtesto.id,
-          fk_credor: savedCredor.id,
-        };
-        await this.relacaoProtestoCredorService.create(
-          newRelacaoProtestoCredor,
-        );
-        //
-        console.log('usuário realizando a ação:::: ', tokenPayload.sub);
-      }
-    } catch (err) {
-      console.error('Erro ao iterar pelos dados:', err);
-      //throw new Error('Falha ao processar os dados importados.');
-      throw new InternalServerErrorException(
-        'Falha ao salvar os dados no banco de dados.',
-      );
-    }
-    //return dados;
+    // Se chegou até aqui, os dados são válidos
+    // Proceder com a persistência
+    // return await this.importPersistance.service.create(dados);
   }
 }
