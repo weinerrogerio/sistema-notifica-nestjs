@@ -11,6 +11,8 @@ import { CredorModule } from '@app/credor/credor.module';
 import { ApresentanteModule } from '@app/apresentante/apresentante.module';
 import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
+import { DataValidation } from '@app/utilities/import-validation.util';
+import { TransformationResult } from '@app/utilities/csvDataTransform';
 
 @Module({
   controllers: [ImportController],
@@ -27,6 +29,8 @@ import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-impo
       ): ImportStrategy[] => [csv, xml],
       inject: [CsvImportStrategy, XmlImportStrategy],
     },
+    DataValidation,
+    TransformationResult,
   ],
   imports: [
     DocProtestoModule,
