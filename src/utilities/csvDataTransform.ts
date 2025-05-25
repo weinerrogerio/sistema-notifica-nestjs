@@ -6,10 +6,10 @@ export interface ImportData {
   apresentante: string;
   codigo: string;
   cartorio: string;
-  data: string;
+  data: Date;
   protocolo: string;
-  data_protocolo: string;
-  data_remessa: string;
+  data_protocolo: Date;
+  data_remessa: Date;
   agenciacodigo_cedente: string;
   cedente: string;
   sacador: string;
@@ -30,10 +30,10 @@ export interface ImportData {
   tipo_autorizacao: string;
   situacao: string;
   impresso: string;
-  data_emissao: string;
-  vencimento: string;
+  data_emissao: Date;
+  vencimento: Date;
   ocorrencia: string;
-  data_ocorrencia: string;
+  data_ocorrencia: Date;
   custas_desistencia: string;
   vigencia: string;
   custas_cancelamento: string;
@@ -43,22 +43,75 @@ export interface ImportData {
 }
 
 export class TransformationResult {
-  async tranformCsvData(data: ImportData): Promise<void> {
-    let transformed;
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      transformed = {
-        ...item,
-        data: parseDateBrToIso(item.data),
-        data_protocolo: parseDateBrToIso(item.data_protocolo),
-        data_remessa: parseDateBrToIso(item.data_remessa),
-        data_emissao: parseDateBrToIso(item.data_emissao),
-        vencimento: parseDateBrToIso(item.vencimento),
-        data_ocorrencia: parseDateBrToIso(item.data_ocorrencia),
-      };
-      // fazer outras transformaçãoes depois
-    }
+  async tranformCsvData(data: Record<string, string>[]): Promise<ImportData[]> {
+    const transformedData: ImportData[] = [];
+    try {
+      for (const dado of data) {
+        const importData: ImportData = {
+          apresentante: dado.apresentante,
+          codigo: dado.codigo,
+          cartorio: dado.cartorio,
+          protocolo: dado.protocolo,
+          agenciacodigo_cedente: dado.agenciacodigo_cedente,
+          cedente: dado.cedente,
+          sacador: dado.sacador,
+          devedor: dado.devedor,
+          // endereco pode ser opcional, então verifique se existe em dado
+          endereco: dado.endereco || undefined, // ou dado.endereco se ele puder ser string vazia
+          cep: dado.cep,
+          bairro: dado.bairro,
+          cidade: dado.cidade,
+          uf: dado.uf,
+          nosso_numero: dado.nosso_numero,
+          numero_do_titulo: dado.numero_do_titulo,
+          valor: dado.valor,
+          saldo: dado.saldo,
+          especie: dado.especie,
+          praca_de_protesto: dado.praca_de_protesto,
+          tipo_autorizacao: dado.tipo_autorizacao,
+          situacao: dado.situacao,
+          impresso: dado.impresso,
+          custas_desistencia: dado.custas_desistencia,
+          vigencia: dado.vigencia,
+          custas_cancelamento: dado.custas_cancelamento,
+          envio_cenprot: dado.envio_cenprot,
+          postergado: dado.postergado,
+          prescricao: dado.prescricao,
+          ocorrencia: dado.ocorrencia, // Adicione aqui
 
-    return transformed;
+          // Propriedades que você vai transformar para Date
+          data: isValidDate(dado.data)
+            ? new Date(dado.data)
+            : parseDateBrToIso(dado.data),
+          vencimento: isValidDate(dado.vencimento)
+            ? new Date(dado.vencimento)
+            : parseDateBrToIso(dado.vencimento),
+          data_protocolo: isValidDate(dado.data_protocolo)
+            ? new Date(dado.data_protocolo)
+            : parseDateBrToIso(dado.data_protocolo),
+          data_remessa: isValidDate(dado.data_remessa)
+            ? new Date(dado.data_remessa)
+            : parseDateBrToIso(dado.data_remessa),
+          data_emissao: isValidDate(dado.data_emissao)
+            ? new Date(dado.data_emissao)
+            : parseDateBrToIso(dado.data_emissao),
+          data_ocorrencia: isValidDate(dado.data_ocorrencia)
+            ? new Date(dado.data_ocorrencia)
+            : parseDateBrToIso(dado.data_ocorrencia),
+
+          // Propriedades que você vai transformar para números (se aplicável, mas aqui são strings tratadas por onlyNumbers)
+          documento: onlyNumbers(dado.documento),
+          documento_sacador: onlyNumbers(dado.documento_sacador),
+        };
+
+        transformedData.push(importData);
+        console.log('transformedData::::::::::: ', transformedData);
+
+        return transformedData;
+      }
+    } catch (error) {
+      console.error('Erro ao converter dados:', error);
+      return null;
+    }
   }
 }

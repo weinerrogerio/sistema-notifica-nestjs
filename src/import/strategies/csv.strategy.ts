@@ -23,4 +23,9 @@ export class CsvImportStrategy implements ImportStrategy {
       throw error;
     }
   }
+  async processFile(fileBuffer: Buffer): Promise<void> {
+    const dadosImportados = await this.import(fileBuffer);
+    // lógica de processamento específica para CSV
+    console.log('Dados CSV processados:', dadosImportados);
+  }
 }
