@@ -59,10 +59,13 @@ export class ImportService {
         `Formato de arquivo não suportado. ${file.mimetype}`,
       );
     }
+    //chamando a função import para tratamento + persistência
+    await strategy.processFile(file.buffer);
+
     //importando o arquivo
     //const dados = await strategy.import(file.buffer);
     // Importando o arquivo - mantém como Record<string, string>[]
-    const dadosImportados: Record<string, string>[] = await strategy.import(
+    /* const dadosImportados: Record<string, string>[] = await strategy.import(
       file.buffer,
     );
     console.log('dadosImportados::::  ', dadosImportados);
@@ -71,13 +74,13 @@ export class ImportService {
     const validationResult =
       await this.dataValidation.validate(dadosImportados);
     console.log('validationResult::: ', validationResult);
-
+ */
     // se os dados nao são validos e podem ser formatados (como data, mascaras de documento e valores...)
     // então passa por um formatador dependendo da estrategia,
     // nesse caso o csvDataTransform. Algo como:
-    const dataFormated =
-      this.transformationResult.tranformCsvData(dadosImportados);
-    console.log('dataFormated: ', dataFormated);
+    //const dataFormated =
+    //this.transformationResult.tranformCsvData(dadosImportados);
+    //console.log('dataFormated: ', dataFormated);
 
     // se não prossegue para a persistência...
 

@@ -3,38 +3,13 @@ import { ImportStrategy } from './import.strategy';
 //import * as xml2js from 'xml2js';
 import { XMLParser } from 'fast-xml-parser';
 import { remove as removeAcentos } from 'diacritics';
+import { DataValidation } from '@app/utilities/import-validation.util';
 
 @Injectable()
 export class XmlImportStrategy implements ImportStrategy {
+  constructor(private readonly dataValidation: DataValidation) {}
   canHandle(mimeType: string): boolean {
     return mimeType === 'application/xml' || mimeType === 'text/xml';
-  }
-
-  async importOriginal(buffer: Buffer): Promise<void> {
-    const xml = buffer.toString('utf-8');
-    console.log(xml);
-
-    /* const parser = new XMLParser();
-    try {
-      const jsonObj = parser.parse(xml);
-      //ATENÇÃO:verificar a existencia ta tabela
-      const rows = jsonObj.Workbook?.Worksheet?.Table?.Row ?? [];
-      //console.log('ROWS:::', rows);
-
-      //console.log('ROW[1]:::', rows[1].Cell[0]);
-
-      const dados = rows.slice(1).map((row) => row.Cell);
-
-      console.log('DADOS:::::', dados);
-
-      console.log(dados[0][2].Data);
-
-      // Aqui você faria a lógica de salvar os dados no banco
-    } catch (error) {
-      console.log('ERRO AQUI');
-      console.error('Erro ao processar XML:', error);
-      throw error;
-    } */
   }
 
   // ss:index --> indica o index do cabeçalho ou seja a coluna a qual o dado pertence!!!!!
@@ -131,5 +106,28 @@ export class XmlImportStrategy implements ImportStrategy {
       });
 
     return dados;
+  }
+  // FUNÇÃO RECEBE OS DADOS DE IMPORT E ENVIA PARA AS VALIDAÇÕES, TRANSFORM E POR FIM PERSISTENCIA(xmlCreate())
+  async processFile(fileBuffer: Buffer): Promise<void> {
+    const dadosImportados = await this.import(fileBuffer);
+    // lógica de processamento específica para CSV
+    //console.log('Dados CSV processados:', dadosImportados);
+
+    // Validação dos dados (a validação aceita Record<string, string>[])
+    const validationResult =
+      await this.dataValidation.validate(dadosImportados);
+    console.log('validationResult::: ', validationResult);
+    console.log('dataValidation: ', validationResult);
+
+    // se os dados nao são validos e podem ser formatados (como data, mascaras de documento e valores...)
+    // então passa por um formatador dependendo da estrategia,
+    // nesse caso o csvDataTransform. Algo como:
+    //const dataFormated =
+    //this.transformationResult.tranformCsvData(dadosImportados);
+    //console.log('dataFormated: ', dataFormated);
+    // se não prossegue para a persistência...
+    // Se chegou até aqui, os dados são válidos
+    // Proceder com a persistência
+    // return await this.importPersistance.service.create(dados);
   }
 }
