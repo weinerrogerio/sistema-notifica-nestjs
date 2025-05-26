@@ -105,10 +105,8 @@ export class TransformationResult {
         };
 
         transformedData.push(importData);
-        console.log('transformedData::::::::::: ', transformedData);
-
-        return transformedData;
       }
+      return transformedData;
     } catch (error) {
       console.error('Erro ao converter dados:', error);
       return null;

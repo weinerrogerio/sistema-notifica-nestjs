@@ -3,7 +3,7 @@ import { CreateDocProtestoCredorDto } from './dto/create-doc-protesto_credor.dto
 import { UpdateDocProtestoCredorDto } from './dto/update-doc-protesto_credor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DocProtestoCredor } from './entities/doc-protesto_credor.entity';
+import { DocProtestoCredor } from './entities/doc-protesto-credor.entity';
 
 @Injectable()
 export class DocProtestoCredorService {

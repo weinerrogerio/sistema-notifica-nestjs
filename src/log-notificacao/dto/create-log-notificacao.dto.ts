@@ -16,5 +16,5 @@ export class CreateLogNotificacaoDto {
 
   //relacionamentos protesto:log(1:N)
   @IsNumber()
-  fk_id_protest: number;
+  fk_id_protesto: number;
 }

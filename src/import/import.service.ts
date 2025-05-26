@@ -2,29 +2,13 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateImportDto } from './dto/create-import.dto';
 import { UpdateImportDto } from './dto/update-import.dto';
 import { ImportStrategy } from './strategies/import.strategy';
-import { DocProtestoService } from 'src/doc-protesto/doc-protesto.service';
-import { DevedorService } from '@app/devedor/devedor.service';
-import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.service';
-import { CredorService } from '@app/credor/credor.service';
-import { ApresentanteService } from '@app/apresentante/apresentante.service';
-import { DocProtestoCredorService } from '@app/doc-protesto_credor/doc-protesto_credor.service';
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
-import { DataValidation } from '@app/utilities/import-validation.util';
-import { TransformationResult } from '@app/utilities/csvDataTransform';
 
 @Injectable()
 export class ImportService {
   constructor(
     @Inject('IMPORT_STRATEGIES')
     private readonly strategies: ImportStrategy[],
-    private readonly docProtestoService: DocProtestoService,
-    private readonly devedorService: DevedorService,
-    private readonly credorService: CredorService,
-    private readonly apresentanteService: ApresentanteService,
-    private readonly logNotificacaoService: LogNotificacaoService,
-    private readonly relacaoProtestoCredorService: DocProtestoCredorService,
-    private readonly dataValidation: DataValidation,
-    private readonly transformationResult: TransformationResult,
   ) {}
 
   create(createImportDto: CreateImportDto) {
@@ -60,7 +44,7 @@ export class ImportService {
       );
     }
     //chamando a função import para tratamento + persistência
-    await strategy.processFile(file.buffer);
+    await strategy.processFile(file.buffer, tokenPayload);
 
     //importando o arquivo
     //const dados = await strategy.import(file.buffer);

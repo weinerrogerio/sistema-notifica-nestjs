@@ -17,7 +17,7 @@ export class LogNotificacaoService {
       data_envio: createLogNotificacaoDto?.data_envio,
       lido: createLogNotificacaoDto?.lido,
       fk_id_devedor: createLogNotificacaoDto?.fk_id_devedor,
-      fk_id_protest: createLogNotificacaoDto?.fk_id_protest,
+      fk_id_protesto: createLogNotificacaoDto?.fk_id_protesto,
     };
     // util para simplesmente salvar
     //return await this.logNotificacaoRepository.save(newLogDtos);

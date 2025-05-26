@@ -8,7 +8,7 @@ import { UserModule } from 'src/user/user.module';
 import { LogUsersModule } from '@app/log-user/log-users.module';
 import { DevedorModule } from 'src/devedor/devedor.module';
 import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module';
-import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
+import { DocProtestoCredorModule } from '@app/doc-protesto-credor/doc-protesto-credor.module';
 import { CredorModule } from '@app/credor/credor.module';
 import { AuthModule } from '@app/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';

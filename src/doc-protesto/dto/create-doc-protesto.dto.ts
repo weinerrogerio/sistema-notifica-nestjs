@@ -1,4 +1,4 @@
-import { IsDate, IsString } from 'class-validator';
+import { IsDate, IsNumber, IsString } from 'class-validator';
 
 export class CreateDocProtestoDto {
   @IsDate()
@@ -18,4 +18,7 @@ export class CreateDocProtestoDto {
 
   @IsDate()
   vencimento: Date;
+
+  @IsNumber()
+  fk_apresentante: number;
 }
