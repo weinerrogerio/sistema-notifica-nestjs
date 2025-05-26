@@ -35,7 +35,6 @@ export class ApresentanteService {
       return existingApresentante;
     }
     // se nao existe cria um novo
-
     return this.create(createApresentanteDto);
   }
 

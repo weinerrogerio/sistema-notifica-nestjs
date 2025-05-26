@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { DocProtestoCredorService } from './doc-protesto_credor.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import { DocProtestoCredorService } from './doc-protesto-credor.service';
 import { CreateDocProtestoCredorDto } from './dto/create-doc-protesto_credor.dto';
 import { UpdateDocProtestoCredorDto } from './dto/update-doc-protesto_credor.dto';
 
 @Controller('doc-protesto-credor')
 export class DocProtestoCredorController {
-  constructor(private readonly docProtestoCredorService: DocProtestoCredorService) {}
+  constructor(
+    private readonly docProtestoCredorService: DocProtestoCredorService,
+  ) {}
 
   @Post()
   create(@Body() createDocProtestoCredorDto: CreateDocProtestoCredorDto) {
@@ -23,8 +33,14 @@ export class DocProtestoCredorController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDocProtestoCredorDto: UpdateDocProtestoCredorDto) {
-    return this.docProtestoCredorService.update(+id, updateDocProtestoCredorDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateDocProtestoCredorDto: UpdateDocProtestoCredorDto,
+  ) {
+    return this.docProtestoCredorService.update(
+      +id,
+      updateDocProtestoCredorDto,
+    );
   }
 
   @Delete(':id')

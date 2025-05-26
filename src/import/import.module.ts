@@ -9,10 +9,11 @@ import { DevedorModule } from '@app/devedor/devedor.module';
 import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
 import { CredorModule } from '@app/credor/credor.module';
 import { ApresentanteModule } from '@app/apresentante/apresentante.module';
-import { DocProtestoCredorModule } from '@app/doc-protesto_credor/doc-protesto_credor.module';
+import { DocProtestoCredorModule } from '@app/doc-protesto-credor/doc-protesto-credor.module';
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
 import { DataValidation } from '@app/utilities/import-validation.util';
-import { TransformationResult } from '@app/utilities/csvDataTransform';
+import { TransformationResult } from '@app/utilities/dataTransform';
+import { ImportPersistenceService } from './services/import-persistence.service';
 
 @Module({
   controllers: [ImportController],
@@ -31,6 +32,7 @@ import { TransformationResult } from '@app/utilities/csvDataTransform';
     },
     DataValidation,
     TransformationResult,
+    ImportPersistenceService,
   ],
   imports: [
     DocProtestoModule,

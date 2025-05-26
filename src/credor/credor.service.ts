@@ -35,22 +35,24 @@ export class CredorService {
   }
   async findOrCreate(createCredorDto: CreateCredorDto) {
     try {
+      // tenta encontrar pelo documento
       const existingCredor = await this.findOneByDoc(
         createCredorDto.doc_credor,
       );
+      // Se já existe, retorna
       if (existingCredor) {
         return existingCredor;
       }
+      // Se não existe, cria um novo
       const newCredor = {
         cedente: createCredorDto.cedente,
         sacador: createCredorDto.sacador,
         doc_credor: createCredorDto.doc_credor,
       };
-      await this.credorRepository.save(newCredor);
-      return newCredor;
+      return await this.credorRepository.save(newCredor);
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-        throw new ConflictException('Devedor já cadastrado');
+        throw new ConflictException('Creador já cadastrado');
       }
       throw error;
     }

@@ -22,6 +22,7 @@ export class DocProtestoService {
         cart_protesto: createDocProtestoDto.cart_protesto,
         num_titulo: createDocProtestoDto.num_titulo,
         vencimento: createDocProtestoDto.vencimento,
+        fk_apresentante: createDocProtestoDto.fk_apresentante,
       };
       const newDocProtesto =
         this.docProtestoRepository.create(newDocProtestoDto);

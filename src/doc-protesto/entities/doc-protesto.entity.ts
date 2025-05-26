@@ -31,6 +31,10 @@ export class DocProtesto {
   @Column()
   vencimento: Date;
 
+  //FAZER RELAÇÃO COM OUTRAS TABELAS depois
+  @Column()
+  fk_apresentante: number;
+
   /* //muitos para um
   @ManyToOne(() => Pessoa, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   //especifica a coluna "de" que armazena o ID da pessoa que enviou o recado

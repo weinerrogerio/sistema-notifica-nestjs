@@ -17,6 +17,7 @@ export class DevedorService {
         nome: createDevedorDto?.nome,
         doc_devedor: createDevedorDto?.doc_devedor,
         devedor_pj: createDevedorDto?.devedor_pj,
+        fk_doc_protesto: createDevedorDto?.fk_doc_protesto,
       };
       const newDevedor = this.devedorRepository.create(newDevedorDto);
       await this.devedorRepository.save(newDevedor);
@@ -40,13 +41,7 @@ export class DevedorService {
         return existingDevedor;
       }
       // Se não existe, cria um novo
-      const newDevedorDto = {
-        nome: createDevedorDto?.nome,
-        doc_devedor: createDevedorDto?.doc_devedor,
-        devedor_pj: createDevedorDto?.devedor_pj,
-      };
-      const newDevedor = this.create(newDevedorDto);
-      return newDevedor;
+      return await this.create(createDevedorDto);
     } catch (error) {
       // Ainda mantemos o tratamento de erro para caso ocorra outro tipo de erro
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {

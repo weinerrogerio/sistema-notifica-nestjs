@@ -24,9 +24,8 @@ export class Devedor {
   devedor_pj: boolean;
 
   //fazer logica relação muitos para um com doc protesto
-  /* @Column()
-  fk_doc_protesto: number;  
- */
+  @Column()
+  fk_doc_protesto: number;
 
   /* //muitos para um
     @ManyToOne(() => Pessoa, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })

@@ -26,7 +26,7 @@ export class LogNotificacao {
 
   //relacionamentos protesto:log(1:N)
   @Column()
-  fk_id_protest: number;
+  fk_id_protesto: number;
 
   //data de criação (data_registro)
   @CreateDateColumn()
