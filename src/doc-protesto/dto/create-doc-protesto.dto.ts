@@ -16,8 +16,14 @@ export class CreateDocProtestoDto {
   @IsString()
   num_titulo: string;
 
-  @IsDate()
-  vencimento: Date;
+  @IsNumber()
+  valor: number;
+
+  @IsNumber()
+  saldo: number;
+
+  @IsString()
+  vencimento: string;
 
   @IsNumber()
   fk_apresentante: number;

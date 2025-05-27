@@ -64,6 +64,12 @@ export class DevedorService {
     });
     return devedor;
   }
+  async findOneBrPj() {
+    const devedor = await this.devedorRepository.findOne({
+      where: { email: null, devedor_pj: true },
+    });
+    return devedor;
+  }
 
   async findOne(id: number) {
     const devedor = await this.devedorRepository.findOne({ where: { id: id } });

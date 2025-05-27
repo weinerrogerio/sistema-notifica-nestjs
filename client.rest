@@ -15,18 +15,8 @@ GET {{baseUrl}}/???/
 Authorization: 'bearer token'
 
 ###
-# CRIA -> POST
-POST {{baseUrl}}/doc-protesto/
-Content-Type: application/json
-
-{
-    "data_apresentacao": "2025-05-07T03:17:00.000Z",
-    "num_distribuicao": "235",
-    "data_distribuicao": "2025-05-07T03:17:00.000Z",
-    "cart_protesto": "1",
-    "num_titulo": "54654",
-    "vencimento": "2024-10-22T03:15:00.000Z"
-}
+GET {{baseUrl}}/devedor/pj
+Authorization: Bearer {{authToken}}
 
 
 
