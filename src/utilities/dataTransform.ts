@@ -31,7 +31,7 @@ export interface ImportData {
   situacao: string;
   impresso: string;
   data_emissao: Date;
-  vencimento: Date;
+  vencimento: string;
   ocorrencia: string;
   data_ocorrencia: Date;
   custas_desistencia: string;
@@ -47,6 +47,15 @@ export class TransformationResult {
     const transformedData: ImportData[] = [];
     try {
       for (const dado of data) {
+        /* let venc: string;
+        if (dado.vencimento === 'A VISTA') {
+          venc = dado.vencimento;
+        } else if (isValidDate(dado.vencimento)) {
+          venc = new Date(dado.vencimento).toISOString();
+        } else {
+          venc = parseDateBrToIso(dado.vencimento).toISOString();
+        }
+ */
         const importData: ImportData = {
           apresentante: dado.apresentante,
           codigo: dado.codigo,
@@ -77,15 +86,14 @@ export class TransformationResult {
           envio_cenprot: dado.envio_cenprot,
           postergado: dado.postergado,
           prescricao: dado.prescricao,
-          ocorrencia: dado.ocorrencia, // Adicione aqui
+          ocorrencia: dado.ocorrencia,
 
-          // Propriedades que você vai transformar para Date
+          // transformção para Date
           data: isValidDate(dado.data)
             ? new Date(dado.data)
             : parseDateBrToIso(dado.data),
-          vencimento: isValidDate(dado.vencimento)
-            ? new Date(dado.vencimento)
-            : parseDateBrToIso(dado.vencimento),
+          // ARRUMAR ESSE VALOR -->
+          vencimento: dado.vencimento,
           data_protocolo: isValidDate(dado.data_protocolo)
             ? new Date(dado.data_protocolo)
             : parseDateBrToIso(dado.data_protocolo),

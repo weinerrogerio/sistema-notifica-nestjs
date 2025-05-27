@@ -29,7 +29,13 @@ export class DocProtesto {
   num_titulo: string;
 
   @Column()
-  vencimento: Date;
+  valor: number;
+
+  @Column()
+  saldo: number;
+
+  @Column({ nullable: true })
+  vencimento: string;
 
   //FAZER RELAÇÃO COM OUTRAS TABELAS depois
   @Column()

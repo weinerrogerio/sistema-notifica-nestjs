@@ -43,7 +43,7 @@
    <Font ss:FontName="Calibri" ss:Size="12" ss:Color="#000000"/>
    <NumberFormat ss:Format="Short Date"/>
   </Style>
-  <Style ss:ID="s66">
+  <Style ss:ID="s65">
    <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="12" ss:Color="#000000"/>
   </Style>
  </Styles>
@@ -208,7 +208,7 @@
     <Cell><Data ss:Type="Number">656</Data></Cell>
     <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE PINHAIS</Data></Cell>
     <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE PINHAIS</Data></Cell>
-    <Cell ss:StyleID="s66"><Data ss:Type="String">04.628.307/0001-92</Data></Cell>
+    <Cell ss:StyleID="s65"><Data ss:Type="String">04.628.307/0001-92</Data></Cell>
     <Cell><Data ss:Type="String">SANTA INTERMEDIACOES DE CONSORCIOS - EIRELI</Data></Cell>
     <Cell><Data ss:Type="String">89.674.486/0001-57</Data></Cell>
     <Cell><Data ss:Type="String">AV. CANDIDO DE ABREU 000526 LJ 13 TRO ANDAR</Data></Cell>
@@ -231,7 +231,111 @@
     <Cell><Data ss:Type="String">Sim</Data></Cell>
     <Cell><Data ss:Type="String">Não</Data></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0" ss:Height="15.75" ss:Span="7098"/>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell><Data ss:Type="String">PGE - PROCURADORIA GERAL DO ESTADO</Data></Cell>
+    <Cell><Data ss:Type="Number">552</Data></Cell>
+    <Cell><Data ss:Type="String">1° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="String">29/11/2022</Data></Cell>
+    <Cell><Data ss:Type="Number">123456</Data></Cell>
+    <Cell ss:StyleID="s64"><Data ss:Type="DateTime">2022-03-09T00:00:00.000</Data></Cell>
+    <Cell><Data ss:Type="String">09/03/2022</Data></Cell>
+    <Cell><Data ss:Type="Number">123</Data></Cell>
+    <Cell><Data ss:Type="String">SECRETARIA DE ESTADO DA FAZENDA PUBLICA</Data></Cell>
+    <Cell><Data ss:Type="String">SECRETARIA DE ESTADO DA FAZENDA PUBLICA</Data></Cell>
+    <Cell><Data ss:Type="String">123.456.789-09</Data></Cell>
+    <Cell><Data ss:Type="String">CLEUZA DE MORAIS COSTA</Data></Cell>
+    <Cell><Data ss:Type="String">54.322.656/0001-50</Data></Cell>
+    <Cell><Data ss:Type="String">JOSE HOMAN WISNIEWSKI 100 CASA3</Data></Cell>
+    <Cell><Data ss:Type="Number">81270100</Data></Cell>
+    <Cell><Data ss:Type="String">CIDADE INDUSTRIAL</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">PR</Data></Cell>
+    <Cell><Data ss:Type="String">1496849</Data></Cell>
+    <Cell><Data ss:Type="String">109232700</Data></Cell>
+    <Cell><Data ss:Type="String">606.51</Data></Cell>
+    <Cell><Data ss:Type="String">606.51</Data></Cell>
+    <Cell><Data ss:Type="String">CDA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">CANCELAMENTO</Data></Cell>
+    <Cell><Data ss:Type="String">PENDENTE</Data></Cell>
+    <Cell><Data ss:Type="String">NÃO</Data></Cell>
+    <Cell><Data ss:Type="String">20/10/2019</Data></Cell>
+    <Cell><Data ss:Type="String">20/10/2019</Data></Cell>
+    <Cell><Data ss:Type="String">Protestado</Data></Cell>
+    <Cell><Data ss:Type="String">15/03/2022</Data></Cell>
+    <Cell ss:Index="36"><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell><Data ss:Type="String">Prefeitura do Município de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="Number">133</Data></Cell>
+    <Cell><Data ss:Type="String">2° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="String">29/11/2022</Data></Cell>
+    <Cell><Data ss:Type="Number">654548</Data></Cell>
+    <Cell><Data ss:Type="String">08/03/2022</Data></Cell>
+    <Cell><Data ss:Type="String">08/03/2022</Data></Cell>
+    <Cell><Data ss:Type="Number">456</Data></Cell>
+    <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">08.675.245/0001-20</Data></Cell>
+    <Cell><Data ss:Type="String">FELIPE AUGUSTO ZIMMERMANN SACHSER</Data></Cell>
+    <Cell><Data ss:Type="String">31.191.927/0001-80</Data></Cell>
+    <Cell><Data ss:Type="String">R. VISCONDE DO RIO BRANCO 001630 CJ 1106 11O</Data></Cell>
+    <Cell><Data ss:Type="String">80420210</Data></Cell>
+    <Cell><Data ss:Type="String">CENTRO</Data></Cell>
+    <Cell ss:Index="19"><Data ss:Type="String">71230</Data></Cell>
+    <Cell><Data ss:Type="String">71230</Data></Cell>
+    <Cell><Data ss:Type="String">852.18</Data></Cell>
+    <Cell><Data ss:Type="String">852.18</Data></Cell>
+    <Cell><Data ss:Type="String">CDA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">CANCELAMENTO</Data></Cell>
+    <Cell><Data ss:Type="String">PENDENTE</Data></Cell>
+    <Cell><Data ss:Type="String">NÃO</Data></Cell>
+    <Cell><Data ss:Type="String">08/03/2022</Data></Cell>
+    <Cell><Data ss:Type="String">11/03/2022</Data></Cell>
+    <Cell><Data ss:Type="String">Protestado</Data></Cell>
+    <Cell><Data ss:Type="String">14/03/2022</Data></Cell>
+    <Cell ss:Index="36"><Data ss:Type="String">Não</Data></Cell>
+    <Cell><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell><Data ss:Type="String">Prefeitura do Município de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="Number">232</Data></Cell>
+    <Cell><Data ss:Type="String">3° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="String">29/11/2022</Data></Cell>
+    <Cell><Data ss:Type="Number">4564862</Data></Cell>
+    <Cell><Data ss:Type="String">08/03/2022</Data></Cell>
+    <Cell><Data ss:Type="String">08/03/2022</Data></Cell>
+    <Cell><Data ss:Type="Number">656</Data></Cell>
+    <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE PINHAIS</Data></Cell>
+    <Cell><Data ss:Type="String">PREFEITURA MUNICIPAL DE PINHAIS</Data></Cell>
+    <Cell ss:StyleID="s65"><Data ss:Type="String">04.628.307/0001-92</Data></Cell>
+    <Cell><Data ss:Type="String">SANTA INTERMEDIACOES DE CONSORCIOS - EIRELI</Data></Cell>
+    <Cell><Data ss:Type="String">51.428.559/0001-58</Data></Cell>
+    <Cell><Data ss:Type="String">AV. CANDIDO DE ABREU 000526 LJ 13 TRO ANDAR</Data></Cell>
+    <Cell><Data ss:Type="String">80530905</Data></Cell>
+    <Cell><Data ss:Type="String">CENTRO CIVICO</Data></Cell>
+    <Cell ss:Index="19"><Data ss:Type="String">69224</Data></Cell>
+    <Cell><Data ss:Type="String">69224</Data></Cell>
+    <Cell><Data ss:Type="String">2239.36</Data></Cell>
+    <Cell><Data ss:Type="String">2239.36</Data></Cell>
+    <Cell><Data ss:Type="String">CDA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">CANCELAMENTO</Data></Cell>
+    <Cell><Data ss:Type="String">PENDENTE</Data></Cell>
+    <Cell><Data ss:Type="String">NÃO</Data></Cell>
+    <Cell><Data ss:Type="String">08/03/2022</Data></Cell>
+    <Cell><Data ss:Type="String">11/03/2022</Data></Cell>
+    <Cell><Data ss:Type="String">Protestado</Data></Cell>
+    <Cell><Data ss:Type="String">14/03/2022</Data></Cell>
+    <Cell ss:Index="36"><Data ss:Type="String">Não</Data></Cell>
+    <Cell><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75" ss:Span="7095"/>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
    <PageSetup>
@@ -248,12 +352,12 @@
     <VerticalResolution>600</VerticalResolution>
    </Print>
    <Selected/>
-   <LeftColumnVisible>4</LeftColumnVisible>
+   <LeftColumnVisible>8</LeftColumnVisible>
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveRow>3</ActiveRow>
-     <ActiveCol>10</ActiveCol>
+     <ActiveRow>6</ActiveRow>
+     <ActiveCol>12</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
