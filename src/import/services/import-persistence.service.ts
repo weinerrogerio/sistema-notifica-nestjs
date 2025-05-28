@@ -1,13 +1,13 @@
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
-import { ImportData } from '@app/utilities/dataTransform';
+import { ImportData } from '@app/common/utils/dataTransform';
 import { DocProtestoService } from 'src/doc-protesto/doc-protesto.service';
 import { DevedorService } from '@app/devedor/devedor.service';
 import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.service';
 import { CredorService } from '@app/credor/credor.service';
 import { ApresentanteService } from '@app/apresentante/apresentante.service';
 import { DocProtestoCredorService } from '@app/doc-protesto-credor/doc-protesto-credor.service';
-import { DataValidation } from '@app/utilities/xmlValidation.util';
-import { TransformationResult } from '@app/utilities/dataTransform';
+import { DataValidation } from '@app/common/utils/xmlValidation.util';
+import { TransformationResult } from '@app/common/utils/dataTransform';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { isValidCNPJ } from '@brazilian-utils/brazilian-utils';
 

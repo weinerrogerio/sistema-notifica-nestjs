@@ -89,6 +89,8 @@ $ npm i @nestjs/jwt --save
 $ npm i jsonwebtoken --save
 
 $ npm i @nestjs/passport passport-jwt
+
+$ npm i @nestjs/axios
 ```
 
 ## Support
