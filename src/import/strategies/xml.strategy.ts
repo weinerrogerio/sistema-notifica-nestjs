@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ImportStrategy } from './import.strategy';
-//import * as xml2js from 'xml2js';
 import { XMLParser } from 'fast-xml-parser';
 import { remove as removeAcentos } from 'diacritics';
 import { DataValidation } from '@app/utilities/xmlValidation.util';
@@ -34,7 +33,7 @@ interface ExcelWorksheet {
 }
 
 interface ExcelWorkbook {
-  Workbook?: ExcelWorkbook; // A raiz do documento pode ter um wrapper <Workbook>
+  Workbook?: ExcelWorkbook;
   Worksheet?: ExcelWorksheet;
 }
 
@@ -45,6 +44,7 @@ export class XmlImportStrategy implements ImportStrategy {
     private readonly transformationResult: TransformationResult,
     private readonly importPersistenceService: ImportPersistenceService,
   ) {}
+
   canHandle(mimeType: string): boolean {
     return mimeType === 'application/xml' || mimeType === 'text/xml';
   }
@@ -58,7 +58,6 @@ export class XmlImportStrategy implements ImportStrategy {
     });
 
     const jsonObj: ExcelWorkbook = parser.parse(xml);
-    // Ajuste aqui se o seu XML tiver <Workbook> como raiz
     const rows: ExcelRow[] = jsonObj.Workbook?.Worksheet?.Table?.Row ?? [];
 
     function normalizeKey(str: string): string {
@@ -96,70 +95,110 @@ export class XmlImportStrategy implements ImportStrategy {
       );
     });
 
-    // 2. Processar linhas de dados
-    const dados: Record<string, string>[] = rows
-      .slice(1) // Ignora a linha de cabeçalho
-      .filter((row: ExcelRow) => {
-        // Tipagem explícita aqui
-        if (!Array.isArray(row?.Cell) || row.Cell.length === 0) {
-          return false;
-        }
-        const hasMeaningfulData = row.Cell.some((cell: ExcelCell) => {
-          // Tipagem explícita aqui
-          let cellValue = '';
-          if (
-            typeof cell.Data === 'object' &&
-            cell.Data !== null &&
-            cell.Data['#text'] !== undefined
-          ) {
-            cellValue = cell.Data['#text']?.toString().trim() || '';
-          } else if (cell.Data !== undefined && cell.Data !== null) {
-            cellValue = cell.Data.toString().trim() || '';
-          }
-          return cellValue !== '';
-        });
-        return hasMeaningfulData;
-      })
-      .map((row: ExcelRow) => {
-        // Tipagem explícita aqui
-        const rowData: Record<string, string> = {};
-        const cells: ExcelCell[] = Array.isArray(row.Cell) ? row.Cell : []; // Tipagem explícita aqui
+    // 2. Função para extrair dados de uma célula
+    const extractCellValue = (cell: ExcelCell): string => {
+      if (
+        typeof cell.Data === 'object' &&
+        cell.Data !== null &&
+        cell.Data['#text'] !== undefined
+      ) {
+        return cell.Data['#text']?.toString().trim() || '';
+      } else if (cell.Data !== undefined && cell.Data !== null) {
+        return cell.Data.toString().trim() || '';
+      }
+      return '';
+    };
 
-        Object.values(headerMap).forEach((header) => {
-          rowData[header] = '';
-        });
+    // 3. Função para verificar se uma linha é uma linha principal (com dados do título)
+    const isMainRow = (rowData: Record<string, string>): boolean => {
+      // Campos que indicam que é uma linha principal do título
+      const mainFields = [
+        'apresentante',
+        'codigo',
+        'cartorio',
+        'data',
+        'protocolo',
+      ];
+      return mainFields.some(
+        (field) => rowData[field] && rowData[field].trim() !== '',
+      );
+    };
 
-        let currentIndex = 0;
+    // 4. Função para verificar se uma linha tem dados de devedor
+    const hasDebtorData = (rowData: Record<string, string>): boolean => {
+      const debtorFields = ['devedor', 'documento'];
+      return debtorFields.some(
+        (field) => rowData[field] && rowData[field].trim() !== '',
+      );
+    };
 
-        cells.forEach((cell: ExcelCell) => {
-          // Tipagem explícita aqui
-          if (cell['ss:Index']) {
-            currentIndex = cell['ss:Index'] - 1;
-          }
+    // 5. Processar linhas de dados
+    const processedData: Record<string, string>[] = [];
+    let lastMainRecord: Record<string, string> | null = null;
 
-          let cellValue = '';
-          if (
-            typeof cell.Data === 'object' &&
-            cell.Data !== null &&
-            cell.Data['#text'] !== undefined
-          ) {
-            cellValue = cell.Data['#text']?.toString().trim() || '';
-          } else if (cell.Data !== undefined && cell.Data !== null) {
-            cellValue = cell.Data.toString().trim() || '';
-          }
+    const dataRows = rows.slice(1); // Ignora a linha de cabeçalho
 
-          const header = headerMap[currentIndex];
-          if (header) {
-            rowData[header] = cellValue;
-          }
+    for (const row of dataRows) {
+      if (!Array.isArray(row?.Cell) || row.Cell.length === 0) {
+        continue;
+      }
 
-          currentIndex++;
-        });
+      // Criar objeto da linha atual
+      const rowData: Record<string, string> = {};
+      const cells: ExcelCell[] = Array.isArray(row.Cell) ? row.Cell : [];
 
-        return rowData;
+      // Inicializar todos os campos como string vazia
+      Object.values(headerMap).forEach((header) => {
+        rowData[header] = '';
       });
 
-    return dados;
+      // Preencher dados das células considerando ss:Index
+      let currentIndex = 0;
+      cells.forEach((cell: ExcelCell) => {
+        if (cell['ss:Index']) {
+          currentIndex = cell['ss:Index'] - 1;
+        }
+
+        const cellValue = extractCellValue(cell);
+        const header = headerMap[currentIndex];
+
+        if (header) {
+          rowData[header] = cellValue;
+        }
+
+        currentIndex++;
+      });
+
+      // Verificar se a linha tem dados significativos
+      const hasAnyData = Object.values(rowData).some(
+        (value) => value.trim() !== '',
+      );
+      if (!hasAnyData) {
+        continue;
+      }
+
+      // Verificar se é uma linha principal ou secundária
+      if (isMainRow(rowData)) {
+        // É uma linha principal - salvar como último registro principal
+        lastMainRecord = { ...rowData };
+        processedData.push(rowData);
+      } else if (hasDebtorData(rowData) && lastMainRecord) {
+        // É uma linha secundária com dados de devedor - mesclar com o último registro principal
+        const mergedRecord: Record<string, string> = { ...lastMainRecord };
+
+        // Sobrescrever apenas os campos que têm dados na linha secundária
+        Object.keys(rowData).forEach((key) => {
+          if (rowData[key] && rowData[key].trim() !== '') {
+            mergedRecord[key] = rowData[key];
+          }
+        });
+
+        processedData.push(mergedRecord);
+      }
+      // Se não é linha principal nem tem dados de devedor, ignora a linha
+    }
+
+    return processedData;
   }
 
   // FUNÇÃO RECEBE OS DADOS DE IMPORT E ENVIA PARA AS VALIDAÇÕES, TRANSFORM E POR FIM PERSISTENCIA(xmlCreate())
@@ -168,6 +207,7 @@ export class XmlImportStrategy implements ImportStrategy {
     tokenPayload: TokenPayloadDto,
   ): Promise<void> {
     const dadosImportados = await this.import(fileBuffer);
+    //console.log('dadosImportados::::  ', dadosImportados);
 
     // lógica de processamento específica para CSV
 
