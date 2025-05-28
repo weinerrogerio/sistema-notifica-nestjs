@@ -11,8 +11,8 @@ import { CredorModule } from '@app/credor/credor.module';
 import { ApresentanteModule } from '@app/apresentante/apresentante.module';
 import { DocProtestoCredorModule } from '@app/doc-protesto-credor/doc-protesto-credor.module';
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
-import { DataValidation } from '@app/utilities/xmlValidation.util';
-import { TransformationResult } from '@app/utilities/dataTransform';
+import { DataValidation } from '@app/common/utils/xmlValidation.util';
+import { TransformationResult } from '@app/common/utils/dataTransform';
 import { ImportPersistenceService } from './services/import-persistence.service';
 
 @Module({

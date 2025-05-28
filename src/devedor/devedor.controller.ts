@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   UseGuards,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { DevedorService } from './devedor.service';
 import { CreateDevedorDto } from './dto/create-devedor.dto';
@@ -30,7 +32,30 @@ export class DevedorController {
   @Roles(Role.USER, Role.ADMIN)
   @Get('pj')
   findAll() {
-    return this.devedorService.findOneBrPj();
+    return this.devedorService.findOneAllByPj();
+  }
+
+  // endpoint para buscar email a partir do cnpj:
+  @Get('emails')
+  async buscarEmails() {
+    try {
+      const resultado = await this.devedorService.buscarEmailsDevedores();
+
+      return {
+        success: true,
+        data: resultado,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: 'Erro ao buscar emails',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Roles(Role.USER, Role.ADMIN)

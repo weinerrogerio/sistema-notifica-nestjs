@@ -15,10 +15,12 @@ GET {{baseUrl}}/???/
 Authorization: 'bearer token'
 
 ###
-GET {{baseUrl}}/devedor/pj
+GET {{baseUrl}}/devedor/pj/
 Authorization: Bearer {{authToken}}
 
-
+###
+GET {{baseUrl}}/devedor/emails/
+Authorization: Bearer {{authToken}}
 
 ###-------------------------------------------------------
 ## EXIBE TODOS

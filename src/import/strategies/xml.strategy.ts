@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ImportStrategy } from './import.strategy';
 import { XMLParser } from 'fast-xml-parser';
 import { remove as removeAcentos } from 'diacritics';
-import { DataValidation } from '@app/utilities/xmlValidation.util';
-import { TransformationResult } from '@app/utilities/dataTransform';
+import { DataValidation } from '@app/common/utils/xmlValidation.util';
+import { TransformationResult } from '@app/common/utils/dataTransform';
 import { ImportPersistenceService } from '../services/import-persistence.service';
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
 
@@ -49,6 +49,7 @@ export class XmlImportStrategy implements ImportStrategy {
     return mimeType === 'application/xml' || mimeType === 'text/xml';
   }
 
+  //ALERTA: FUNÇÃO IMPORT AINDA NAO CONSEGUE LER MUITOS DADOS DE UMA VEZ(1000+) --ARRUMAR ISSO
   async import(buffer: Buffer): Promise<Record<string, string>[]> {
     const xml = buffer.toString('utf-8');
     const parser = new XMLParser({
