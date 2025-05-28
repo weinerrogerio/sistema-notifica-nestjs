@@ -3,10 +3,40 @@ import { ImportStrategy } from './import.strategy';
 //import * as xml2js from 'xml2js';
 import { XMLParser } from 'fast-xml-parser';
 import { remove as removeAcentos } from 'diacritics';
-import { DataValidation } from '@app/utilities/import-validation.util';
+import { DataValidation } from '@app/utilities/xmlValidation.util';
 import { TransformationResult } from '@app/utilities/dataTransform';
 import { ImportPersistenceService } from '../services/import-persistence.service';
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
+
+// Definição das interfaces para a estrutura do XML
+interface ExcelData {
+  '#text'?: string;
+}
+
+interface ExcelCell {
+  Data?: ExcelData | string | number | boolean;
+  'ss:Index'?: number;
+}
+
+interface ExcelRow {
+  Cell?: ExcelCell[];
+  'ss:AutoFitHeight'?: number;
+  'ss:Height'?: number;
+  'ss:Span'?: number;
+}
+
+interface ExcelTable {
+  Row?: ExcelRow[];
+}
+
+interface ExcelWorksheet {
+  Table?: ExcelTable;
+}
+
+interface ExcelWorkbook {
+  Workbook?: ExcelWorkbook; // A raiz do documento pode ter um wrapper <Workbook>
+  Worksheet?: ExcelWorksheet;
+}
 
 @Injectable()
 export class XmlImportStrategy implements ImportStrategy {
@@ -19,14 +49,6 @@ export class XmlImportStrategy implements ImportStrategy {
     return mimeType === 'application/xml' || mimeType === 'text/xml';
   }
 
-  // ss:index --> indica o index do cabeçalho ou seja a coluna a qual o dado pertence!!!!!
-  ///* FAZER STRING DE OBJETOS
-  // OBJETO DEVE TER A MESMA QUANTIDADE DE COLUNAS (JA OBTIDAS EM HEADER - Extrair Cabeçalhos)
-  // INJETAR OSDADOSNESSE ARRAY - SE A CELL TIVER SS.index PULAR OS CAMPOS TEA CHEGAR NESSE INDEX
-  // POR EX: SRRAY TEM 5 CAMPOS VAZIOS 0,1 JA FOI PREENCHIDO,
-  // (AGORA APONTAMOS PRO 2 DO ARRAY) SE SS.index = 3 PULAR 2 E PREENCHER 3 E SEGUIR A SEQUENCIA
-  // E REPETIR LOGICA ATE A ULTIMA COLUNA E PODER PREENCHER TODOS OS CAMPOS DO ARRAY*/
-
   async import(buffer: Buffer): Promise<Record<string, string>[]> {
     const xml = buffer.toString('utf-8');
     const parser = new XMLParser({
@@ -35,8 +57,9 @@ export class XmlImportStrategy implements ImportStrategy {
       parseAttributeValue: true,
     });
 
-    const jsonObj = parser.parse(xml);
-    const rows = jsonObj.Workbook?.Worksheet?.Table?.Row ?? [];
+    const jsonObj: ExcelWorkbook = parser.parse(xml);
+    // Ajuste aqui se o seu XML tiver <Workbook> como raiz
+    const rows: ExcelRow[] = jsonObj.Workbook?.Worksheet?.Table?.Row ?? [];
 
     function normalizeKey(str: string): string {
       return removeAcentos(str)
@@ -46,66 +69,90 @@ export class XmlImportStrategy implements ImportStrategy {
     }
 
     // 1. Extrair Cabeçalhos
-    const headerCells = Array.isArray(rows[0]?.Cell) ? rows[0].Cell : [];
+    const headerRow = rows[0];
+    const headerCells: ExcelCell[] = Array.isArray(headerRow?.Cell)
+      ? headerRow.Cell
+      : [];
     const headerMap: Record<number, string> = {};
 
     headerCells.forEach((cell, idx) => {
-      // Usa 'ss:Index' se disponível, caso contrário usa o índice atual + 1
       const cellIndex = cell['ss:Index'] ? cell['ss:Index'] - 1 : idx;
 
-      // Extrai o valor do cabeçalho
-      let headerValue;
-      if (typeof cell.Data === 'object' && cell.Data['#text']) {
-        headerValue = cell.Data['#text'].trim();
-      } else if (cell.Data) {
+      let headerValue: string | undefined;
+      if (
+        typeof cell.Data === 'object' &&
+        cell.Data !== null &&
+        cell.Data['#text'] !== undefined
+      ) {
+        headerValue = cell.Data['#text']?.trim();
+      } else if (cell.Data !== undefined && cell.Data !== null) {
         headerValue = cell.Data.toString().trim();
       } else {
         headerValue = `coluna_${cellIndex + 1}`;
       }
 
-      // Normaliza o nome do cabeçalho
-      headerMap[cellIndex] = normalizeKey(headerValue);
+      headerMap[cellIndex] = normalizeKey(
+        headerValue || `coluna_${cellIndex + 1}`,
+      );
     });
 
     // 2. Processar linhas de dados
     const dados: Record<string, string>[] = rows
-      .slice(1)
-      .filter((row) => Array.isArray(row?.Cell))
-      .map((row) => {
+      .slice(1) // Ignora a linha de cabeçalho
+      .filter((row: ExcelRow) => {
+        // Tipagem explícita aqui
+        if (!Array.isArray(row?.Cell) || row.Cell.length === 0) {
+          return false;
+        }
+        const hasMeaningfulData = row.Cell.some((cell: ExcelCell) => {
+          // Tipagem explícita aqui
+          let cellValue = '';
+          if (
+            typeof cell.Data === 'object' &&
+            cell.Data !== null &&
+            cell.Data['#text'] !== undefined
+          ) {
+            cellValue = cell.Data['#text']?.toString().trim() || '';
+          } else if (cell.Data !== undefined && cell.Data !== null) {
+            cellValue = cell.Data.toString().trim() || '';
+          }
+          return cellValue !== '';
+        });
+        return hasMeaningfulData;
+      })
+      .map((row: ExcelRow) => {
+        // Tipagem explícita aqui
         const rowData: Record<string, string> = {};
-        const cells = Array.isArray(row.Cell) ? row.Cell : [];
+        const cells: ExcelCell[] = Array.isArray(row.Cell) ? row.Cell : []; // Tipagem explícita aqui
 
-        // Inicializa todos os campos com string vazia
         Object.values(headerMap).forEach((header) => {
           rowData[header] = '';
         });
 
         let currentIndex = 0;
 
-        cells.forEach((cell) => {
-          // Se tem 'ss:Index', use-o para posicionar corretamente
+        cells.forEach((cell: ExcelCell) => {
+          // Tipagem explícita aqui
           if (cell['ss:Index']) {
             currentIndex = cell['ss:Index'] - 1;
           }
 
-          // Extrai o valor da célula
           let cellValue = '';
           if (
             typeof cell.Data === 'object' &&
+            cell.Data !== null &&
             cell.Data['#text'] !== undefined
           ) {
             cellValue = cell.Data['#text']?.toString().trim() || '';
-          } else if (cell.Data !== undefined) {
-            cellValue = cell.Data?.toString().trim() || '';
+          } else if (cell.Data !== undefined && cell.Data !== null) {
+            cellValue = cell.Data.toString().trim() || '';
           }
 
-          // Pega o cabeçalho correspondente a este índice
           const header = headerMap[currentIndex];
           if (header) {
             rowData[header] = cellValue;
           }
 
-          // Avança para a próxima coluna
           currentIndex++;
         });
 
@@ -114,6 +161,7 @@ export class XmlImportStrategy implements ImportStrategy {
 
     return dados;
   }
+
   // FUNÇÃO RECEBE OS DADOS DE IMPORT E ENVIA PARA AS VALIDAÇÕES, TRANSFORM E POR FIM PERSISTENCIA(xmlCreate())
   async processFile(
     fileBuffer: Buffer,
@@ -122,7 +170,6 @@ export class XmlImportStrategy implements ImportStrategy {
     const dadosImportados = await this.import(fileBuffer);
 
     // lógica de processamento específica para CSV
-    //console.log('Dados CSV processados:', dadosImportados);
 
     // Validação dos dados (a validação aceita Record<string, string>[])
     // melhorar a validação --> esta perdendo retorno(erros) atualmente

@@ -23,8 +23,10 @@ export interface ImportData {
   uf: string;
   nosso_numero: string;
   numero_do_titulo: string;
-  valor: string;
-  saldo: string;
+  // Alterado para number, representando o valor em centavos
+  valor: number;
+  // Alterado para number, representando o saldo em centavos
+  saldo: number;
   especie: string;
   praca_de_protesto: string;
   tipo_autorizacao: string;
@@ -43,73 +45,84 @@ export interface ImportData {
 }
 
 export class TransformationResult {
-  async tranformCsvData(data: Record<string, string>[]): Promise<ImportData[]> {
+  async tranformCsvData(
+    data: Record<string, string | number>[],
+  ): Promise<ImportData[]> {
     const transformedData: ImportData[] = [];
     try {
       for (const dado of data) {
-        /* let venc: string;
-        if (dado.vencimento === 'A VISTA') {
-          venc = dado.vencimento;
-        } else if (isValidDate(dado.vencimento)) {
-          venc = new Date(dado.vencimento).toISOString();
-        } else {
-          venc = parseDateBrToIso(dado.vencimento).toISOString();
-        }
- */
+        // Função auxiliar para limpar e converter valores monetários
+        const cleanAndConvertMoney = (value: string | number): number => {
+          if (typeof value === 'number') {
+            // Se já for um número, talvez ele já esteja no formato correto,
+            // mas para garantir, vamos tratá-lo como string.
+            value = value.toString();
+          }
+          // Remove pontos e substitui vírgulas por nada para números inteiros (centavos)
+          // Ex: "606.51" -> "60651" | "606,51" -> "60651"
+          const cleanedValue = value.replace(/\./g, '').replace(/,/g, '');
+          // Garante que é um número. Se não for um número válido, retorna 0 ou lança erro.
+          const numericValue = parseInt(cleanedValue, 10);
+          return isNaN(numericValue) ? 0 : numericValue; // Retorna 0 se a conversão falhar
+        };
+
         const importData: ImportData = {
-          apresentante: dado.apresentante,
-          codigo: dado.codigo,
-          cartorio: dado.cartorio,
-          protocolo: dado.protocolo,
-          agenciacodigo_cedente: dado.agenciacodigo_cedente,
-          cedente: dado.cedente,
-          sacador: dado.sacador,
-          devedor: dado.devedor,
-          // endereco pode ser opcional, então verifique se existe em dado
-          endereco: dado.endereco || undefined, // ou dado.endereco se ele puder ser string vazia
-          cep: dado.cep,
-          bairro: dado.bairro,
-          cidade: dado.cidade,
-          uf: dado.uf,
-          nosso_numero: dado.nosso_numero,
-          numero_do_titulo: dado.numero_do_titulo,
-          valor: dado.valor,
-          saldo: dado.saldo,
-          especie: dado.especie,
-          praca_de_protesto: dado.praca_de_protesto,
-          tipo_autorizacao: dado.tipo_autorizacao,
-          situacao: dado.situacao,
-          impresso: dado.impresso,
-          custas_desistencia: dado.custas_desistencia,
-          vigencia: dado.vigencia,
-          custas_cancelamento: dado.custas_cancelamento,
-          envio_cenprot: dado.envio_cenprot,
-          postergado: dado.postergado,
-          prescricao: dado.prescricao,
-          ocorrencia: dado.ocorrencia,
+          apresentante: dado.apresentante as string,
+          codigo: dado.codigo as string,
+          cartorio: dado.cartorio as string,
+          protocolo: dado.protocolo as string,
+          agenciacodigo_cedente: dado.agenciacodigo_cedente as string,
+          cedente: dado.cedente as string,
+          sacador: dado.sacador as string,
+          devedor: dado.devedor as string,
+          endereco:
+            typeof dado.endereco === 'string' ? dado.endereco : undefined,
+          cep: dado.cep as string,
+          bairro: dado.bairro as string,
+          cidade: dado.cidade as string,
+          uf: dado.uf as string,
+          nosso_numero: dado.nosso_numero as string,
+          numero_do_titulo: dado.numero_do_titulo as string,
+          // Aplica a nova função de limpeza e conversão
+          valor: cleanAndConvertMoney(dado.valor),
+          // Aplica a nova função de limpeza e conversão
+          saldo: cleanAndConvertMoney(dado.saldo),
+          especie: dado.especie as string,
+          praca_de_protesto: dado.praca_de_protesto as string,
+          tipo_autorizacao: dado.tipo_autorizacao as string,
+          situacao: dado.situacao as string,
+          impresso: dado.impresso as string,
+          custas_desistencia: dado.custas_desistencia as string,
+          vigencia: dado.vigencia as string,
+          custas_cancelamento: dado.custas_cancelamento as string,
+          envio_cenprot: dado.envio_cenprot as string,
+          postergado: dado.postergado as string,
+          prescricao: dado.prescricao as string,
+          ocorrencia: dado.ocorrencia as string,
 
-          // transformção para Date
-          data: isValidDate(dado.data)
-            ? new Date(dado.data)
-            : parseDateBrToIso(dado.data),
-          // ARRUMAR ESSE VALOR -->
-          vencimento: dado.vencimento,
-          data_protocolo: isValidDate(dado.data_protocolo)
-            ? new Date(dado.data_protocolo)
-            : parseDateBrToIso(dado.data_protocolo),
-          data_remessa: isValidDate(dado.data_remessa)
-            ? new Date(dado.data_remessa)
-            : parseDateBrToIso(dado.data_remessa),
-          data_emissao: isValidDate(dado.data_emissao)
-            ? new Date(dado.data_emissao)
-            : parseDateBrToIso(dado.data_emissao),
-          data_ocorrencia: isValidDate(dado.data_ocorrencia)
-            ? new Date(dado.data_ocorrencia)
-            : parseDateBrToIso(dado.data_ocorrencia),
+          // Transformação para Date.
+          // Aqui é crucial que dado.data seja uma string ou seja tratado para tal.
+          data: isValidDate(dado.data as string)
+            ? new Date(dado.data as string)
+            : parseDateBrToIso(dado.data as string),
 
-          // Propriedades que você vai transformar para números (se aplicável, mas aqui são strings tratadas por onlyNumbers)
-          documento: onlyNumbers(dado.documento),
-          documento_sacador: onlyNumbers(dado.documento_sacador),
+          vencimento: dado.vencimento.toString(),
+
+          data_protocolo: isValidDate(dado.data_protocolo as string)
+            ? new Date(dado.data_protocolo as string)
+            : parseDateBrToIso(dado.data_protocolo as string),
+          data_remessa: isValidDate(dado.data_remessa as string)
+            ? new Date(dado.data_remessa as string)
+            : parseDateBrToIso(dado.data_remessa as string),
+          data_emissao: isValidDate(dado.data_emissao as string)
+            ? new Date(dado.data_emissao as string)
+            : parseDateBrToIso(dado.data_emissao as string),
+          data_ocorrencia: isValidDate(dado.data_ocorrencia as string)
+            ? new Date(dado.data_ocorrencia as string)
+            : parseDateBrToIso(dado.data_ocorrencia as string),
+
+          documento: onlyNumbers(dado.documento as string),
+          documento_sacador: onlyNumbers(dado.documento_sacador as string),
         };
 
         transformedData.push(importData);
@@ -117,7 +130,10 @@ export class TransformationResult {
       return transformedData;
     } catch (error) {
       console.error('Erro ao converter dados:', error);
-      return null;
+      // É melhor relançar o erro ou lançar uma exceção mais específica
+      // para que a camada superior possa tratá-lo adequadamente,
+      // em vez de retornar null que pode ser um problema para o chamador.
+      throw new Error('Falha na transformação dos dados CSV.');
     }
   }
 }

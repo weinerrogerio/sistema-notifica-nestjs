@@ -6,7 +6,7 @@ import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.serv
 import { CredorService } from '@app/credor/credor.service';
 import { ApresentanteService } from '@app/apresentante/apresentante.service';
 import { DocProtestoCredorService } from '@app/doc-protesto-credor/doc-protesto-credor.service';
-import { DataValidation } from '@app/utilities/import-validation.util';
+import { DataValidation } from '@app/utilities/xmlValidation.util';
 import { TransformationResult } from '@app/utilities/dataTransform';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { isValidCNPJ } from '@brazilian-utils/brazilian-utils';
@@ -55,6 +55,8 @@ export class ImportPersistenceService {
           data_distribuicao: dado.data_remessa,
           cart_protesto: dado.cartorio,
           num_titulo: dado.numero_do_titulo,
+          valor: dado.valor,
+          saldo: dado.saldo,
           fk_apresentante: savedApresentante.id,
         };
         const savedDocProtesto =

@@ -28,10 +28,10 @@ export class DocProtesto {
   @Column()
   num_titulo: string;
 
-  @Column()
+  @Column({ default: 0 })
   valor: number;
 
-  @Column()
+  @Column({ default: 0 })
   saldo: number;
 
   @Column({ nullable: true })
