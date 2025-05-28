@@ -21,6 +21,8 @@ export class DocProtestoService {
         data_distribuicao: createDocProtestoDto.data_distribuicao,
         cart_protesto: createDocProtestoDto.cart_protesto,
         num_titulo: createDocProtestoDto.num_titulo,
+        valor: createDocProtestoDto.valor,
+        saldo: createDocProtestoDto.saldo,
         vencimento: createDocProtestoDto.vencimento,
         fk_apresentante: createDocProtestoDto.fk_apresentante,
       };
@@ -32,8 +34,6 @@ export class DocProtestoService {
       throw new Error(
         'Falha ao processar os dados importados para Documento de protesto.',
       );
-
-      // aqui podemos fazer logica para conferir titulos importados anteriormente
     }
   }
 
