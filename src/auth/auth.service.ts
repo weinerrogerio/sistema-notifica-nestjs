@@ -56,12 +56,43 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(payload);
 
     // retorna o token
-    return { accessToken };
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        nome: user.nome,
+        role: user.role,
+        email: user.email,
+      },
+    };
   }
 
   async logout(userId: number) {
     // Atualiza o registro de login com a data de logout
     await this.logUsersService.updateLogoutEntry(userId);
     return { message: 'Logout realizado com sucesso' };
+  }
+
+  //validar token e retornar dados do usuário
+  async validateToken(token: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
+      const user = await this.user.findOneBy({
+        id: payload.sub,
+        is_active: true,
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Token inválido');
+      }
+
+      return {
+        id: user.id,
+        nome: user.nome,
+        role: user.role,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido', error.message);
+    }
   }
 }
