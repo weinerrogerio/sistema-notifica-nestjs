@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { UserService } from '@app/user/user.service';
@@ -25,6 +33,17 @@ export class AuthController {
     // Assume que o usuário id está em req.user.payload.sub após autenticação JWT
     const userId = req?.['payload']?.sub;
     return this.authService.logout(userId);
+  }
+
+  // endpoint para validar token
+  @Get('validate')
+  async validateToken(@Headers('authorization') authorization: string) {
+    if (!authorization) {
+      throw new Error('Token não fornecido');
+    }
+
+    const token = authorization.replace('Bearer ', '');
+    return await this.authService.validateToken(token);
   }
 
   //rota aberta para registro de usuário -- APENAS PARA TESTE
