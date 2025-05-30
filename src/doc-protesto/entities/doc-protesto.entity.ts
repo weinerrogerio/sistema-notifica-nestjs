@@ -1,9 +1,13 @@
-//npm i @nestjs/typeorm typeorm pg
-
+import { Apresentante } from '@app/apresentante/entities/apresentante.entity';
+import { DocProtestoCredor } from '@app/doc-protesto-credor/entities/doc-protesto-credor.entity';
+import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -41,12 +45,27 @@ export class DocProtesto {
   @Column()
   fk_apresentante: number;
 
-  /* //muitos para um
-  @ManyToOne(() => Pessoa, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-  //especifica a coluna "de" que armazena o ID da pessoa que enviou o recado
-  @JoinColumn({ name: 'de' })
-  de: Pessoa;
- */
+  //muitos para muitos com devedores(1:n -- log_notificacao:n)
+  //muitos para um --> um protesto pode ter muitos devedores
+  // Relacionamento Many-to-One com Apresentante
+  @ManyToOne(() => Apresentante, (apresentante) => apresentante.documentos, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'fkApresentante' }) // Baseado no DER
+  apresentante: Apresentante;
+
+  // Um documento de protesto pode ter muitas notificações
+  @OneToMany(() => LogNotificacao, (logNotificacao) => logNotificacao.protesto)
+  notificacao: LogNotificacao[];
+
+  // Um documento de protesto pode ter muitos credores associados
+  @OneToMany(
+    () => DocProtestoCredor,
+    (docProtestoCredor) => docProtestoCredor.protesto,
+  )
+  credores: DocProtestoCredor[];
+
   //data de criação (data_registro)
   @CreateDateColumn()
   createdAt?: Date;

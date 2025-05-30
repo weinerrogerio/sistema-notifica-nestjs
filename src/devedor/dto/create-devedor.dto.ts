@@ -21,5 +21,5 @@ export class CreateDevedorDto {
 
   @IsNotEmpty()
   @IsNumber()
-  fk_doc_protesto: number;
+  fk_protesto: number;
 }

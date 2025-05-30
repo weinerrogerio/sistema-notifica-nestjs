@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller, Post } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 
 @Controller('notification')
@@ -6,14 +6,14 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post('cobranca')
-  async enviarCobranca(@Body() dados: SendCobrancaDto) {
-    const success = await this.notificationService.enviarNotificacao(dados);
+  async enviarCobranca() {
+    const success = await this.notificationService.enviarNotificacao();
 
     return {
       success,
       message: success
-        ? 'Cobrança enviada com sucesso!'
-        : 'Falha ao enviar cobrança',
+        ? 'Intimação enviada com sucesso!'
+        : 'Falha ao enviar intimação',
     };
   }
 }

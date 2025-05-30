@@ -69,7 +69,7 @@ export class ImportPersistenceService {
           //remover mascara--> onlyNumbers
           doc_devedor: dado.documento, //apenas numeros
           devedor_pj: isValidCNPJ(dado.documento), // pessoa juridica? boolean
-          fk_doc_protesto: savedDocProtesto.id,
+          fk_protesto: savedDocProtesto.id,
         };
         const savedDevedor = await this.devedorService.findOrCreate(newDevedor);
 
@@ -85,7 +85,7 @@ export class ImportPersistenceService {
 
         //  ---------SALVANDO RELAÇÃO PROTESTO-CREDOR N:N  ------------------
         const newRelacaoProtestoCredor = {
-          fk_doc_protesto: savedDocProtesto.id,
+          fk_protesto: savedDocProtesto.id,
           fk_credor: savedCredor.id,
         };
         await this.relacaoProtestoCredorService.create(

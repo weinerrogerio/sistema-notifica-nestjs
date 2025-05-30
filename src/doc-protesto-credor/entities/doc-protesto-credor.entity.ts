@@ -1,7 +1,11 @@
+import { Credor } from '@app/credor/entities/credor.entity';
+import { DocProtesto } from '@app/doc-protesto/entities/doc-protesto.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,13 +15,33 @@ export class DocProtestoCredor {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // criar as chaves estrangeiras docProtesto:docProteto_credor (1:n)
-  @Column()
-  fk_doc_protesto: number;
-  // criar as chaves estrangeiras
+  // Colunas para armazenar os IDs das chaves estrangeiras
   @Column()
   fk_credor: number;
 
+  @Column()
+  fk_protesto: number;
+
+  // Relacionamento Many-to-One com Credor
+  @ManyToOne(() => Credor, (credor) => credor.documentosProtesto, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'fk_credor' })
+  credor: Credor;
+
+  // Relacionamento Many-to-One com DocProtesto
+  @ManyToOne(() => DocProtesto, (docProtesto) => docProtesto.credores, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'fk_protesto' })
+  protesto: DocProtesto;
+
+  /* // criar as chaves estrangeiras
+  @Column()
+  fk_credor: number;
+ */
   //data de criação (data_registro)
   @CreateDateColumn()
   createdAt?: Date;

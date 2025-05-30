@@ -1,7 +1,11 @@
+import { Devedor } from '@app/devedor/entities/devedor.entity';
+import { DocProtesto } from '@app/doc-protesto/entities/doc-protesto.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -20,13 +24,23 @@ export class LogNotificacao {
   @Column()
   lido: boolean;
 
-  //relacionamentos devedor:log(1:N)
-  @Column()
-  fk_id_devedor: number;
+  // Relacionamento Many-to-One com Devedor
+  @ManyToOne(() => Devedor, (devedor) => devedor.notificacao, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'fk_devedor' })
+  devedor: Devedor;
 
-  //relacionamentos protesto:log(1:N)
-  @Column()
-  fk_id_protesto: number;
+  // Relacionamento Many-to-One com DocProtesto
+  @ManyToOne(() => DocProtesto, (docProtesto) => docProtesto.notificacao, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'fk_protesto' })
+  protesto: DocProtesto;
 
   //data de criação (data_registro)
   @CreateDateColumn()
