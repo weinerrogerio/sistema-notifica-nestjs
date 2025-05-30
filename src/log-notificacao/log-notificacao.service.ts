@@ -4,7 +4,7 @@ import { UpdateLogNotificacaoDto } from './dto/update-log-notificacao.dto';
 import { LogNotificacao } from './entities/log-notificacao.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-
+//NOTA: ALTERARA ENTIDADE--> LOG_NOTIFICACAO -> ADICIONAR COLUNA DE EMAIL ENCONTRADO, COLUNAR DE ENVIADO, E DATA DE ENVIO != DATA GRAVAÇÃO
 @Injectable()
 export class LogNotificacaoService {
   constructor(

@@ -1,11 +1,11 @@
 import { BaseTemplate } from './base.template';
 import {
-  CobrancaData,
   ContatoCartorio,
+  IntimacaoData,
 } from '../../common/interfaces/notification-data.interface';
 
 export class CobrancaTemplate extends BaseTemplate {
-  static gerar(dados: CobrancaData, contatoCartorio: ContatoCartorio): string {
+  static gerar(dados: IntimacaoData, contatoCartorio: ContatoCartorio): string {
     return `
     <!DOCTYPE html>
       <html lang="pt-BR">
@@ -47,7 +47,7 @@ export class CobrancaTemplate extends BaseTemplate {
 
             <p>
                 Em caso de duvida e/ou interesse do pagamento em cartorio, entrar em
-                contao diretamente com o ${dados.cartorio} com os dadoss abaixo:
+                contao diretamente com o ${dados.tabelionato} com os dadoss abaixo:
             </p>
             <div class="contato-box">
                 <p><strong>Nome:</strong> ${contatoCartorio.nomeTabelionato}</p>

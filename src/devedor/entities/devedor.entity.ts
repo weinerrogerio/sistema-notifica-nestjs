@@ -1,7 +1,9 @@
+import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -23,16 +25,12 @@ export class Devedor {
   @Column()
   devedor_pj: boolean;
 
-  //fazer logica relação muitos para um com doc protesto
-  @Column()
-  fk_doc_protesto: number;
+  //muitos para muitos com doc protesto(1:n - log_notificacao)
+  //muitos para um --> um devedor pode ter muitas intimações (log_notificacao)
+  // Um devedor pode ter muitas notificações
+  @OneToMany(() => LogNotificacao, (logNotificacao) => logNotificacao.devedor)
+  notificacao: LogNotificacao[];
 
-  /* //muitos para um
-    @ManyToOne(() => Pessoa, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-    //especifica a coluna "de" que armazena o ID da pessoa que enviou o recado
-    @JoinColumn({ name: 'de' })
-    de: Pessoa;
-   */
   //data de criação (data_registro)
   @CreateDateColumn()
   createdAt?: Date;

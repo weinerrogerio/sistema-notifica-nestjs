@@ -4,7 +4,7 @@ export class CreateDocProtestoCredorDto {
   // criar as chaves estrangeiras docProtesto:docProteto_credor (1:n)
   @IsNumber()
   @IsNotEmpty()
-  fk_doc_protesto: number;
+  fk_protesto: number;
   // criar as chaves estrangeiras
   @IsNumber()
   @IsNotEmpty()

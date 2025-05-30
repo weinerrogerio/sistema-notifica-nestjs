@@ -15,7 +15,7 @@ export class DocProtestoCredorService {
   async create(createDocProtestoCredorDto: CreateDocProtestoCredorDto) {
     try {
       const newDocProtestoCredorDto = {
-        fk_doc_protesto: createDocProtestoCredorDto.fk_doc_protesto,
+        fk_protesto: createDocProtestoCredorDto.fk_protesto,
         fk_credor: createDocProtestoCredorDto.fk_credor,
       };
       const newDocProtestoCredor = this.docProtestoCredorRepository.create(

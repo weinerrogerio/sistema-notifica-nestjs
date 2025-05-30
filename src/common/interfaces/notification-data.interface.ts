@@ -1,14 +1,25 @@
-export interface CobrancaData {
+export interface IntimacaoData {
+  //dados do devedor
   nomeDevedor: string;
-  clienteEmail: string;
+  devedorEmail: string;
+  docDevedor: string;
+  //dados do titulo
+  distribuicao: string;
+  dataDistribuicao: Date;
   valorTotal: number;
   dataVencimento: string;
-  dataDistribuicao: string;
   tabelionato: string;
-  portador: string;
+  //dados do portador/credor
   credor: string;
-  cartorio: string;
-  distribuicao: string;
+  //dados apresentante
+  portador: string; //apresentante
+}
+
+export interface ContatoCartorio {
+  nomeTabelionato: string;
+  telefone: string;
+  email: string;
+  endereco?: string;
 }
 
 export interface ContatoCartorio {
