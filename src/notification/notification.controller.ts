@@ -16,4 +16,15 @@ export class NotificationController {
         : 'Falha ao enviar intimação',
     };
   }
+
+  @Post('busca')
+  async buscarIntimacoesPorDevedorENumProtesto() {
+    const intimacoes =
+      await this.notificationService.buscarIntimacoesPorDevedorENumProtesto(
+        'DEVEDOR 13',
+        '12345',
+      );
+
+    return intimacoes;
+  }
 }

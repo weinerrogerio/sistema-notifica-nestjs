@@ -18,17 +18,23 @@ export class LogNotificacao {
   @Column()
   email_enviado: boolean;
 
-  @Column()
+  @Column({ nullable: true })
   data_envio: Date;
 
   @Column()
   lido: boolean;
 
+  @Column({ name: 'fk_devedor' })
+  fk_devedor: number;
+
+  @Column({ name: 'fk_protesto' })
+  fk_protesto: number;
+
   // Relacionamento Many-to-One com Devedor
   @ManyToOne(() => Devedor, (devedor) => devedor.notificacao, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
-    nullable: true,
+    nullable: false,
   })
   @JoinColumn({ name: 'fk_devedor' })
   devedor: Devedor;
@@ -37,7 +43,7 @@ export class LogNotificacao {
   @ManyToOne(() => DocProtesto, (docProtesto) => docProtesto.notificacao, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
-    nullable: true,
+    nullable: false,
   })
   @JoinColumn({ name: 'fk_protesto' })
   protesto: DocProtesto;
