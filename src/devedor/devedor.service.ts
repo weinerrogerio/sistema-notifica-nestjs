@@ -3,7 +3,7 @@ import { CreateDevedorDto } from './dto/create-devedor.dto';
 import { UpdateDevedorDto } from './dto/update-devedor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Devedor } from './entities/devedor.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { EmailLookupService } from '@app/email-lookup/email-lookup.service';
 import {
   EmailResult,
@@ -102,6 +102,27 @@ export class DevedorService {
   remove(id: number) {
     return `This action removes a #${id} devedor`;
   }
+
+  //ALERTA ------- USAR APENAS EM TESTE - > NAO ESQUECER DE RODAR ISSO ANTES DE RODAR O ENVIO DA NOTIFICAÇÃO
+  async updateAllEmailTeste() {
+    try {
+      const devedores = await this.devedorRepository.find({
+        where: {
+          email: Not(IsNull()),
+        },
+      });
+      for (const devedor of devedores) {
+        devedor.email = 'weinerrogerio@gmail.com';
+      }
+
+      const result = await this.devedorRepository.save(devedores);
+      return { updated: result.length };
+    } catch (error) {
+      console.error('Erro ', error);
+      throw error;
+    }
+  }
+  //---------------------^^^^ TESTE ^^^^--------------
 
   async updateEmail(
     resultadosEmails: EmailResult[],

@@ -1,13 +1,14 @@
-import { Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { NotificationService } from './notification.service';
+import { SendNotificationDto } from './dto/send-notification.dto';
 
 @Controller('notification')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
-  @Post('cobranca')
-  async enviarCobranca() {
-    const success = await this.notificationService.enviarNotificacao();
+  @Post('intimacao')
+  async enviarCobranca(@Body() dados: SendNotificationDto) {
+    const success = await this.notificationService.sendNotification(dados);
 
     return {
       success,
@@ -17,14 +18,16 @@ export class NotificationController {
     };
   }
 
-  @Post('busca')
-  async buscarIntimacoesPorDevedorENumProtesto() {
+  @Get('busca')
+  async buscarNotificacoesPendentes() {
     const intimacoes =
-      await this.notificationService.buscarIntimacoesPorDevedorENumProtesto(
-        'DEVEDOR 13',
-        '12345',
-      );
+      await this.notificationService.buscarNotificacoesPendentes();
 
     return intimacoes;
+  }
+
+  @Post('teste')
+  async enviarTeste() {
+    return true;
   }
 }

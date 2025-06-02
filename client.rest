@@ -18,6 +18,8 @@ Authorization: 'bearer token'
 GET {{baseUrl}}/devedor/pj/
 Authorization: Bearer {{authToken}}
 
+
+##------------------------- BUSCA EMAIL - DEVEDOR PJ -------------------------------
 ###
 GET {{baseUrl}}/devedor/emails/
 Authorization: Bearer {{authToken}}
@@ -107,3 +109,37 @@ Content-Type: application/json
 ## LOGOUT - AUTH
 POST  {{baseUrl}}/auth/logout/
 Authorization: Bearer {{authToken}}
+
+
+### ---------------------------------------- NOTIFICAÇÃO !!!!!! -------------------------------
+
+###
+POST {{baseUrl}}/notification/teste
+Authorization: Bearer {{authToken}}
+
+###
+GET {{baseUrl}}/notification/busca
+Authorization: Bearer {{authToken}}
+
+### --> NAO ESQUECER DE RODAR ISSO ANTES DE ENVIAR NOTIFICAÇÕES EM TESTE
+GET {{baseUrl}}/devedor/teste-update-email
+Authorization: Bearer {{authToken}}
+
+
+### ------------------> INTIMAÇÃO -------
+POST {{baseUrl}}/notification/intimacao
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "nomeDevedor": "DEVEDOR 1",
+  "devedorEmail": "weinerrogerio@gmail.com",
+  "docDevedor": "08764191982",
+  "distribuicao": "1234",
+  "dataDistribuicao": "15/06/2025",
+  "valorTotal": 2000,
+  "dataVencimento": "15/06/2024", 
+  "tabelionato": "1° Oficio de Protesto de Títulos de Curitiba",
+  "credor": "Prefeitura do Município de Curitiba",
+  "portador": "Prefeitura do Município de Curitiba"
+}

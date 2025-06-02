@@ -7,7 +7,7 @@ export interface IntimacaoData {
   distribuicao: string;
   dataDistribuicao: Date;
   valorTotal: number;
-  dataVencimento: string;
+  dataVencimento: string; // data string pois pode ser "a vista"
   tabelionato: string;
   //dados do portador/credor
   credor: string;
@@ -22,7 +22,7 @@ export interface ContatoCartorio {
   endereco?: string;
 }
 
-export interface ContatoCartorio {
+export interface ContatoTabelionato {
   nomeTabelionato: string;
   telefone: string;
   email: string;

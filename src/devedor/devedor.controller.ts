@@ -29,6 +29,11 @@ export class DevedorController {
     return this.devedorService.create(createDevedorDto);
   }
 
+  @Get('teste-update-email')
+  findAllWithEmailNull() {
+    return this.devedorService.updateAllEmailTeste();
+  }
+
   @Roles(Role.USER, Role.ADMIN)
   @Get('pj')
   findAll() {
