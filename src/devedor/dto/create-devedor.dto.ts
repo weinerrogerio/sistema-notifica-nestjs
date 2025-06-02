@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateDevedorDto {
   //nome: string; doc_devedor: string; devedor_pj: boolean;
@@ -18,8 +18,4 @@ export class CreateDevedorDto {
   @IsString()
   @IsNotEmpty()
   devedor_pj: boolean;
-
-  @IsNotEmpty()
-  @IsNumber()
-  fk_protesto: number;
 }

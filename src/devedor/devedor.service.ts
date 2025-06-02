@@ -24,7 +24,6 @@ export class DevedorService {
         nome: createDevedorDto?.nome,
         doc_devedor: createDevedorDto?.doc_devedor,
         devedor_pj: createDevedorDto?.devedor_pj,
-        fk_protesto: createDevedorDto?.fk_protesto,
       };
       const newDevedor = this.devedorRepository.create(newDevedorDto);
       await this.devedorRepository.save(newDevedor);

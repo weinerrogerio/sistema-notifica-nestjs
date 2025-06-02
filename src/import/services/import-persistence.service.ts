@@ -75,12 +75,11 @@ export class ImportPersistenceService {
 
         //  ---------SALVANDO LOG DE NOTIFICACAO - RELAÇÃO N:N  ------------------
         const newLogNotificacao = {
-          email_enviado: false,
-          data_envio: new Date(),
-          lido: false,
-          fk_id_protesto: savedDocProtesto.id,
-          fk_id_devedor: savedDevedor.id,
+          fk_protesto: savedDocProtesto.id,
+          fk_devedor: savedDevedor.id,
         };
+        console.log('newLogNotificacao: ', newLogNotificacao);
+
         await this.logNotificacaoService.create(newLogNotificacao);
 
         //  ---------SALVANDO RELAÇÃO PROTESTO-CREDOR N:N  ------------------

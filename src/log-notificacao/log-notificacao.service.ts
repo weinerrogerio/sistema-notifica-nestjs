@@ -12,20 +12,18 @@ export class LogNotificacaoService {
     private readonly logNotificacaoRepository: Repository<LogNotificacao>,
   ) {}
   async create(createLogNotificacaoDto: CreateLogNotificacaoDto) {
+    console.log('createLogNotificacaoDto recebido:', createLogNotificacaoDto);
     const newLogDto = {
-      email_enviado: createLogNotificacaoDto?.email_enviado,
-      data_envio: createLogNotificacaoDto?.data_envio,
-      lido: createLogNotificacaoDto?.lido,
-      fk_id_devedor: createLogNotificacaoDto?.fk_id_devedor,
-      fk_id_protesto: createLogNotificacaoDto?.fk_id_protesto,
+      email_enviado: false,
+      lido: false,
+      fk_devedor: createLogNotificacaoDto?.fk_devedor,
+      fk_protesto: createLogNotificacaoDto?.fk_protesto,
     };
-    // util para simplesmente salvar
-    //return await this.logNotificacaoRepository.save(newLogDtos);
-
-    //util para salvar e retornar (validar antes de salvar)
-    const newDevedor = this.logNotificacaoRepository.create(newLogDto);
-    await this.logNotificacaoRepository.save(newDevedor);
-    return newDevedor;
+    console.log('newLogDto antes de criar:', newLogDto);
+    const newLog = this.logNotificacaoRepository.create(newLogDto);
+    console.log('newLog após create:', newLog);
+    await this.logNotificacaoRepository.save(newLog);
+    return newLog;
   }
 
   findAll() {
@@ -36,10 +34,36 @@ export class LogNotificacaoService {
     return `This action returns a #${id} logNotificacao`;
   }
 
-  update(id: number, updateLogNotificacaoDto: UpdateLogNotificacaoDto) {
-    console.log(updateLogNotificacaoDto);
+  // update  data de envio, email enviado
+  async updateEnvioEmail(
+    id: number,
+    updateLogNotificacaoDto: UpdateLogNotificacaoDto,
+  ) {
+    const newLogDto = {
+      email_enviado: updateLogNotificacaoDto?.email_enviado,
+      data_envio: updateLogNotificacaoDto?.data_envio,
+      ...updateLogNotificacaoDto,
+    };
+    const newLog = this.logNotificacaoRepository.create(newLogDto);
+    await this.logNotificacaoRepository.save(newLog);
+    return newLog;
+  }
 
-    return `This action updates a #${id} logNotificacao`;
+  // update lido
+  async updateReceived(
+    id: number,
+    updateLogNotificacaoDto: UpdateLogNotificacaoDto,
+  ) {
+    const newLogDto = {
+      lido: updateLogNotificacaoDto?.lido,
+      ...updateLogNotificacaoDto,
+    };
+    const newLog = this.logNotificacaoRepository.create(newLogDto);
+    await this.logNotificacaoRepository.save(newLog);
+    return newLog;
+  }
+  async update(id: number, updateLogNotificacaoDto: UpdateLogNotificacaoDto) {
+    return `This action updates a #${id} logNotificacao ${updateLogNotificacaoDto}`;
   }
 
   remove(id: number) {

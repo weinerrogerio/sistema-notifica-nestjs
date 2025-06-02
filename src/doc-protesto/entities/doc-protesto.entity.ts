@@ -52,7 +52,7 @@ export class DocProtesto {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
-  @JoinColumn({ name: 'fkApresentante' }) // Baseado no DER
+  @JoinColumn({ name: 'fk_apresentante' })
   apresentante: Apresentante;
 
   // Um documento de protesto pode ter muitas notificações
