@@ -14,6 +14,7 @@ import { AuthModule } from '@app/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { LogEventAdminUserModule } from '@app/log_event_admin_user/log_event_admin_user.module';
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
+import { NotificationModule } from '@app/notification/notification.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-impo
       envFilePath: '.env',
     }),
     AuthModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

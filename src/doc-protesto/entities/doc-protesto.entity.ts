@@ -39,7 +39,7 @@ export class DocProtesto {
   saldo: number;
 
   @Column({ nullable: true })
-  vencimento: string;
+  vencimento: string; // data astring pois pode ser "a vista"
 
   //FAZER RELAÇÃO COM OUTRAS TABELAS depois
   @Column()

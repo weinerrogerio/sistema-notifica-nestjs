@@ -4,7 +4,7 @@ import {
   IntimacaoData,
 } from '../../common/interfaces/notification-data.interface';
 
-export class CobrancaTemplate extends BaseTemplate {
+export class NotificationTemplate extends BaseTemplate {
   static gerar(dados: IntimacaoData, contatoCartorio: ContatoCartorio): string {
     return `
     <!DOCTYPE html>
