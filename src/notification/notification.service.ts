@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { NotificationTemplate } from './templates/notification.template';
+import { TrackingService } from '@app/tracking-pixel/tracking-pixel.service';
 
 @Injectable()
 export class NotificationService {
@@ -22,6 +23,7 @@ export class NotificationService {
   private readonly contatoTabelionato: ContatoTabelionato;
 
   constructor(
+    private trackingService: TrackingService,
     private configService: ConfigService,
     @InjectRepository(LogNotificacao)
     private readonly logNotificacaoRepository: Repository<LogNotificacao>,
@@ -149,6 +151,7 @@ export class NotificationService {
       }
 
       return {
+        logNotificacaoId: logNotificacao.id,
         nomeDevedor: logNotificacao.devedor?.nome || '',
         devedorEmail: logNotificacao.devedor?.email || '',
         docDevedor: logNotificacao.devedor?.doc_devedor || '',
@@ -256,6 +259,115 @@ export class NotificationService {
 
   // ------------------------------------- envio de emails ------------------------------------- //
   // ALERTA --> PARA O ENVIO CORRETO DO EMAIL O SERVIDOR DE DOMINIO TEM DE ESTAR CONFIGURADO CORRETAMENTE(SPF, DKIM e DMARC no DNS DO DOMINIO)
+
+  async sendNotificationsWithTracking(): Promise<{
+    enviados: number;
+    erros: number;
+    detalhes: Array<{
+      id: number;
+      email: string;
+      sucesso: boolean;
+      erro?: string;
+    }>;
+  }> {
+    // Uma única consulta que já traz todos os dados necessários
+    const intimacoesPendentes = await this.buscarNotificacoesPendentes();
+
+    const resultados = {
+      enviados: 0,
+      erros: 0,
+      detalhes: [] as Array<{
+        id: number;
+        email: string;
+        sucesso: boolean;
+        erro?: string;
+      }>,
+    };
+
+    for (const intimacao of intimacoesPendentes) {
+      try {
+        const sucesso = await this.sendOneNotificationWithTracking(
+          intimacao /* ,
+          intimacao.logNotificacaoId, */,
+        );
+
+        if (sucesso) {
+          resultados.enviados++;
+          resultados.detalhes.push({
+            id: intimacao.logNotificacaoId,
+            email: intimacao.devedorEmail,
+            sucesso: true,
+          });
+        } else {
+          resultados.erros++;
+          resultados.detalhes.push({
+            id: intimacao.logNotificacaoId,
+            email: intimacao.devedorEmail,
+            sucesso: false,
+            erro: 'Falha no envio do email',
+          });
+        }
+      } catch (error) {
+        resultados.erros++;
+        resultados.detalhes.push({
+          id: intimacao.logNotificacaoId,
+          email: intimacao.devedorEmail,
+          sucesso: false,
+          erro: error.message,
+        });
+      }
+    }
+
+    this.logger.log(
+      `Envio concluído: ${resultados.enviados} enviados, ${resultados.erros} erros`,
+    );
+    return resultados;
+  }
+
+  // Método simplificado para envio individual
+  async sendOneNotificationWithTracking(
+    dados: IntimacaoData /* ,
+    logNotificacaoId: number, */,
+  ): Promise<boolean> {
+    try {
+      // Gerar token e URL do tracking pixel
+      const trackingToken = this.trackingService.generateTrackingToken(
+        dados.logNotificacaoId,
+      );
+      const baseUrl =
+        this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+      const trackingPixelUrl = `${baseUrl}/tracking/pixel/${trackingToken}`;
+
+      // Gerar HTML com tracking
+      const html = NotificationTemplate.gerar(
+        dados,
+        this.contatoTabelionato,
+        trackingPixelUrl,
+      );
+
+      // Enviar email
+      const emailEnviado = await this.sendEmail({
+        to: dados.devedorEmail,
+        subject: 'Intimação de Protesto',
+        html,
+      });
+
+      // Atualizar status no banco
+      if (emailEnviado) {
+        await this.logNotificacaoRepository.update(dados.logNotificacaoId, {
+          email_enviado: true,
+          data_envio: new Date(),
+          tracking_token: trackingToken,
+        });
+      }
+
+      return emailEnviado;
+    } catch (error) {
+      this.logger.error(`Erro ao enviar notificação: ${error.message}`);
+      return false;
+    }
+  }
+
   private async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       const mailOptions = {
@@ -274,7 +386,7 @@ export class NotificationService {
       return false;
     }
   }
-
+  /* --------------------------------------------------------------------------------------------------- */
   // ENVIA UMA NOTIFICAÇÃO
   async sendNotification(dados: IntimacaoData): Promise<boolean> {
     const html = NotificationTemplate.gerar(dados, this.contatoTabelionato);

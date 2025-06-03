@@ -5,7 +5,15 @@ import {
 } from '../../common/interfaces/notification-data.interface';
 
 export class NotificationTemplate extends BaseTemplate {
-  static gerar(dados: IntimacaoData, contatoCartorio: ContatoCartorio): string {
+  static gerar(
+    dados: IntimacaoData,
+    contatoCartorio: ContatoCartorio,
+    trackingPixelUrl?: string,
+  ): string {
+    const trackingPixel = trackingPixelUrl
+      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`
+      : '';
+
     return `
     <!DOCTYPE html>
       <html lang="pt-BR">
@@ -16,6 +24,7 @@ export class NotificationTemplate extends BaseTemplate {
         ${this.getHeader()}
       </head>
       <body>
+        ${trackingPixel}  
         <div class="header">
             <h1>Intimação de Cobrança</h1>
         </div>
@@ -63,6 +72,7 @@ export class NotificationTemplate extends BaseTemplate {
             <p>Após o pagamento ao tabelionato, o processamento pode levar até 48 horas úteis.</p>
         </div>
         ${this.getFooter()}
+        ${trackingPixel}
       </body>
     </html>
     `;

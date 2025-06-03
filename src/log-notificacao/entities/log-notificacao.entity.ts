@@ -24,6 +24,14 @@ export class LogNotificacao {
   @Column()
   lido: boolean;
 
+  // Nova coluna para armazenar quando foi lido
+  @Column({ nullable: true })
+  data_leitura: Date;
+
+  // Nova coluna para o token de tracking
+  @Column({ nullable: true, unique: true })
+  tracking_token: string;
+
   @Column({ name: 'fk_devedor' })
   fk_devedor: number;
 

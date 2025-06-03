@@ -1,6 +1,9 @@
 import { IsString, IsNumber, IsEmail } from 'class-validator';
 
 export class SendNotificationDto {
+  @IsNumber()
+  logNotificacaoId: number;
+
   @IsString()
   nomeDevedor: string;
 
