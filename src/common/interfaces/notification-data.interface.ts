@@ -1,4 +1,5 @@
 export interface IntimacaoData {
+  logNotificacaoId: number;
   //dados do devedor
   nomeDevedor: string;
   devedorEmail: string;

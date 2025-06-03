@@ -127,11 +127,12 @@ Authorization: Bearer {{authToken}}
 
 
 ### ------------------> INTIMAÇÃO -------
-POST {{baseUrl}}/notification/intimacao
+POST {{baseUrl}}/notification/intimacao-tracking
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
+  "logNotificacaoId":1,
   "nomeDevedor": "DEVEDOR",
   "devedorEmail": "weinerrogerio@hotmail.com",
   "docDevedor": "08764191982",
