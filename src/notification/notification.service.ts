@@ -48,6 +48,7 @@ export class NotificationService {
       endereco: 'Rua Exemplo, 123 - Centro - Curitiba/PR',
     };
   }
+
   // Buscar notificações não enviadas de devedores que possuem email
   async buscarNotificacoesPendentes(): Promise<IntimacaoData[]> {
     const logNotificacoes = await this.logNotificacaoRepository
@@ -253,6 +254,8 @@ export class NotificationService {
     };
   }
 
+  // ------------------------------------- envio de emails ------------------------------------- //
+  // ALERTA --> PARA O ENVIO CORRETO DO EMAIL O SERVIDOR DE DOMINIO TEM DE ESTAR CONFIGURADO CORRETAMENTE(SPF, DKIM e DMARC no DNS DO DOMINIO)
   private async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       const mailOptions = {
@@ -272,6 +275,7 @@ export class NotificationService {
     }
   }
 
+  // ENVIA UMA NOTIFICAÇÃO
   async sendNotification(dados: IntimacaoData): Promise<boolean> {
     const html = NotificationTemplate.gerar(dados, this.contatoTabelionato);
 
@@ -280,5 +284,12 @@ export class NotificationService {
       subject: 'Intimação de Protesto',
       html,
     });
+  }
+
+  //ENVIA MULTIPLOS EMAILS
+  async sendNotifications(dados: IntimacaoData[]): Promise<void> {
+    for (const intimacao of dados) {
+      await this.sendNotification(intimacao);
+    }
   }
 }
