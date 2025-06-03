@@ -42,7 +42,11 @@ import { NotificationModule } from '@app/notification/notification.module';
     LogArquivoImportModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: [
+        '.env.production', // Arquivo específico do ambiente
+        '.env.local', // Arquivo local (se existir)
+        '.env', // Arquivo padrão (fallback)
+      ],
     }),
     AuthModule,
     NotificationModule,

@@ -132,8 +132,8 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "nomeDevedor": "DEVEDOR 1",
-  "devedorEmail": "weinerrogerio@gmail.com",
+  "nomeDevedor": "DEVEDOR",
+  "devedorEmail": "weinerrogerio@hotmail.com",
   "docDevedor": "08764191982",
   "distribuicao": "1234",
   "dataDistribuicao": "15/06/2025",

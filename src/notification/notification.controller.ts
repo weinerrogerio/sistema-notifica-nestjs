@@ -6,8 +6,15 @@ import { SendNotificationDto } from './dto/send-notification.dto';
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
+  //envia varias notificacoes
+  @Post('intimacoes')
+  async sendMultipleNotifications() {
+    return 'fazer rota depois';
+  }
+
+  //ENVIA UMA INTIMAÇÃO
   @Post('intimacao')
-  async enviarCobranca(@Body() dados: SendNotificationDto) {
+  async sendNotification(@Body() dados: SendNotificationDto) {
     const success = await this.notificationService.sendNotification(dados);
 
     return {
@@ -18,6 +25,8 @@ export class NotificationController {
     };
   }
 
+  /* -------------------------------------   BUSCAS  -------------------------------------- */
+  //BUSCA POR NOTIFICAÇÕES PENDENTES
   @Get('busca')
   async buscarNotificacoesPendentes() {
     const intimacoes =
@@ -26,8 +35,27 @@ export class NotificationController {
     return intimacoes;
   }
 
-  @Post('teste')
-  async enviarTeste() {
-    return true;
+  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DEVEDOR
+  @Get('busca/:devedorId')
+  async buscarNotificacoesPendentesPorDevedor(@Body() devedorId: number) {
+    const intimacoes =
+      await this.notificationService.buscarNotificacoesPendentesPorDevedor(
+        devedorId,
+      );
+
+    return intimacoes;
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DISTRIBUIÇÃO
+  @Get('busca/distribuicao/:numDistribuicao')
+  async buscarNotificacoesPendentesPorDistribuicao(
+    @Body() numDistribuicao: string,
+  ) {
+    const intimacoes =
+      await this.notificationService.buscarNotificacoesPendentesPorDistribuicao(
+        numDistribuicao,
+      );
+
+    return intimacoes;
   }
 }
