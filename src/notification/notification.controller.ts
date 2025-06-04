@@ -1,11 +1,7 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { SendNotificationDto } from './dto/send-notification.dto';
-<<<<<<< HEAD
-import { TrackingService } from '@app/tracking-pixel/tracking-pixel.service';
-=======
 import { TrackingService } from '@app/tracking/tracking.service';
->>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
 
 @Controller('notification')
 export class NotificationController {
