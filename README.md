@@ -97,6 +97,24 @@ $ npm install @nestjs/common @nestjs/core @nestjs/config nodemailer
 $ npm install -D @types/nodemailer
 ```
 
+## Resources - local
+
+Nota: para rodar o modulo tracking em modo desenvolvimento local é preciso abrir uma url publica temporária. Pode ser feito com algumas das opções:
+
+```
+ngrok (gratuito com limitações)
+
+LocalTunnel (100% Gratuito)
+
+Serveo (Gratuito)
+
+Cloudflare Tunnel (Gratuito)
+
+Bore (Gratuito)
+
+Tailscale Funnel (Gratuito para uso pessoal)
+```
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TrackingService } from './tracking-pixel.service';
-import { TrackingController } from './tracking-pixel.controller';
+import { TrackingService } from './tracking.service';
+import { TrackingController } from './tracking.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 

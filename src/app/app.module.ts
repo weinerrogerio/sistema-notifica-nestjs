@@ -15,7 +15,7 @@ import { ConfigModule } from '@nestjs/config';
 import { LogEventAdminUserModule } from '@app/log_event_admin_user/log_event_admin_user.module';
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
 import { NotificationModule } from '@app/notification/notification.module';
-import { TrackingPixelModule } from '@app/tracking-pixel/tracking-pixel.module';
+import { TrackingPixelModule } from '@app/tracking/tracking.module';
 
 @Module({
   imports: [

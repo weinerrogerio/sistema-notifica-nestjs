@@ -5,7 +5,7 @@ import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.modul
 import { DocProtestoModule } from '@app/doc-protesto/doc-protesto.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
-import { TrackingPixelModule } from '@app/tracking-pixel/tracking-pixel.module';
+import { TrackingPixelModule } from '@app/tracking/tracking.module';
 
 @Module({
   imports: [

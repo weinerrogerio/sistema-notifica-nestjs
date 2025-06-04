@@ -1,5 +1,3 @@
-// No seu notification.service.ts
-
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { NotificationTemplate } from './templates/notification.template';
-import { TrackingService } from '@app/tracking-pixel/tracking-pixel.service';
+import { TrackingService } from '@app/tracking/tracking.service';
 
 @Injectable()
 export class NotificationService {
@@ -334,8 +332,13 @@ export class NotificationService {
       const trackingToken = this.trackingService.generateTrackingToken(
         dados.logNotificacaoId,
       );
+      console.log('trackingToken', trackingToken);
+
+      //ATENÇÃO: USAR ROTA ABERTA PARA RODAR EM LOCALHOST
       const baseUrl =
-        this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+        this.configService.get<string>('BASE_URL') ||
+        this.configService.get<string>('NGROK_PUBLIC_URL');
+      console.log('baseUrl', baseUrl);
       const trackingPixelUrl = `${baseUrl}/tracking/pixel/${trackingToken}`;
 
       // Gerar HTML com tracking

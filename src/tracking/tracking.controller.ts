@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Res, Logger } from '@nestjs/common';
 import { Response } from 'express';
-import { TrackingService } from './tracking-pixel.service';
+import { TrackingService } from './tracking.service';
 
 @Controller('tracking')
 export class TrackingController {
@@ -25,7 +25,7 @@ export class TrackingController {
         Expires: '0',
       });
 
-      res.send(pixel); // Use send() em vez de end()
+      res.send(pixel);
     } catch (error) {
       this.logger.error(`Erro ao processar tracking pixel: ${error.message}`);
 

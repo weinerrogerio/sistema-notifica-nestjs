@@ -36,6 +36,8 @@ export class TrackingService {
     logNotificacaoId: number,
     token: string,
   ): Promise<void> {
+    console.log('storeTrackingToken: token ', token);
+
     try {
       await this.logNotificacaoRepository.update(logNotificacaoId, {
         tracking_token: token,
@@ -56,14 +58,29 @@ export class TrackingService {
    * Registra quando o email foi aberto
    */
   async registerEmailOpen(token: string): Promise<void> {
+    console.log('registerEmailOpen: token ', token);
+
     try {
       // Buscar o log de notificação pelo token
       const logNotificacao = await this.logNotificacaoRepository.findOne({
         where: { tracking_token: token },
       });
+      console.log('registerEmailOpen: logNotificacao', logNotificacao);
+
+      this.logger.log(
+        `Resultado da busca: ${logNotificacao ? `ID ${logNotificacao.id}` : 'NÃO ENCONTRADO'}`,
+      );
 
       if (!logNotificacao) {
         this.logger.warn(`Token de tracking não encontrado: ${token}`);
+
+        // DEBUG: Listar alguns tokens do banco para comparar
+        const tokens = await this.logNotificacaoRepository.find({
+          select: ['id', 'tracking_token'],
+          take: 5,
+          order: { id: 'DESC' },
+        });
+        this.logger.log(`Últimos tokens no banco:`, tokens);
         return;
       }
 
@@ -128,9 +145,7 @@ export class TrackingService {
     }
   }
 
-  /**
-   * Busca logs com detalhes de rastreamento
-   */
+  /* Busca logs com detalhes de rastreamento */
   async getTrackingDetails(limit: number = 50): Promise<any[]> {
     try {
       return await this.logNotificacaoRepository

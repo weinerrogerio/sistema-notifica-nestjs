@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CredorService } from './credor.service';
 import { CreateCredorDto } from './dto/create-credor.dto';
 import { UpdateCredorDto } from './dto/update-credor.dto';
@@ -15,6 +23,11 @@ export class CredorController {
   @Get()
   findAll() {
     return this.credorService.findAll();
+  }
+
+  @Get('teste')
+  teste() {
+    return this.credorService.teste();
   }
 
   @Get(':id')
