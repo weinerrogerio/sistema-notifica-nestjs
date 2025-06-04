@@ -8,14 +8,20 @@ import { UpdateCredorDto } from './dto/update-credor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Credor } from './entities/credor.entity';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CredorService {
   constructor(
     @InjectRepository(Credor)
     private credorRepository: Repository<Credor>,
+    private configService: ConfigService,
   ) {}
 
+  async teste() {
+    const baseUrl = this.configService.get<string>('BASE_URL');
+    return `ok ${baseUrl} ESTA TUDO CERTO`;
+  }
   //ALERTA: ARRUMAR A CRIANÇÃO DE CREDOR --> SACADOR E CEDENTE NÃO É IGUAL A CREDOR!!!!!!!
   async create(createCredorDto: CreateCredorDto) {
     try {

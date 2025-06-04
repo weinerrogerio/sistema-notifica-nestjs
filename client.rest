@@ -112,6 +112,7 @@ Authorization: Bearer {{authToken}}
 
 
 ### ---------------------------------------- NOTIFICAÇÃO !!!!!! -------------------------------
+<<<<<<< HEAD
 
 ###
 POST {{baseUrl}}/notification/teste
@@ -144,3 +145,42 @@ Content-Type: application/json
   "credor": "Prefeitura do Município de Curitiba",
   "portador": "Prefeitura do Município de Curitiba"
 }
+=======
+
+###
+POST {{baseUrl}}/notification/teste
+Authorization: Bearer {{authToken}}
+
+###
+GET {{baseUrl}}/notification/busca
+Authorization: Bearer {{authToken}}
+
+### --> NAO ESQUECER DE RODAR ISSO ANTES DE ENVIAR NOTIFICAÇÕES EM TESTE
+GET {{baseUrl}}/devedor/teste-update-email
+Authorization: Bearer {{authToken}}
+
+
+### ------------------> INTIMAÇÃO -------
+POST {{baseUrl}}/notification/intimacao-tracking
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "logNotificacaoId":1,
+  "nomeDevedor": "DEVEDOR",
+  "devedorEmail": "weinerrogerio@gmail.com",
+  "docDevedor": "08764191982",
+  "distribuicao": "1234",
+  "dataDistribuicao": "15/06/2025",
+  "valorTotal": 2000,
+  "dataVencimento": "15/06/2024", 
+  "tabelionato": "1° Oficio de Protesto de Títulos de Curitiba",
+  "credor": "Prefeitura do Município de Curitiba",
+  "portador": "Prefeitura do Município de Curitiba"
+}
+
+
+###
+GET {{baseUrl}}/tracking/pixel/73511f945eef88283da4b853034a60e0
+Authorization: Bearer {{authToken}}
+>>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
