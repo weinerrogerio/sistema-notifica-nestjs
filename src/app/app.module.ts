@@ -16,7 +16,7 @@ import { LogEventAdminUserModule } from '@app/log_event_admin_user/log_event_adm
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
 import { NotificationModule } from '@app/notification/notification.module';
 <<<<<<< HEAD
-import { TrackingPixelModule } from '@app/tracking-pixel/tracking-pixel.module';
+import { TrackingPixelModule } from '@app/tracking-pixel/tracking.module';
 =======
 import { TrackingPixelModule } from '@app/tracking/tracking.module';
 >>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
