@@ -10,10 +10,19 @@ export class NotificationTemplate extends BaseTemplate {
     contatoCartorio: ContatoCartorio,
     trackingPixelUrl?: string,
   ): string {
+<<<<<<< HEAD
     const trackingPixel = trackingPixelUrl
       ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`
       : '';
 
+=======
+    /* const trackingPixel = trackingPixelUrl
+      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`
+      : ''; */
+    /*  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`; */
+    const teste = trackingPixelUrl;
+    const trackingPixel = `<img src="${trackingPixelUrl}" width="100" height="100" style="background-color: red;border: 5px solid #27ae60; padding: 5px;" alt="" />`;
+>>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
     return `
     <!DOCTYPE html>
       <html lang="pt-BR">
@@ -24,7 +33,11 @@ export class NotificationTemplate extends BaseTemplate {
         ${this.getHeader()}
       </head>
       <body>
+<<<<<<< HEAD
         ${trackingPixel}  
+=======
+          
+>>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
         <div class="header">
             <h1>Intimação de Cobrança</h1>
         </div>
@@ -72,6 +85,10 @@ export class NotificationTemplate extends BaseTemplate {
             <p>Após o pagamento ao tabelionato, o processamento pode levar até 48 horas úteis.</p>
         </div>
         ${this.getFooter()}
+<<<<<<< HEAD
+=======
+        <p>${teste}</p>
+>>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
         ${trackingPixel}
       </body>
     </html>
