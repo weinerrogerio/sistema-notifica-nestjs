@@ -1,4 +1,3 @@
-// tracking/tracking.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,18 +14,19 @@ export class TrackingService {
   ) {}
 
   /**
-   * Gera um token único para rastreamento
+   * Gera um token único e DETERMINÍSTICO para rastreamento
+   * IMPORTANTE: Sempre retorna o mesmo token para o mesmo ID
    */
   generateTrackingToken(logNotificacaoId: number): string {
-    const timestamp = Date.now().toString();
-    const data = `${logNotificacaoId}-${timestamp}`;
+    // Usar uma seed fixa baseada apenas no ID para garantir determinismo
+    const secretKey = process.env.TRACKING_SECRET_KEY || 'default-secret-key';
+    const data = `${logNotificacaoId}-${secretKey}`;
 
-    // Criar hash seguro do ID + timestamp
     return crypto
       .createHash('sha256')
       .update(data)
       .digest('hex')
-      .substring(0, 32); // Usar apenas os primeiros 32 caracteres
+      .substring(0, 32);
   }
 
   /**
@@ -36,7 +36,9 @@ export class TrackingService {
     logNotificacaoId: number,
     token: string,
   ): Promise<void> {
-    console.log('storeTrackingToken: token ', token);
+    this.logger.log(
+      `Armazenando token: ${token} para log ID: ${logNotificacaoId}`,
+    );
 
     try {
       await this.logNotificacaoRepository.update(logNotificacaoId, {
@@ -44,7 +46,7 @@ export class TrackingService {
       });
 
       this.logger.log(
-        `Token de tracking armazenado para log ID: ${logNotificacaoId}`,
+        `Token de tracking armazenado com sucesso para log ID: ${logNotificacaoId}`,
       );
     } catch (error) {
       this.logger.error(
@@ -55,17 +57,25 @@ export class TrackingService {
   }
 
   /**
+   * Gera E armazena o token em uma única operação
+   */
+  async generateAndStoreToken(logNotificacaoId: number): Promise<string> {
+    const token = this.generateTrackingToken(logNotificacaoId);
+    await this.storeTrackingToken(logNotificacaoId, token);
+    return token;
+  }
+
+  /**
    * Registra quando o email foi aberto
    */
   async registerEmailOpen(token: string): Promise<void> {
-    console.log('registerEmailOpen: token ', token);
+    this.logger.log(`Tentativa de registrar abertura com token: ${token}`);
 
     try {
       // Buscar o log de notificação pelo token
       const logNotificacao = await this.logNotificacaoRepository.findOne({
         where: { tracking_token: token },
       });
-      console.log('registerEmailOpen: logNotificacao', logNotificacao);
 
       this.logger.log(
         `Resultado da busca: ${logNotificacao ? `ID ${logNotificacao.id}` : 'NÃO ENCONTRADO'}`,
@@ -99,11 +109,12 @@ export class TrackingService {
       });
 
       this.logger.log(
-        `Email marcado como lido. Log ID: ${logNotificacao.id}, Token: ${token}`,
+        `✅ Email marcado como lido com sucesso! Log ID: ${logNotificacao.id}, Token: ${token}`,
       );
     } catch (error) {
       this.logger.error(
         `Erro ao registrar abertura do email: ${error.message}`,
+        error.stack,
       );
       throw error;
     }
@@ -145,7 +156,9 @@ export class TrackingService {
     }
   }
 
-  /* Busca logs com detalhes de rastreamento */
+  /**
+   * Busca logs com detalhes de rastreamento
+   */
   async getTrackingDetails(limit: number = 50): Promise<any[]> {
     try {
       return await this.logNotificacaoRepository

@@ -29,14 +29,20 @@ export class NotificationService {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
       port: this.configService.get<number>('SMTP_PORT'),
-      secure: false,
+      secure: false, // true para 465, false para outras portas
       auth: {
         user: this.configService.get<string>('SMTP_USER'),
         pass: this.configService.get<string>('SMTP_PASS'),
       },
+      // Configurações adicionais para melhorar deliverability
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      rateDelta: 20000, // 20 segundos
+      rateLimit: 5, // máximo 5 emails por rateDelta
     });
 
-    // Dados o cartorio (pode vir do banco futuramente)
+    // Configuração do contato do tabelionato
     this.contatoTabelionato = {
       nomeTabelionato:
         this.configService.get<string>('COMPANY_NAME') || 'Sua Empresa LTDA',
@@ -324,22 +330,23 @@ export class NotificationService {
 
   // Método simplificado para envio individual
   async sendOneNotificationWithTracking(
-    dados: IntimacaoData /* ,
-    logNotificacaoId: number, */,
+    dados: IntimacaoData,
   ): Promise<boolean> {
     try {
-      // Gerar token e URL do tracking pixel
-      const trackingToken = this.trackingService.generateTrackingToken(
+      // Gerar e armazenar o token
+      const token = await this.trackingService.generateAndStoreToken(
         dados.logNotificacaoId,
       );
-      console.log('trackingToken', trackingToken);
 
-      //ATENÇÃO: USAR ROTA ABERTA PARA RODAR EM LOCALHOST
+      // Criar URLs (usar HTTPS se possível)
       const baseUrl =
-        this.configService.get<string>('BASE_URL') ||
-        this.configService.get<string>('NGROK_PUBLIC_URL');
-      console.log('baseUrl', baseUrl);
-      const trackingPixelUrl = `${baseUrl}/tracking/pixel/${trackingToken}`;
+        this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+      const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
+
+      this.logger.log(
+        `Enviando email com tracking para: ${dados.devedorEmail}`,
+      );
+      this.logger.log(`🔗 Tracking URL: ${trackingPixelUrl}`);
 
       // Gerar HTML com tracking
       const html = NotificationTemplate.gerar(
@@ -349,24 +356,28 @@ export class NotificationService {
       );
 
       // Enviar email
-      const emailEnviado = await this.sendEmail({
+      const success = await this.sendEmail({
         to: dados.devedorEmail,
-        subject: 'Intimação de Protesto',
+        subject: 'Intimação de Protesto - Ação Requerida',
         html,
       });
 
-      // Atualizar status no banco
-      if (emailEnviado) {
+      if (success) {
+        // Atualizar log que email foi enviado
         await this.logNotificacaoRepository.update(dados.logNotificacaoId, {
           email_enviado: true,
           data_envio: new Date(),
-          tracking_token: trackingToken,
         });
+
+        this.logger.log(`Email enviado com sucesso para ${dados.devedorEmail}`);
       }
 
-      return emailEnviado;
+      return success;
     } catch (error) {
-      this.logger.error(`Erro ao enviar notificação: ${error.message}`);
+      this.logger.error(
+        `Erro ao enviar notificação com tracking: ${error.message}`,
+        error.stack,
+      );
       return false;
     }
   }
@@ -374,21 +385,46 @@ export class NotificationService {
   private async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       const mailOptions = {
-        from: this.configService.get<string>('SMTP_FROM'),
+        from: {
+          name: this.contatoTabelionato.nomeTabelionato,
+          address:
+            this.configService.get<string>('SMTP_FROM') ||
+            this.configService.get<string>('SMTP_USER'),
+        },
         to: options.to,
         subject: options.subject,
         html: options.html,
-        attachments: options.attachments,
+        // Headers importantes para deliverability e tracking
+        headers: {
+          'X-Mailer': 'NotificationService',
+          'X-Priority': '1', // Alta prioridade
+          Importance: 'high',
+          'X-MSMail-Priority': 'High',
+          // Header para permitir imagens
+          'Content-Type': 'text/html; charset=UTF-8',
+          // Anti-spam headers
+          'List-Unsubscribe': `<mailto:${this.contatoTabelionato.email}?subject=Unsubscribe>`,
+          'List-Id': 'Intimacoes de Protesto',
+        },
+        // Configurações de tracking
+        trackingSettings: {
+          clickTracking: { enable: false },
+          openTracking: { enable: false }, // Usar nosso próprio tracking
+        },
       };
 
-      await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email enviado para: ${options.to}`);
+      const info = await this.transporter.sendMail(mailOptions);
+
+      this.logger.log(`Email enviado com sucesso: ${info.messageId}`);
+      this.logger.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+
       return true;
     } catch (error) {
-      this.logger.error(`Erro ao enviar email: ${error.message}`);
+      this.logger.error(`Erro ao enviar email: ${error.message}`, error.stack);
       return false;
     }
   }
+
   /* --------------------------------------------------------------------------------------------------- */
   // ENVIA UMA NOTIFICAÇÃO
   async sendNotification(dados: IntimacaoData): Promise<boolean> {
