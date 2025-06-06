@@ -1,8 +1,13 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { TrackingService } from '@app/tracking/tracking.service';
+import { AuthTokenGuard } from '@app/auth/guards/auth-token.guard';
+import { RolesGuard } from '@app/auth/guards/roles.guard';
+import { Roles } from '@app/auth/decorators/roles.decorator';
+import { Role } from '@app/common/enums/role.enum';
 
+@UseGuards(AuthTokenGuard, RolesGuard)
 @Controller('notification')
 export class NotificationController {
   constructor(
@@ -12,6 +17,7 @@ export class NotificationController {
 
   // Envia várias notificações COM tracking (versão otimizada)
   @Post('intimacoes-tracking')
+  @Roles(Role.USER, Role.ADMIN)
   async sendMultipleNotificationsWithTracking() {
     const resultado =
       await this.notificationService.sendNotificationsWithTracking();
@@ -25,6 +31,7 @@ export class NotificationController {
 
   // ENVIA UMA INTIMAÇÃO com tracking (se você tiver o logNotificacaoId)
   @Post('intimacao-tracking')
+  @Roles(Role.USER, Role.ADMIN)
   async sendNotificationWithTracking(@Body() dados: SendNotificationDto) {
     // dados deve incluir logNotificacaoId
     const intimacaoData = dados;
@@ -49,6 +56,7 @@ export class NotificationController {
 
   // Buscar notificações pendentes (com IDs para tracking)
   @Get('pendentes-com-id')
+  @Roles(Role.USER, Role.ADMIN)
   async buscarNotificacoesPendentesComId() {
     const intimacoes =
       await this.notificationService.buscarNotificacoesPendentes();
@@ -61,6 +69,7 @@ export class NotificationController {
 
   // Estatísticas de abertura
   @Get('stats')
+  @Roles(Role.USER, Role.ADMIN)
   async getStats() {
     const stats = await this.trackingService.getEmailOpenStats();
     return {
@@ -71,6 +80,7 @@ export class NotificationController {
 
   // Detalhes de tracking
   @Get('tracking')
+  @Roles(Role.USER, Role.ADMIN)
   async getTracking(@Query('limit') limit?: string) {
     const limitNum = limit ? parseInt(limit) : 50;
     const detalhes = await this.trackingService.getTrackingDetails(limitNum);
@@ -84,12 +94,14 @@ export class NotificationController {
 
   //envia varias notificacoes
   @Post('intimacoes')
+  @Roles(Role.USER, Role.ADMIN)
   async sendMultipleNotifications() {
     return 'fazer rota depois';
   }
 
   //ENVIA UMA INTIMAÇÃO
   @Post('intimacao')
+  @Roles(Role.USER, Role.ADMIN)
   async sendNotification(@Body() dados: SendNotificationDto) {
     const success = await this.notificationService.sendNotification(dados);
 
@@ -104,6 +116,7 @@ export class NotificationController {
   /* -------------------------------------   BUSCAS  -------------------------------------- */
   //BUSCA POR NOTIFICAÇÕES PENDENTES
   @Get('busca')
+  @Roles(Role.USER, Role.ADMIN)
   async buscarNotificacoesPendentes() {
     const intimacoes =
       await this.notificationService.buscarNotificacoesPendentes();
@@ -113,6 +126,7 @@ export class NotificationController {
 
   //BUSCA POR NOTIFICAÇÕES PENDENTES POR DEVEDOR
   @Get('busca/:devedorId')
+  @Roles(Role.USER, Role.ADMIN)
   async buscarNotificacoesPendentesPorDevedor(@Body() devedorId: number) {
     const intimacoes =
       await this.notificationService.buscarNotificacoesPendentesPorDevedor(
@@ -124,6 +138,7 @@ export class NotificationController {
 
   //BUSCA POR NOTIFICAÇÕES PENDENTES POR DISTRIBUIÇÃO
   @Get('busca/distribuicao/:numDistribuicao')
+  @Roles(Role.USER, Role.ADMIN)
   async buscarNotificacoesPendentesPorDistribuicao(
     @Body() numDistribuicao: string,
   ) {

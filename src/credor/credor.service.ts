@@ -18,10 +18,6 @@ export class CredorService {
     private configService: ConfigService,
   ) {}
 
-  async teste() {
-    const baseUrl = this.configService.get<string>('BASE_URL');
-    return `ok ${baseUrl} ESTA TUDO CERTO`;
-  }
   //ALERTA: ARRUMAR A CRIANÇÃO DE CREDOR --> SACADOR E CEDENTE NÃO É IGUAL A CREDOR!!!!!!!
   async create(createCredorDto: CreateCredorDto) {
     try {
