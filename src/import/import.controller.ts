@@ -32,21 +32,25 @@ export class ImportController {
   } */
 
   @Get()
+  @Roles(Role.USER, Role.ADMIN)
   findAll() {
     return this.importService.findAll();
   }
 
   @Get(':id')
+  @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {
     return this.importService.findOne(+id);
   }
 
   @Patch(':id')
+  @Roles(Role.USER, Role.ADMIN)
   update(@Param('id') id: string, @Body() updateImportDto: UpdateImportDto) {
     return this.importService.update(+id, updateImportDto);
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.importService.remove(+id);
   }

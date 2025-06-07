@@ -1,21 +1,26 @@
 import { Module } from '@nestjs/common';
-import { NotificationService } from './notification.service';
-import { NotificationController } from './notification.controller';
-import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
-import { DocProtestoModule } from '@app/doc-protesto/doc-protesto.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 import { TrackingPixelModule } from '@app/tracking/tracking.module';
 
+import { NotificationService } from './notification.service';
+import { NotificationQueryService } from './services/notification-search.service';
+import { EmailService } from './services/notification-email.service';
+import { NotificationOrchestratorService } from './services/notification-log.service';
+
 @Module({
   imports: [
-    TrackingPixelModule,
-    LogNotificacaoModule,
-    DocProtestoModule,
     TypeOrmModule.forFeature([LogNotificacao]),
+    ConfigModule,
+    TrackingPixelModule,
   ],
-  controllers: [NotificationController],
-  providers: [NotificationService],
+  providers: [
+    NotificationQueryService,
+    EmailService,
+    NotificationOrchestratorService,
+    NotificationService,
+  ],
   exports: [NotificationService],
 })
 export class NotificationModule {}
