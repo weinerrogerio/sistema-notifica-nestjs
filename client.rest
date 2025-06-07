@@ -112,7 +112,6 @@ Authorization: Bearer {{authToken}}
 
 
 ### ---------------------------------------- NOTIFICAÇÃO !!!!!! -------------------------------
-<<<<<<< HEAD
 
 ###
 POST {{baseUrl}}/notification/teste
@@ -166,7 +165,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "logNotificacaoId":1,
+  "logNotificacaoId":2,
   "nomeDevedor": "DEVEDOR",
   "devedorEmail": "weinerrogerio@gmail.com",
   "docDevedor": "08764191982",
@@ -183,4 +182,3 @@ Content-Type: application/json
 ###
 GET {{baseUrl}}/tracking/pixel/73511f945eef88283da4b853034a60e0
 Authorization: Bearer {{authToken}}
->>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
