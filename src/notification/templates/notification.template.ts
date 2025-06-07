@@ -11,21 +11,6 @@ export class NotificationTemplate extends BaseTemplate {
     contatoCartorio: ContatoCartorio,
     trackingPixelUrl?: string,
   ): string {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    const trackingPixel = trackingPixelUrl
-      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`
-      : '';
-
-=======
-    /* const trackingPixel = trackingPixelUrl
-      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`
-      : ''; */
-    /*  const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`; */
-    const teste = trackingPixelUrl;
-    const trackingPixel = `<img src="${trackingPixelUrl}" width="100" height="100" style="background-color: red;border: 5px solid #27ae60; padding: 5px;" alt="" />`;
->>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
-=======
     // Múltiplos pixels para aumentar chance de carregamento
     const trackingPixels = trackingPixelUrl
       ? `
@@ -47,7 +32,6 @@ export class NotificationTemplate extends BaseTemplate {
       ? trackingPixelUrl.replace('/pixel/', '/confirm/')
       : '';
 
->>>>>>> b8081eb791c714b61dedea0de09e4195d42ecc89
     return `
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -56,19 +40,6 @@ export class NotificationTemplate extends BaseTemplate {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Intimação de Protesto</title>
-<<<<<<< HEAD
-        ${this.getHeader()}
-      </head>
-      <body>
-<<<<<<< HEAD
-        ${trackingPixel}  
-=======
-          
->>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
-        <div class="header">
-            <h1>Intimação de Cobrança</h1>
-        </div>
-=======
         
         <!--[if mso]>
         <style type="text/css">
@@ -180,7 +151,6 @@ export class NotificationTemplate extends BaseTemplate {
                 <h1>⚖️ Intimação de Cobrança</h1>
                 <p style="margin: 10px 0 0 0; opacity: 0.9;">Documento Oficial</p>
             </div>
->>>>>>> b8081eb791c714b61dedea0de09e4195d42ecc89
 
             <div class="content">
                 <h2 style="color: #2c3e50;">Prezado(a) ${dados.nomeDevedor},</h2>
@@ -246,15 +216,6 @@ export class NotificationTemplate extends BaseTemplate {
                 <p>Sistema Automatizado de Notificações</p>
             </div>
         </div>
-<<<<<<< HEAD
-        ${this.getFooter()}
-<<<<<<< HEAD
-=======
-        <p>${teste}</p>
->>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
-        ${trackingPixel}
-      </body>
-=======
 
         ${trackingPixels}
 
@@ -272,7 +233,6 @@ export class NotificationTemplate extends BaseTemplate {
         }
         </script>
     </body>
->>>>>>> b8081eb791c714b61dedea0de09e4195d42ecc89
     </html>
     `;
   }
