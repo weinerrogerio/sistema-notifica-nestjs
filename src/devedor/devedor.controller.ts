@@ -23,13 +23,14 @@ import { Role } from '@app/common/enums/role.enum';
 export class DevedorController {
   constructor(private readonly devedorService: DevedorService) {}
 
-  @Roles(Role.ADMIN)
   @Post()
+  @Roles(Role.USER, Role.ADMIN)
   create(@Body() createDevedorDto: CreateDevedorDto) {
     return this.devedorService.create(createDevedorDto);
   }
 
   @Get('teste-update-email')
+  @Roles(Role.USER, Role.ADMIN)
   findAllWithEmailNull() {
     return this.devedorService.updateAllEmailTeste();
   }
@@ -42,6 +43,7 @@ export class DevedorController {
 
   // endpoint para buscar email a partir do cnpj:
   @Get('emails')
+  @Roles(Role.USER, Role.ADMIN)
   async buscarEmails() {
     try {
       const resultado = await this.devedorService.buscarEmailsDevedores();
@@ -63,20 +65,20 @@ export class DevedorController {
     }
   }
 
-  @Roles(Role.USER, Role.ADMIN)
   @Get(':id')
+  @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {
     return this.devedorService.findOne(+id);
   }
 
-  @Roles(Role.ADMIN)
   @Patch(':id')
+  @Roles(Role.ADMIN)
   update(@Param('id') id: string, @Body() updateDevedorDto: UpdateDevedorDto) {
     return this.devedorService.update(+id, updateDevedorDto);
   }
 
-  @Roles(Role.ADMIN)
   @Delete(':id')
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.devedorService.remove(+id);
   }
