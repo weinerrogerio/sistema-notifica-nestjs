@@ -1,11 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { CreateContatoTabelionatoDto } from './dto/create-contato-tabelionato.dto';
 import { UpdateContatoTabelionatoDto } from './dto/update-contato-tabelionato.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ContatoTabelionato } from './entities/contato-tabelionato.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ContatoTabelionatoService {
-  create(createContatoTabelionatoDto: CreateContatoTabelionatoDto) {
-    return 'This action adds a new contatoTabelionato';
+  constructor(
+    @InjectRepository(ContatoTabelionato)
+    private readonly contatoTabelionatoRepository: Repository<ContatoTabelionato>,
+  ) {}
+
+  async create(createContatoTabelionatoDto: CreateContatoTabelionatoDto) {
+    const newContatoTabelionatoDto = {
+      nomeTabelionato: createContatoTabelionatoDto.nomeTabelionato,
+      codTabelionato: createContatoTabelionatoDto.codTabelionato,
+      cnpj: createContatoTabelionatoDto?.cnpj,
+      titular: createContatoTabelionatoDto.titular,
+      telefone: createContatoTabelionatoDto.telefone,
+      email: createContatoTabelionatoDto.email,
+      endereco: createContatoTabelionatoDto?.endereco,
+      cidade: createContatoTabelionatoDto?.cidade,
+      uf: createContatoTabelionatoDto?.uf,
+      cep: createContatoTabelionatoDto?.cep,
+      observacao: createContatoTabelionatoDto?.observacao,
+    };
+    /* const newContatoTabelionato = this.contatoTabelionatoRepository.create(
+      newContatoTabelionatoDto,
+    ); */
+    await this.contatoTabelionatoRepository.save(newContatoTabelionatoDto);
   }
 
   findAll() {
@@ -17,7 +41,8 @@ export class ContatoTabelionatoService {
   }
 
   update(id: number, updateContatoTabelionatoDto: UpdateContatoTabelionatoDto) {
-    return `This action updates a #${id} contatoTabelionato`;
+    console.log(updateContatoTabelionatoDto);
+    return `This action updates a #${id} contatoTabelionato::: ${updateContatoTabelionatoDto}`;
   }
 
   remove(id: number) {
