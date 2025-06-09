@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { CreateDevedorDto } from './dto/create-devedor.dto';
 import { UpdateDevedorDto } from './dto/update-devedor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -32,7 +37,8 @@ export class DevedorService {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
         throw new ConflictException('Email ja cadastrado');
       }
-      throw error;
+      // Erro genérico para casos não previstos
+      throw new InternalServerErrorException('Erro interno do servidor');
     }
   }
 

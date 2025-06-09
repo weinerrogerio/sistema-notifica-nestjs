@@ -182,3 +182,25 @@ Content-Type: application/json
 ###
 GET {{baseUrl}}/tracking/pixel/73511f945eef88283da4b853034a60e0
 Authorization: Bearer {{authToken}}
+
+
+
+### -----------------------------------  CONTATO TABELIONATO --------------------------
+##
+POST {{baseUrl}}/contato-tabelionato/
+Content-Type: application/json
+
+{
+   "nomeTabelionato": "TESTE",
+   "codTabelionato": "02",
+   "cnpj": "75.590.133/0001-65",
+   "titular": "Nome Titular",
+   "telefone": "(41) 3053-4360",
+   "email": "certidao@3distrib.com.br",
+   "endereco": "Rua Visconde do Rio branco, 1341",
+   "cidade": "Curitiba",
+   "uf": "pr", 
+   "cep": "12345678",
+   "observacao": "3 Distribuidor de curitiba..."
+}
+

@@ -1,3 +1,6 @@
+// src/common/index.ts
+export * from './utils/date.utils';
+// adicionar mais exportações conforme necessário
 // Exportação centralizada de todos os validadores
 export { DocumentValidator } from './utils/document.validator';
 export { DateValidator } from './utils/date.validator';
