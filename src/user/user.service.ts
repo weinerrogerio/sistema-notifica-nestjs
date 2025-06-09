@@ -57,7 +57,6 @@ export class UserService {
       }
       //melhorar esse tratamento de erro
       console.log('error - CREATE USER');
-
       throw error;
     }
   }

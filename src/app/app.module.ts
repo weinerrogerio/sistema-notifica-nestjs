@@ -17,6 +17,7 @@ import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-impo
 import { NotificationModule } from '@app/notification/notification.module';
 
 import { TrackingPixelModule } from '@app/tracking/tracking.module';
+import { ContatoTabelionatoModule } from '@app/contato-tabelionato/contato-tabelionato.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { TrackingPixelModule } from '@app/tracking/tracking.module';
     LogUsersModule,
     LogEventAdminUserModule,
     LogArquivoImportModule,
+    ContatoTabelionatoModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [

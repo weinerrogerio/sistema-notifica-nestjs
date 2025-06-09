@@ -1,13 +1,14 @@
-import { Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+@Entity('contato_tabelionato')
 export class ContatoTabelionato {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: false })
   nomeTabelionato: string; // 1ª Tabelionato, 2ª Tabelionato, 3ª Tabelionato,...
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: false })
   codTabelionato: string; //01, 02, 03,...
 
   @Column()

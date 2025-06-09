@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateDocProtestoDto } from './dto/create-doc-protesto.dto';
 import { UpdateDocProtestoDto } from './dto/update-doc-protesto.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -31,8 +31,11 @@ export class DocProtestoService {
       return await this.docProtestoRepository.save(newDocProtesto);
     } catch (error) {
       console.log(error);
-      throw new Error(
+      /* throw new Error(
         'Falha ao processar os dados importados para Documento de protesto.',
+      ); */
+      throw new BadRequestException(
+        `Falha ao processar os dados importados para Documento de protesto.  ${createDocProtestoDto}       ${error}   `,
       );
     }
   }

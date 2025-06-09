@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateApresentanteDto } from './dto/create-apresentante.dto';
 import { UpdateApresentanteDto } from './dto/update-apresentante.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,9 +24,16 @@ export class ApresentanteService {
       return await this.apresentanteRepository.save(newApresentante);
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-        throw new BadRequestException(error);
+        throw new BadRequestException(
+          `Apresentante informado ja esta cadastrado  ${error}`,
+        );
       }
-      throw error;
+      /* throw error;
+      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
+        throw new ConflictException('O código de tabelionato já está em uso');
+      } */
+      // Erro genérico para casos não previstos
+      throw new InternalServerErrorException('Erro interno do servidor');
     }
   }
   async findOrCreate(createApresentanteDto: CreateApresentanteDto) {

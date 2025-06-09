@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { CreateCredorDto } from './dto/create-credor.dto';
 import { UpdateCredorDto } from './dto/update-credor.dto';
@@ -30,9 +31,11 @@ export class CredorService {
       return newCredor;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-        throw new BadRequestException(error);
+        throw new BadRequestException(
+          `Credor informado ja esta cadastrado  ${error}`,
+        );
       }
-      throw error;
+      throw new InternalServerErrorException('Erro interno do servidor');
     }
   }
   async findOrCreate(createCredorDto: CreateCredorDto) {
