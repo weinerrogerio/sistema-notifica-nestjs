@@ -17,7 +17,7 @@ export class ContatoTabelionato {
   titular: string;
 
   @Column()
-  telefone: string;
+  telefone?: string;
 
   @Column()
   email: string;

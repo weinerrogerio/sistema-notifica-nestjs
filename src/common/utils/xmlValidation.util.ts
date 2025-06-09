@@ -1,4 +1,7 @@
-import { isValidCNPJ, isValidCPF } from '@brazilian-utils/brazilian-utils';
+import { DocumentValidator } from './document.validator';
+import { DateValidator } from './date.validator';
+import { AddressValidator } from './address.validator';
+import { NumericValidator } from './numeric.validator';
 
 // Tipo para os dados importados - mais flexível que uma interface rígida
 export type ImportDataItem = Record<string, string>;
@@ -76,10 +79,8 @@ export class DataValidation {
       return;
     }
 
-    const isCpfValid = isValidCPF(item.documento);
-    const isCnpjValid = isValidCNPJ(item.documento);
-
-    if (!isCpfValid && !isCnpjValid) {
+    // Usando o validador comum
+    if (!DocumentValidator.isValidDocument(item.documento)) {
       errors.push({
         linha,
         campo: 'documento',
@@ -90,10 +91,8 @@ export class DataValidation {
 
     // Validação do documento do sacador se existir
     if (item.documento_sacador && item.documento_sacador.trim() !== '') {
-      const isSacadorCpfValid = isValidCPF(item.documento_sacador);
-      const isSacadorCnpjValid = isValidCNPJ(item.documento_sacador);
-
-      if (!isSacadorCpfValid && !isSacadorCnpjValid) {
+      // Usando o validador comum
+      if (!DocumentValidator.isValidDocument(item.documento_sacador)) {
         errors.push({
           linha,
           campo: 'documento_sacador',
@@ -146,7 +145,8 @@ export class DataValidation {
     dateFields.forEach((field) => {
       const dateValue = item[field];
       if (dateValue && dateValue.trim() !== '') {
-        if (!this.isValidDateFormat(dateValue)) {
+        // Usando o validador comum
+        if (!DateValidator.isValidDateFormat(dateValue)) {
           errors.push({
             linha,
             campo: field,
@@ -169,8 +169,8 @@ export class DataValidation {
     monetaryFields.forEach((field) => {
       const value = item[field];
       if (value && value.trim() !== '') {
-        const numericValue = this.parseMonetaryValue(value);
-        if (isNaN(numericValue) || numericValue < 0) {
+        // Usando o validador comum
+        if (!NumericValidator.isValidMonetaryValue(value)) {
           errors.push({
             linha,
             campo: field,
@@ -187,7 +187,8 @@ export class DataValidation {
     numericFields.forEach((field) => {
       const value = item[field];
       if (value && value.trim() !== '') {
-        if (!/^\d+$/.test(value.trim())) {
+        // Usando o validador comum
+        if (!NumericValidator.isNumericOnly(value)) {
           errors.push({
             linha,
             campo: field,
@@ -205,8 +206,8 @@ export class DataValidation {
     errors: ValidationError[],
   ): void {
     if (item.cep && item.cep.trim() !== '') {
-      const cepPattern = /^\d{5}-?\d{3}$|^\d{8}$/;
-      if (!cepPattern.test(item.cep)) {
+      // Usando o validador comum
+      if (!AddressValidator.isValidCep(item.cep)) {
         errors.push({
           linha,
           campo: 'cep',
@@ -223,37 +224,8 @@ export class DataValidation {
     errors: ValidationError[],
   ): void {
     if (item.uf && item.uf.trim() !== '') {
-      const validUfs = [
-        'AC',
-        'AL',
-        'AP',
-        'AM',
-        'BA',
-        'CE',
-        'DF',
-        'ES',
-        'GO',
-        'MA',
-        'MT',
-        'MS',
-        'MG',
-        'PA',
-        'PB',
-        'PR',
-        'PE',
-        'PI',
-        'RJ',
-        'RN',
-        'RS',
-        'RO',
-        'RR',
-        'SC',
-        'SP',
-        'SE',
-        'TO',
-      ];
-
-      if (!validUfs.includes(item.uf.toUpperCase())) {
+      // Usando o validador comum
+      if (!AddressValidator.isValidUf(item.uf)) {
         errors.push({
           linha,
           campo: 'uf',
@@ -262,28 +234,5 @@ export class DataValidation {
         });
       }
     }
-  }
-
-  private isValidDateFormat(dateString: string): boolean {
-    const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!datePattern.test(dateString)) {
-      return false;
-    }
-
-    const [day, month, year] = dateString.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
-
-    return (
-      date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day
-    );
-  }
-
-  private parseMonetaryValue(value: string): number {
-    // Remove pontos de milhares e substitui vírgula por ponto
-    const cleanValue = value.replace(/\./g, '').replace(',', '.');
-
-    return parseFloat(cleanValue);
   }
 }
