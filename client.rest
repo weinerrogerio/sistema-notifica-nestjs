@@ -72,7 +72,7 @@ Authorization: Bearer {{authToken}}
 
 
 
-### --------------------------------------------------------- LOGIN !!!!!!
+### -------------------------------------------------- LOGIN !!!!!!
 ## AUTH
 POST {{baseUrl}}/auth/
 
@@ -93,7 +93,7 @@ Content-Type: application/json
 
 
 ###
-## LOGIN - AUTH
+## --------------------------LOGIN - AUTH
 # @name authenticate
 POST  {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -188,12 +188,13 @@ Authorization: Bearer {{authToken}}
 ### -----------------------------------  CONTATO TABELIONATO --------------------------
 ##
 POST {{baseUrl}}/contato-tabelionato/
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
    "nomeTabelionato": "TESTE",
    "codTabelionato": "02",
-   "cnpj": "75.590.133/0001-65",
+   "cnpj": "75.590.133/0001-64",
    "titular": "Nome Titular",
    "telefone": "(41) 3053-4360",
    "email": "certidao@3distrib.com.br",
@@ -203,4 +204,25 @@ Content-Type: application/json
    "cep": "12345678",
    "observacao": "3 Distribuidor de curitiba..."
 }
+
+
+###
+## ------------ MOSTRA TODOS ----------
+GET {{baseUrl}}/contato-tabelionato/
+Authorization: Bearer {{authToken}}
+
+### 
+##----------------- UPDATE -----------
+PATCH {{baseUrl}}/contato-tabelionato/a
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+   "email": "meuemail@gmail.com.br"
+}
+
+###
+## 
+DELETE {{baseUrl}}/contato-tabelionato/ID
+Authorization: Bearer {{authToken}}
 

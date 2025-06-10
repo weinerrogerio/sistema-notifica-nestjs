@@ -4,6 +4,7 @@ import {
   HttpException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateContatoTabelionatoDto } from './dto/create-contato-tabelionato.dto';
 import { UpdateContatoTabelionatoDto } from './dto/update-contato-tabelionato.dto';
@@ -77,20 +78,83 @@ export class ContatoTabelionatoService {
     }
   }
 
-  findAll() {
-    return `This action returns all contatoTabelionato`;
+  async findAll() {
+    const contatoTabelionato = await this.contatoTabelionatoRepository.find({
+      order: { id: 'desc' },
+    });
+    return contatoTabelionato;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} contatoTabelionato`;
+  async findOne(id: number) {
+    const contatoTabelionato = await this.contatoTabelionatoRepository.findOne({
+      where: { id: id },
+    });
+    return contatoTabelionato;
   }
 
-  update(id: number, updateContatoTabelionatoDto: UpdateContatoTabelionatoDto) {
-    console.log(updateContatoTabelionatoDto);
-    return `This action updates a #${id} contatoTabelionato::: ${updateContatoTabelionatoDto}`;
+  async update(
+    id: number,
+    updateContatoTabelionatoDto: UpdateContatoTabelionatoDto,
+  ) {
+    const dados = {
+      codTabelionato: updateContatoTabelionatoDto.codTabelionato,
+      nomeTabelionato: updateContatoTabelionatoDto.nomeTabelionato,
+      cnpj: updateContatoTabelionatoDto.cnpj,
+      titular: updateContatoTabelionatoDto.titular,
+      telefone: updateContatoTabelionatoDto.telefone,
+      email: updateContatoTabelionatoDto.email,
+      endereco: updateContatoTabelionatoDto.endereco,
+      cidade: updateContatoTabelionatoDto.cidade,
+      uf: updateContatoTabelionatoDto.uf,
+      cep: updateContatoTabelionatoDto.cep,
+      observacao: updateContatoTabelionatoDto.observacao,
+    };
+    const dadosTabelionato = await this.contatoTabelionatoRepository.preload({
+      id,
+      ...dados,
+    });
+
+    if (!dadosTabelionato) {
+      throw new NotFoundException(`Dados de tabelionato não encontrados ${id}`);
+    }
+
+    return this.contatoTabelionatoRepository.save(dadosTabelionato);
+    /* @Column({ nullable: false })
+      nomeTabelionato: string; // 1ª Tabelionato, 2ª Tabelionato, 3ª Tabelionato,...
+    
+      @Column({ unique: true, nullable: false })
+      codTabelionato: string; //01, 02, 03,...
+    
+      @Column()
+      cnpj?: string;
+    
+      @Column()
+      titular: string;
+    
+      @Column()
+      telefone?: string;
+    
+      @Column()
+      email: string;
+    
+      @Column()
+      endereco?: string;
+    
+      @Column()
+      cidade?: string;
+    
+      @Column()
+      uf?: string;
+    
+      @Column()
+      cep?: string;
+    
+      @Column()
+      observacao?: string; */
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} contatoTabelionato`;
+  async remove(id: number) {
+    const contatoTabelionato = await this.findOne(id);
+    return this.contatoTabelionatoRepository.remove(contatoTabelionato);
   }
 }
