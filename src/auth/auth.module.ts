@@ -12,8 +12,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserModule } from '@app/user/user.module';
 import { LogUsersModule } from '@app/log-user/log-users.module';
 /* import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { APP_GUARD } from '@nestjs/core'; */
+  import { RolesGuard } from './guards/roles.guard';
+  import { APP_GUARD } from '@nestjs/core'; */
 
 //moduleo global--> utilizado em todos os modulos
 @Global()
@@ -48,6 +48,6 @@ import { APP_GUARD } from '@nestjs/core'; */
     AuthService,
     JwtStrategy,
   ],
-  exports: [HashingService, JwtModule, ConfigModule],
+  exports: [HashingService, JwtModule, ConfigModule, AuthService],
 })
 export class AuthModule {}

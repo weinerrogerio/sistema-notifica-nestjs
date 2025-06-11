@@ -1,20 +1,30 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
-import { UserService } from '@app/user/user.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-/*
-import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
- */
+import { TokenPayloadDto } from './dto/token-payload.dto';
+import { AuthTokenGuard } from './guards/auth-token.guard';
+import { TokenPayloadParam } from './params/token-payload.param';
+import {
+  LoginResponse,
+  RefreshTokenResponse,
+  LogoutResponse,
+} from './types/auth.types';
+
+// Extend Request interface para incluir propriedades de IP
+declare global {
+  //eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      ip?: string;
+      connection?: {
+        remoteAddress?: string;
+      };
+    }
+  }
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -23,34 +33,55 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+  ): Promise<LoginResponse> {
+    // Obtém o IP real do cliente considerando proxies
+    const ipAddress = this.getClientIp(req);
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    return this.authService.login(loginDto, ipAddress, userAgent);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Post('refresh')
+  async refreshToken(
+    @Body() body: { refreshToken: string },
+    @Req() req: Request,
+  ): Promise<RefreshTokenResponse> {
+    const ipAddress = this.getClientIp(req);
+    return this.authService.refreshTokens(body.refreshToken, ipAddress);
+  }
+
+  @UseGuards(AuthTokenGuard)
   @Post('logout')
-  async logout(@Req() req: Request) {
-    // Assume que o usuário id está em req.user.payload.sub após autenticação JWT
-    const userId = req?.['payload']?.sub;
-    return this.authService.logout(userId);
+  async logout(
+    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
+  ): Promise<LogoutResponse> {
+    return this.authService.logout(tokenPayload.sub);
   }
 
-  // endpoint para validar token
-  @Get('validate')
-  async validateToken(@Headers('authorization') authorization: string) {
-    if (!authorization) {
-      throw new Error('Token não fornecido');
+  @UseGuards(AuthTokenGuard)
+  @Post('force-logout')
+  async forceLogout(
+    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
+  ): Promise<LogoutResponse> {
+    return this.authService.forceLogoutUser(tokenPayload.sub);
+  }
+
+  private getClientIp(req: Request): string {
+    // Considera headers de proxy (X-Forwarded-For, X-Real-IP)
+    const forwarded = req.headers['x-forwarded-for'] as string;
+    const realIp = req.headers['x-real-ip'] as string;
+
+    if (forwarded) {
+      return forwarded.split(',')[0].trim();
     }
 
-    const token = authorization.replace('Bearer ', '');
-    return await this.authService.validateToken(token);
-  }
+    if (realIp) {
+      return realIp;
+    }
 
-  //rota aberta para registro de usuário -- APENAS PARA TESTE
-  /* @Post('register')
-  register(@Body() createUserDto: CreateUserDto) {
-    // Forçar role de USER para registro público
-    createUserDto.role = Role.USER;
-    return this.userService.create(createUserDto);
-  } */
+    return req.ip || '127.0.0.1';
+  }
 }

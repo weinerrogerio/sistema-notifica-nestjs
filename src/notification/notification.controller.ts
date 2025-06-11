@@ -33,6 +33,8 @@ export class NotificationController {
   @Post('intimacao-tracking')
   @Roles(Role.USER, Role.ADMIN)
   async sendNotificationWithTracking(@Body() dados: SendNotificationDto) {
+    console.log('TESTES DADOS: ', dados);
+
     // dados deve incluir logNotificacaoId
     const intimacaoData = dados;
 

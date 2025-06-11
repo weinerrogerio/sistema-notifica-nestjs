@@ -1,93 +1,209 @@
 import { Injectable } from '@nestjs/common';
-import { CreateLogUserDto } from './dto/create-log-user.dto';
-import { LogUser } from './entities/log-user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserService } from '@app/user/user.service';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan, LessThan } from 'typeorm';
+import { LogUser } from './entities/log-user.entity';
+import { CreateLogUserDto } from './dto/create-log-user.dto';
+import { UpdateLogUserDto } from './dto/update-log-user.dto';
+import { HashingService } from '@app/auth/hashing/hashing.service';
 
 @Injectable()
 export class LogUsersService {
   constructor(
     @InjectRepository(LogUser)
     private readonly logUserRepository: Repository<LogUser>,
-    private readonly userService: UserService,
+    private readonly hashingService: HashingService,
   ) {}
 
-  async createLoginEntry(userId: number) {
-    // Primeiro, fechamos qualquer sessão ativa que o usuário possa ter
-    await this.closeActiveSession(userId);
-
-    // Calculamos quando o token vai expirar baseado na configuração do JWT
-    const tokenExpiryDate = this.calculateTokenExpiry();
-
-    const user = await this.userService.findOneById(userId);
-    if (!user) throw new Error('Usuário nao encontrado');
-    const logUser = {
-      log_in: new Date(),
-      fk_id_user: user.id,
-      token_expiry_date: tokenExpiryDate,
-    };
+  // Métodos básicos do CRUD
+  async create(createLogUserDto: CreateLogUserDto): Promise<LogUser> {
+    const logUser = this.logUserRepository.create(createLogUserDto);
     return await this.logUserRepository.save(logUser);
   }
 
-  async updateLogoutEntry(userId: number): Promise<LogUser | null> {
-    // Busca o registro de login mais recente para o usuário que ainda não tem logout
-    const lastLoginEntry = await this.logUserRepository.findOne({
-      where: {
-        fk_id_user: userId,
-        log_out: null, // Considera apenas os registros sem logout
-      },
-      order: {
-        createdAt: 'DESC', // Pega o mais recente
-      },
+  async findAll(): Promise<LogUser[]> {
+    return await this.logUserRepository.find({
+      relations: ['user'],
+      order: { data_registro: 'DESC' },
     });
-    if (!lastLoginEntry) {
-      return null;
+  }
+
+  async findOne(id: number): Promise<LogUser> {
+    const logUser = await this.logUserRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+
+    if (!logUser) {
+      throw new Error(`LogUser with ID ${id} not found`);
     }
-    // Atualiza a data de logout
-    const logOut = {
+
+    return logUser;
+  }
+
+  async update(
+    id: number,
+    updateLogUserDto: UpdateLogUserDto,
+  ): Promise<LogUser> {
+    await this.logUserRepository.update(id, updateLogUserDto);
+    return this.findOne(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.logUserRepository.delete(id);
+  }
+
+  // Métodos específicos para autenticação
+  async createLoginEntry(
+    userId: number,
+    refreshToken: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<LogUser> {
+    // Fecha sessões ativas anteriores
+    await this.closeActiveSession(userId);
+
+    const refreshTokenHash = await this.hashingService.hash(refreshToken);
+    const refreshExpiryDate = this.calculateRefreshTokenExpiry();
+
+    const logUser = this.logUserRepository.create({
+      log_in: new Date(),
+      data_registro: new Date(),
+      fk_user: userId,
+      refresh_token_hash: refreshTokenHash,
+      refresh_token_expires_at: refreshExpiryDate,
+      ip_address: ipAddress,
+      user_agent: userAgent,
+      session_active: true,
+      last_activity: new Date(),
+    });
+
+    return await this.logUserRepository.save(logUser);
+  }
+
+  async findActiveSessionByRefreshToken(
+    refreshToken: string,
+  ): Promise<LogUser | null> {
+    const sessions = await this.logUserRepository.find({
+      where: {
+        session_active: true,
+        refresh_token_expires_at: MoreThan(new Date()),
+      },
+      relations: ['user'],
+    });
+
+    for (const session of sessions) {
+      if (session.refresh_token_hash) {
+        const isValid = await this.hashingService.compare(
+          refreshToken,
+          session.refresh_token_hash,
+        );
+        if (isValid) {
+          return session;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async updateRefreshToken(
+    sessionId: number,
+    newRefreshToken: string,
+  ): Promise<void> {
+    const refreshTokenHash = await this.hashingService.hash(newRefreshToken);
+    const refreshExpiryDate = this.calculateRefreshTokenExpiry();
+
+    await this.logUserRepository.update(sessionId, {
+      refresh_token_hash: refreshTokenHash,
+      refresh_token_expires_at: refreshExpiryDate,
+      last_activity: new Date(),
+    });
+  }
+
+  async updateLastActivity(sessionId: number): Promise<void> {
+    await this.logUserRepository.update(sessionId, {
+      last_activity: new Date(),
+    });
+  }
+
+  async logoutSession(
+    sessionId: number,
+    endType: string = 'explicit',
+  ): Promise<void> {
+    await this.logUserRepository.update(sessionId, {
       log_out: new Date(),
-      session_end_type: 'Explicito',
-    };
-    //lastLoginEntry.log_out = new Date();
-    return this.logUserRepository.save(logOut);
+      session_active: false,
+      session_end_type: endType,
+      refresh_token_hash: null,
+    });
   }
 
-  create(createLogUserDto: CreateLogUserDto) {
-    console.log(createLogUserDto);
-
-    return 'This action adds a new logUser';
+  async findActiveSessionByUserId(userId: number): Promise<LogUser | null> {
+    return await this.logUserRepository.findOne({
+      where: {
+        fk_user: userId,
+        session_active: true,
+      },
+      order: { log_in: 'DESC' },
+    });
   }
 
-  findAll() {
-    return `This action returns all logUsers`;
+  async revokeAllUserSessions(userId: number): Promise<number> {
+    const result = await this.logUserRepository.update(
+      {
+        fk_user: userId,
+        session_active: true,
+      },
+      {
+        log_out: new Date(),
+        session_active: false,
+        session_end_type: 'revoked',
+        refresh_token_hash: null,
+      },
+    );
+
+    return result.affected || 0;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} logUser`;
+  async cleanExpiredSessions(): Promise<number> {
+    const result = await this.logUserRepository.update(
+      {
+        session_active: true,
+        refresh_token_expires_at: LessThan(new Date()),
+      },
+      {
+        log_out: new Date(),
+        session_active: false,
+        session_end_type: 'expired',
+        refresh_token_hash: null,
+      },
+    );
+
+    return result.affected || 0;
   }
 
   private async closeActiveSession(userId: number): Promise<void> {
-    const activeSessions = await this.logUserRepository.find({
-      where: {
-        fk_id_user: userId,
-        log_out: null,
+    await this.logUserRepository.update(
+      {
+        fk_user: userId,
+        session_active: true,
       },
-    });
-
-    for (const session of activeSessions) {
-      session.log_out = new Date();
-      session.session_end_type = 'implícito'; // Registramos que o logout foi implícito
-      await this.logUserRepository.save(session);
-    }
+      {
+        log_out: new Date(),
+        session_active: false,
+        session_end_type: 'implicit',
+        refresh_token_hash: null,
+      },
+    );
   }
 
-  private calculateTokenExpiry(): Date {
-    // Assumindo que o token expira em 24 horas (1d --> 86400s)
-    // Obter o valor JWT_TTL do ambiente e converter para número
-    const jwtTtlSeconds = parseInt(process.env.JWT_TTL || '86400', 10);
+  private calculateRefreshTokenExpiry(): Date {
+    const refreshTtlSeconds = parseInt(
+      process.env.JWT_REFRESH_TTL || '604800',
+      10,
+    );
     const expiryDate = new Date();
-    expiryDate.setHours(expiryDate.getHours() + jwtTtlSeconds); // Ajuste conforme sua configuração de expiração
+    expiryDate.setSeconds(expiryDate.getSeconds() + refreshTtlSeconds);
     return expiryDate;
   }
 }

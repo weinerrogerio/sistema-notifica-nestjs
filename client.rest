@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:3000
 #@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJ1c2VyMSIsImlhdCI6MTc0NzQyMDk2MiwiZXhwIjoxNzQ3NDI0NTYyLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAifQ.tyUWvRdC4MUXFclFhOFgxyvffCoVgFzKQ4SCGEnH9oY
+
 @authToken = {{authenticate.response.body.accessToken}}
 
 ### AppControllerGetHello
@@ -127,7 +128,8 @@ Authorization: Bearer {{authToken}}
 
 
 ### ------------------> INTIMAÇÃO -------
-POST {{baseUrl}}/notification/intimacao-tracking
+#GET ...pixel/:token
+POST {{baseUrl}}/notification/intimacao-tracking/
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
@@ -144,7 +146,7 @@ Content-Type: application/json
   "credor": "Prefeitura do Município de Curitiba",
   "portador": "Prefeitura do Município de Curitiba"
 }
-=======
+
 
 ###
 POST {{baseUrl}}/notification/teste
@@ -193,7 +195,7 @@ Content-Type: application/json
 
 {
    "nomeTabelionato": "TESTE",
-   "codTabelionato": "02",
+   "codTabelionato": "03",
    "cnpj": "75.590.133/0001-64",
    "titular": "Nome Titular",
    "telefone": "(41) 3053-4360",
@@ -213,7 +215,7 @@ Authorization: Bearer {{authToken}}
 
 ### 
 ##----------------- UPDATE -----------
-PATCH {{baseUrl}}/contato-tabelionato/a
+PATCH {{baseUrl}}/contato-tabelionato/8
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
@@ -223,6 +225,6 @@ Content-Type: application/json
 
 ###
 ## 
-DELETE {{baseUrl}}/contato-tabelionato/ID
+DELETE {{baseUrl}}/contato-tabelionato/8
 Authorization: Bearer {{authToken}}
 

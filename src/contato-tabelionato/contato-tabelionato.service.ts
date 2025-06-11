@@ -119,38 +119,6 @@ export class ContatoTabelionatoService {
     }
 
     return this.contatoTabelionatoRepository.save(dadosTabelionato);
-    /* @Column({ nullable: false })
-      nomeTabelionato: string; // 1ª Tabelionato, 2ª Tabelionato, 3ª Tabelionato,...
-    
-      @Column({ unique: true, nullable: false })
-      codTabelionato: string; //01, 02, 03,...
-    
-      @Column()
-      cnpj?: string;
-    
-      @Column()
-      titular: string;
-    
-      @Column()
-      telefone?: string;
-    
-      @Column()
-      email: string;
-    
-      @Column()
-      endereco?: string;
-    
-      @Column()
-      cidade?: string;
-    
-      @Column()
-      uf?: string;
-    
-      @Column()
-      cep?: string;
-    
-      @Column()
-      observacao?: string; */
   }
 
   async remove(id: number) {
