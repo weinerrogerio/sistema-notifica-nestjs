@@ -18,7 +18,7 @@ export class LogEventAdminUserService {
   async create(createLogEventAdminUserDto: CreateLogEventAdminUserDto) {
     console.log(createLogEventAdminUserDto);
   }
-  async createLogEntry(createLogEventAdminUserDto: CreateLogEventAdminUserDto) {
+  /* async createLogEntry(createLogEventAdminUserDto: CreateLogEventAdminUserDto) {
     const fkUser = createLogEventAdminUserDto.fk_id_user;
     const fkIdTarget = createLogEventAdminUserDto.fk_id_target;
     if (!fkUser) {
@@ -35,6 +35,31 @@ export class LogEventAdminUserService {
       event: createLogEventAdminUserDto.event,
       descricao: createLogEventAdminUserDto.descricao,
     };
+    await this.logEventAdminUserRepository.save(logEntryDto);
+  }
+ */
+  // Atualizar para incluir sessionId nos logs
+  async createLogEntry(
+    createLogEventAdminUserDto: CreateLogEventAdminUserDto & {
+      sessionId?: number;
+    },
+  ) {
+    if (!createLogEventAdminUserDto.fk_id_user) {
+      throw new NotFoundException(`Usuário não encontrado`);
+    }
+    if (!createLogEventAdminUserDto.fk_id_target) {
+      throw new ForbiddenException(
+        `Não é possível salvar uma ação de um usuário desativado ou excluido`,
+      );
+    }
+    const logEntryDto = {
+      fk_id_user: createLogEventAdminUserDto.fk_id_user,
+      fk_id_target: createLogEventAdminUserDto.fk_id_target,
+      event: createLogEventAdminUserDto.event,
+      descricao: createLogEventAdminUserDto.descricao,
+      session_id: createLogEventAdminUserDto.sessionId, // Novo campo
+    };
+
     await this.logEventAdminUserRepository.save(logEntryDto);
   }
 

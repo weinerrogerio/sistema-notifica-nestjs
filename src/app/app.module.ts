@@ -20,6 +20,8 @@ import { TrackingPixelModule } from '@app/tracking/tracking.module';
 import { ContatoTabelionatoModule } from '@app/contato-tabelionato/contato-tabelionato.module';
 import { APP_FILTER } from '@nestjs/core';
 import { GlobalQueryFailedExceptionFilter } from '@app/common/filters/query-failed-exception.filter';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CleanupTask } from '@app/schedule-module/cleanup.task';
 
 @Module({
   imports: [
@@ -36,6 +38,15 @@ import { GlobalQueryFailedExceptionFilter } from '@app/common/filters/query-fail
       //NÃO USAR EM PRODUÇÃO - RETIRAR (FALSE) SINCRONIZAÇÃO NO DEPLOY
       synchronize: true, //sincroniza as entidades com o banco de dados
     }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [
+        '.env.production', // Arquivo específico do ambiente
+        '.env.local', // Arquivo local (se existir)
+        '.env', // Arquivo padrão (fallback)
+      ],
+    }),
+    ScheduleModule.forRoot(),
     DocProtestoModule,
     DevedorModule,
     DocProtestoCredorModule,
@@ -46,14 +57,6 @@ import { GlobalQueryFailedExceptionFilter } from '@app/common/filters/query-fail
     LogEventAdminUserModule,
     LogArquivoImportModule,
     ContatoTabelionatoModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: [
-        '.env.production', // Arquivo específico do ambiente
-        '.env.local', // Arquivo local (se existir)
-        '.env', // Arquivo padrão (fallback)
-      ],
-    }),
     AuthModule,
     NotificationModule,
     TrackingPixelModule,
@@ -64,8 +67,9 @@ import { GlobalQueryFailedExceptionFilter } from '@app/common/filters/query-fail
     //FILTROP DE EXCEÇÕES - ERROS
     {
       provide: APP_FILTER,
-      useClass: GlobalQueryFailedExceptionFilter, // ✅ Com DI completo
+      useClass: GlobalQueryFailedExceptionFilter,
     },
+    CleanupTask,
   ],
 })
 export class AppModule {}

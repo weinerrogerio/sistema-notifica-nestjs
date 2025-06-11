@@ -5,7 +5,7 @@ export default registerAs('jwt', () => {
     secret: process.env.JWT_SECRET,
     audience: process.env.JWT_TOKEN_AUDIENCE,
     issuer: process.env.JWT_TOKEN_ISSUER,
-    jwtTtl: Number(process.env.JWT_TTL ?? '3600'),
-    jwtRefreshTtl: Number(process.env.JWT_REFRESH_TTL ?? '86400'),
+    accessTokenTtl: Number(process.env.JWT_ACCESS_TTL ?? '900'), // 15 min
+    refreshTokenTtl: Number(process.env.JWT_REFRESH_TTL ?? '604800'), // 7 dias
   };
 });
