@@ -2,6 +2,7 @@
 #@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsIm5hbWUiOiJ1c2VyMSIsImlhdCI6MTc0NzQyMDk2MiwiZXhwIjoxNzQ3NDI0NTYyLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjMwMDAifQ.tyUWvRdC4MUXFclFhOFgxyvffCoVgFzKQ4SCGEnH9oY
 
 @authToken = {{authenticate.response.body.accessToken}}
+@refreshToken = {{authenticate.response.body.refreshToken}}
 
 ### AppControllerGetHello
 
@@ -94,7 +95,7 @@ Content-Type: application/json
 
 
 ###
-## --------------------------LOGIN - AUTH
+## --------------------------LOGIN - AUTH    ----------
 # @name authenticate
 POST  {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -105,6 +106,15 @@ Content-Type: application/json
    "password": "123456"
 }
 
+###
+## ------- LOGIN - REFRESH --> RECEBE NOVO TOKEN A PARTIR DO PRINCIPAL -------
+# @name authenticate
+POST  {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+   "refreshToken": "{{refreshToken}}"
+}
 
 ###
 ## LOGOUT - AUTH

@@ -5,6 +5,7 @@ import { LogUser } from './entities/log-user.entity';
 import { CreateLogUserDto } from './dto/create-log-user.dto'; // Assumindo que esses DTOs existem
 import { UpdateLogUserDto } from './dto/update-log-user.dto'; // Assumindo que esses DTOs existem
 import { HashingService } from '@app/auth/hashing/hashing.service';
+import { User } from '@app/user/entities/user.entity';
 
 @Injectable()
 export class LogUsersService {
@@ -99,7 +100,7 @@ export class LogUsersService {
    */
   async findActiveSessionByRefreshToken(
     refreshToken: string,
-  ): Promise<(LogUser & { user?: any }) | null> {
+  ): Promise<(LogUser & { user?: User }) | null> {
     // Adicionado user?: any para o ManyToOne relation
     const sessions = await this.logUserRepository.find({
       where: {
