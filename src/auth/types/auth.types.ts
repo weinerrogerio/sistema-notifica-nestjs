@@ -46,3 +46,8 @@ export interface ValidateTokenResponse {
   role: string;
   sessionId?: number;
 }
+
+export interface LoginDto {
+  nome: string;
+  password: string;
+}

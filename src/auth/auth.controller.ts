@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  Get,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
@@ -10,6 +18,7 @@ import {
   LoginResponse,
   RefreshTokenResponse,
   LogoutResponse,
+  ValidateTokenResponse,
 } from './types/auth.types';
 
 // Extend Request interface para incluir propriedades de IP
@@ -35,53 +44,98 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
-    @Req() req: Request,
+    @Req() request: Request,
   ): Promise<LoginResponse> {
-    // Obtém o IP real do cliente considerando proxies
-    const ipAddress = this.getClientIp(req);
-    const userAgent = req.headers['user-agent'] || 'unknown';
+    const ipAddress = this.extractIpAddress(request);
+    const userAgent = request.headers['user-agent'] || 'unknown';
 
-    return this.authService.login(loginDto, ipAddress, userAgent);
+    return await this.authService.login(loginDto, ipAddress, userAgent);
   }
 
   @Post('refresh')
-  async refreshToken(
-    @Body() body: { refreshToken: string },
-    @Req() req: Request,
+  async refresh(
+    @Body('refreshToken') refreshToken: string,
+    @Req() request: Request,
   ): Promise<RefreshTokenResponse> {
-    const ipAddress = this.getClientIp(req);
-    return this.authService.refreshTokens(body.refreshToken, ipAddress);
+    const ipAddress = this.extractIpAddress(request);
+    return await this.authService.refreshTokens(refreshToken, ipAddress);
   }
 
-  @UseGuards(AuthTokenGuard)
   @Post('logout')
+  @UseGuards(AuthTokenGuard)
   async logout(
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
   ): Promise<LogoutResponse> {
     return this.authService.logout(tokenPayload.sub);
   }
+  /*   async logout(@Req() request: Request): Promise<LogoutResponse> {
+    const payload = request['REQUEST_TOKEN_PAYLOAD_KEY'] as TokenPayloadDto & {
+      sessionId: number;
+    };
+    return await this.authService.logout(payload.sub);
+  } */
 
+  // Novo endpoint para verificar se o token precisa ser renovado
+  @Get('check-token')
   @UseGuards(AuthTokenGuard)
-  @Post('force-logout')
-  async forceLogout(
-    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
-  ): Promise<LogoutResponse> {
-    return this.authService.forceLogoutUser(tokenPayload.sub);
+  async checkToken(
+    @Req() request: Request,
+  ): Promise<{ valid: boolean; needsRenewal: boolean; timeToExpiry?: number }> {
+    const token = this.extractTokenFromHeader(request);
+    if (!token) {
+      throw new UnauthorizedException('Token não encontrado.');
+    }
+
+    const renewalInfo = await this.authService.checkTokenRenewal(token);
+
+    return {
+      valid: true,
+      ...renewalInfo,
+    };
   }
 
-  private getClientIp(req: Request): string {
-    // Considera headers de proxy (X-Forwarded-For, X-Real-IP)
-    const forwarded = req.headers['x-forwarded-for'] as string;
-    const realIp = req.headers['x-real-ip'] as string;
+  @Get('validate')
+  @UseGuards(AuthTokenGuard)
+  /*  async validateToken(@Req() request: Request): Promise<ValidateTokenResponse> {
+    const payload = request['REQUEST_TOKEN_PAYLOAD_KEY'] as TokenPayloadDto & {
+      sessionId: number;
+    }; */
+  async validateToken(
+    @TokenPayloadParam()
+    payload: TokenPayloadDto & {
+      sessionId: number;
+    },
+  ): Promise<ValidateTokenResponse> {
+    return {
+      id: payload.sub,
+      nome: payload.email,
+      role: payload.role,
+      sessionId: payload.sessionId,
+    };
+  }
 
-    if (forwarded) {
-      return forwarded.split(',')[0].trim();
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const authorization = request.headers?.authorization;
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      return undefined;
     }
+    return authorization.split(' ')[1];
+  }
 
-    if (realIp) {
-      return realIp;
-    }
+  private extractIpAddress(request: Request): string {
+    // Tenta extrair o IP real considerando proxies
+    const forwarded = request.headers['x-forwarded-for'] as string;
+    const realIp = request.headers['x-real-ip'] as string;
+    const cfConnectingIp = request.headers['cf-connecting-ip'] as string;
 
-    return req.ip || '127.0.0.1';
+    return (
+      cfConnectingIp ||
+      realIp ||
+      (forwarded && forwarded.split(',')[0].trim()) ||
+      request.ip ||
+      request.connection?.remoteAddress ||
+      request.socket?.remoteAddress ||
+      'unknown'
+    );
   }
 }

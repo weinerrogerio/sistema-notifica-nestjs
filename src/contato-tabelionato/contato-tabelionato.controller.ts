@@ -24,15 +24,16 @@ export class ContatoTabelionatoController {
   ) {}
 
   @Roles(Role.USER, Role.ADMIN)
-  @Post()
-  create(@Body() createContatoTabelionatoDto: CreateContatoTabelionatoDto) {
-    return this.contatoTabelionatoService.create(createContatoTabelionatoDto);
-  }
-  @Roles(Role.USER, Role.ADMIN)
   @Get()
   findAll() {
     return this.contatoTabelionatoService.findAll();
   }
+  @Roles(Role.USER, Role.ADMIN)
+  @Post()
+  create(@Body() createContatoTabelionatoDto: CreateContatoTabelionatoDto) {
+    return this.contatoTabelionatoService.create(createContatoTabelionatoDto);
+  }
+
   @Roles(Role.USER, Role.ADMIN)
   @Get(':id')
   findOne(@Param('id') id: string) {

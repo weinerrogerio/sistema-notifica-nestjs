@@ -10,6 +10,7 @@ import { Request } from 'express';
 import jwtConfig from '../config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { LogUsersService } from '@app/log-user/log-users.service';
+import { TokenPayloadDto } from '../dto/token-payload.dto';
 
 @Injectable()
 export class AuthTokenGuard implements CanActivate {
@@ -25,38 +26,55 @@ export class AuthTokenGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      throw new UnauthorizedException('Nenhum token foi fornecido');
+      throw new UnauthorizedException('Token não fornecido.');
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(
-        token,
-        this.jwtConfiguration,
-      );
+      // 1. Verifica o token
+      const payload: TokenPayloadDto =
+        await this.jwtService.verifyAsync<TokenPayloadDto>(token, {
+          secret: this.jwtConfiguration.secret,
+          audience: this.jwtConfiguration.audience,
+          issuer: this.jwtConfiguration.issuer,
+        });
 
-      // Verifica se há sessão ativa
+      if (!payload.sub) {
+        throw new UnauthorizedException('Token inválido.');
+      }
+
+      // 2. Verifica se a sessão ainda é válida
       const activeSession =
         await this.logUsersService.findActiveSessionByUserId(payload.sub);
 
       if (!activeSession) {
-        throw new UnauthorizedException('Sessão inválida ou expirada');
+        throw new UnauthorizedException('Sessão inválida ou expirada.');
       }
 
-      // Atualiza última atividade
+      // 3. Apenas atualiza a última atividade (sem renovar token aqui)
       await this.logUsersService.updateLastActivity(activeSession.id);
 
+      // 4. Anexa informações à requisição
       request['REQUEST_TOKEN_PAYLOAD_KEY'] = {
         ...payload,
         sessionId: activeSession.id,
       };
-    } catch (error) {
-      throw new UnauthorizedException('Token inválido', error.message);
-    }
 
-    return true;
+      return true;
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expirado. Use o refresh token.');
+      }
+      if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Token inválido.');
+      }
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Falha na autenticação.');
+    }
   }
 
-  extractTokenFromHeader(request: Request): string | undefined {
+  private extractTokenFromHeader(request: Request): string | undefined {
     const authorization = request.headers?.authorization;
     if (!authorization || !authorization.startsWith('Bearer ')) {
       return undefined;
