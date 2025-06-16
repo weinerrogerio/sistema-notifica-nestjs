@@ -22,6 +22,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { GlobalQueryFailedExceptionFilter } from '@app/common/filters/query-failed-exception.filter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CleanupTask } from '@app/schedule-module/cleanup.task';
+import { TemplateModule } from '@app/template/template.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { CleanupTask } from '@app/schedule-module/cleanup.task';
     AuthModule,
     NotificationModule,
     TrackingPixelModule,
+    TemplateModule,
   ],
   controllers: [AppController],
   providers: [
