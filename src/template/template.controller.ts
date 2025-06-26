@@ -113,7 +113,7 @@ export class TemplateController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('templateFile')) // 'templateFile' deve ser o nome do campo no Postman
+  @UseInterceptors(FileInterceptor('file')) // 'templateFile' deve ser o nome do campo no Postman
   async uploadTemplate(
     @UploadedFile() file: Express.Multer.File, // Este será o arquivo
   ) {
