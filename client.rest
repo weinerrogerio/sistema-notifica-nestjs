@@ -20,6 +20,9 @@ Authorization: 'bearer token'
 GET {{baseUrl}}/devedor/pj/
 Authorization: Bearer {{authToken}}
 
+### ---------------------- BUSCA DISTRIBUIÇÃO - JOIM -> DISTRIBUIÇÃO, DEVEDOR(c/ email), CREDOR
+GET {{baseUrl}}/doc-protesto/distribuicoes/buscar/
+Authorization: Bearer {{authToken}}
 
 ##------------------------- BUSCA EMAIL - DEVEDOR PJ -------------------------------
 ###
@@ -238,3 +241,19 @@ Content-Type: application/json
 DELETE {{baseUrl}}/contato-tabelionato/8
 Authorization: Bearer {{authToken}}
 
+
+
+### ----------------------------- TEMPLATE -----------
+##
+{{baseUrl}}/TEMPLATE/1/conteudo
+Authorization: Bearer {{authToken}}
+
+
+###
+{{baseUrl}}/template/1
+Authorization: Bearer {{authToken}}
+
+
+###
+{{baseUrl}}/template/
+Authorization: Bearer {{authToken}}
