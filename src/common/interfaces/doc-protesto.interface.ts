@@ -84,4 +84,5 @@ export interface FiltrosDistribuicao {
   dataInicio?: Date;
   dataFim?: Date;
   status?: string;
+  email?: string;
 }

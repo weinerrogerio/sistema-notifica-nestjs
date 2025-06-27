@@ -48,6 +48,7 @@ export class DocProtestoSearchService {
       .leftJoinAndSelect('protesto.notificacao', 'logNotificacao')
       .leftJoinAndSelect('logNotificacao.devedor', 'devedor');
 
+    queryBuilder.andWhere('devedor.email IS NOT NULL');
     // Aplicar filtros dinamicamente
     if (filtros.devedorNome) {
       queryBuilder.andWhere('devedor.nome LIKE :devedorNome', {
@@ -58,6 +59,12 @@ export class DocProtestoSearchService {
     if (filtros.docDevedor) {
       queryBuilder.andWhere('devedor.doc_devedor = :docDevedor', {
         docDevedor: filtros.docDevedor,
+      });
+    }
+
+    if (filtros.email) {
+      queryBuilder.andWhere('devedor.email LIKE :email', {
+        email: `%${filtros.email}%`,
       });
     }
 
