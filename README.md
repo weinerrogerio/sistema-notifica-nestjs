@@ -95,28 +95,6 @@ $ npm i @nestjs/axios
 $ npm install @nestjs/common @nestjs/core @nestjs/config nodemailer
 
 $ npm install -D @types/nodemailer
-<<<<<<< HEAD
-=======
-```
-
-## Resources - local
-
-Nota: para rodar o modulo tracking em modo desenvolvimento local é preciso abrir uma url publica temporária. Pode ser feito com algumas das opções:
-
-```
-ngrok (gratuito com limitações)
-
-LocalTunnel (100% Gratuito)
-
-Serveo (Gratuito)
-
-Cloudflare Tunnel (Gratuito)
-
-Bore (Gratuito)
-
-Tailscale Funnel (Gratuito para uso pessoal)
->>>>>>> 6d33415a355ee5b1da811fe64db74d42e2312a74
-```
 
 ## Support
 
@@ -131,3 +109,4 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
