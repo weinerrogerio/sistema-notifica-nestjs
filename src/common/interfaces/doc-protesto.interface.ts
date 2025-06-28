@@ -53,13 +53,13 @@ export interface DistribuicaoSearchResult {
   valor: number;
   saldo: number;
   vencimento: string;
-  devedor: {
+  devedor: Array<{
     id: number;
     nome: string;
     docDevedor: string;
     email: string;
     devedorPj: boolean;
-  };
+  }>;
   apresentante: {
     id: number;
     nome: string;
