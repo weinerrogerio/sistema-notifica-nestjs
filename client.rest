@@ -127,7 +127,7 @@ Authorization: Bearer {{authToken}}
 
 ### ---------------------------------------- NOTIFICAÇÃO !!!!!! -------------------------------
 
-###
+### !!!!!     CUIDADO      !!!!!!!!!!!!!!!!!!!!!!!!!
 POST {{baseUrl}}/notification/teste
 Authorization: Bearer {{authToken}}
 

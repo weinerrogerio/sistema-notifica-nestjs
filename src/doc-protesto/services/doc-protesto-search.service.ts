@@ -120,7 +120,7 @@ export class DocProtestoSearchService {
     return distribuicoes.map((protesto) => {
       // Pegar o primeiro devedor da primeira notificação (pode haver múltiplos)
       const primeiraNotificacao = protesto.notificacao?.[0];
-      const devedor = primeiraNotificacao?.devedor;
+      //const devedor = primeiraNotificacao?.devedor;
 
       return {
         id: protesto.id,
@@ -132,7 +132,13 @@ export class DocProtestoSearchService {
         valor: protesto.valor,
         saldo: protesto.saldo,
         vencimento: protesto.vencimento,
-        devedor: devedor
+        devedor: protesto.notificacao?.map((dado) => ({
+          id: dado.devedor.id,
+          nome: dado.devedor.nome,
+          docDevedor: dado.devedor.doc_devedor,
+          email: dado.devedor.email,
+          devedorPj: dado.devedor.devedor_pj,
+        })) /* devedor
           ? {
               id: devedor.id,
               nome: devedor.nome,
@@ -140,7 +146,7 @@ export class DocProtestoSearchService {
               email: devedor.email,
               devedorPj: devedor.devedor_pj,
             }
-          : null,
+          : null, */,
         apresentante: protesto.apresentante
           ? {
               id: protesto.apresentante.id,
