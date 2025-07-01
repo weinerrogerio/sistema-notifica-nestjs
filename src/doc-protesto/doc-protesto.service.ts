@@ -3,7 +3,7 @@ import { CreateDocProtestoDto } from './dto/create-doc-protesto.dto';
 import { UpdateDocProtestoDto } from './dto/update-doc-protesto.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DocProtesto } from './entities/doc-protesto.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 
 @Injectable()
 export class DocProtestoService {
@@ -40,10 +40,46 @@ export class DocProtestoService {
     }
   }
 
-  findAll() {
-    return `This action returns all docProtesto`;
+  async findAll() {
+    return await this.docProtestoRepository.find({
+      order: { id: 'desc' },
+    });
   }
 
+  async findByDateRange(startDate?: Date, endDate?: Date) {
+    console.log('Service - parâmetros recebidos:', { startDate, endDate });
+
+    // Verificar se as datas são válidas
+    if (startDate && isNaN(startDate.getTime())) {
+      throw new Error('startDate inválida');
+    }
+    if (endDate && isNaN(endDate.getTime())) {
+      throw new Error('endDate inválida');
+    }
+
+    if (!startDate || !endDate) {
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 15);
+      console.log('Usando período padrão:', { startDate, endDate });
+    }
+
+    // Ajustar para início e fim do dia
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    console.log('Período final de busca:', { startOfDay, endOfDay });
+
+    return await this.docProtestoRepository.find({
+      where: {
+        createdAt: Between(startOfDay, endOfDay),
+      },
+      order: { createdAt: 'ASC' },
+    });
+  }
   findOne(id: number) {
     return `This action returns a #${id} docProtesto`;
   }
