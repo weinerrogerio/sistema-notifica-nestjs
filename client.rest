@@ -24,6 +24,19 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/doc-protesto/distribuicoes/buscar/
 Authorization: Bearer {{authToken}}
 
+###
+## BUSCA POR DATA --> INFORMAR DATA INICIAL E DATA FINAL
+GET {{baseUrl}}/doc-protesto/date-range?startDate=2025-06-02&endDate=2025-06-17
+Authorization: Bearer {{authToken}}
+//Content-Type: application/json
+
+//{
+//   //2025-06-02 09:59:06.05855
+//   "startDate":"2025-06-02",
+//   "endDate":"2025-06-17"
+//}
+
+
 ##------------------------- BUSCA EMAIL - DEVEDOR PJ -------------------------------
 ###
 GET {{baseUrl}}/devedor/emails/
@@ -79,8 +92,7 @@ Authorization: Bearer {{authToken}}
 
 ### -------------------------------------------------- LOGIN !!!!!!
 ## AUTH
-POST {{baseUrl}}/auth/
-
+//POST {{baseUrl}}/auth/
 
 ###
 ## NOVO USER - COMUM - NÃO ADM -- RETIRAR DEPOIS !!!
@@ -94,8 +106,6 @@ Content-Type: application/json
    "contato": "41997653623",
    "password": "12345"
 }
-
-
 
 ###
 ## --------------------------LOGIN - AUTH    ----------

@@ -38,6 +38,17 @@ export class DocProtestoController {
     return this.docProtestoService.findAll();
   }
 
+  @Get('date-range')
+  async getByDateRange(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+
+    return await this.docProtestoService.findByDateRange(start, end);
+  }
+
   @Get(':id')
   @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {
