@@ -4,6 +4,50 @@
 @authToken = {{authenticate.response.body.accessToken}}
 @refreshToken = {{authenticate.response.body.refreshToken}}
 
+###
+## --------------------------LOGIN - AUTH    ----------
+# @name authenticate
+POST  {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+   "nome":"admin",
+   //"nome": "user1",
+   "password": "123456"
+}
+
+###
+## ------- LOGIN - REFRESH --> RECEBE NOVO TOKEN A PARTIR DO PRINCIPAL -------
+# @name authenticate
+POST  {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+   "refreshToken": "{{refreshToken}}"
+}
+
+###
+## LOGOUT - AUTH
+POST  {{baseUrl}}/auth/logout/
+Authorization: Bearer {{authToken}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### AppControllerGetHello
 
 # @name RecadosController
@@ -107,32 +151,6 @@ Content-Type: application/json
    "password": "12345"
 }
 
-###
-## --------------------------LOGIN - AUTH    ----------
-# @name authenticate
-POST  {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-   "nome":"admin",
-   //"nome": "user1",
-   "password": "123456"
-}
-
-###
-## ------- LOGIN - REFRESH --> RECEBE NOVO TOKEN A PARTIR DO PRINCIPAL -------
-# @name authenticate
-POST  {{baseUrl}}/auth/refresh
-Content-Type: application/json
-
-{
-   "refreshToken": "{{refreshToken}}"
-}
-
-###
-## LOGOUT - AUTH
-POST  {{baseUrl}}/auth/logout/
-Authorization: Bearer {{authToken}}
 
 
 ### ---------------------------------------- NOTIFICAÇÃO !!!!!! -------------------------------
@@ -254,7 +272,7 @@ Authorization: Bearer {{authToken}}
 
 
 ### ----------------------------- TEMPLATE -----------
-##
+## ----> ERRO ERRO ERRO....
 {{baseUrl}}/TEMPLATE/1/conteudo
 Authorization: Bearer {{authToken}}
 
@@ -267,3 +285,26 @@ Authorization: Bearer {{authToken}}
 ###
 {{baseUrl}}/template/
 Authorization: Bearer {{authToken}}
+
+
+### ---------------------------- LOG IMPORT - LOG DE IMPORTAÇÃO DE ARQUIVO
+##
+POST {{baseUrl}}/log-arquivo-import
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+   "nome_arquivo": "testeExcuir.xml", 
+   "mimetype": "text/xml",  
+   "tamanho_arquivo": 20473, 
+   "status": "sucesso",  
+   "total_registros": 500, 
+   "registros_processados": 500,
+   "registros_com_erro": 0, 
+   "detalhes_erro": "",
+   "duracao": "00:00:00",
+   "fk_usuario": 3
+
+}
+
+
