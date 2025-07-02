@@ -15,7 +15,7 @@ export class LogImportacaoArquivo {
   id: number;
 
   // alterar para unique --> nao pode importar o mesmo arquivo mais de uma vez
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, unique: true })
   nome_arquivo: string;
 
   @Column({ type: 'varchar', length: 50 })

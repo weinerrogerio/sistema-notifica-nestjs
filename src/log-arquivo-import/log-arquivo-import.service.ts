@@ -1,13 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateLogArquivoImportDto } from './dto/create-log-arquivo-import.dto';
 import { UpdateLogArquivoImportDto } from './dto/update-log-arquivo-import.dto';
+import { LogImportacaoArquivo } from './entities/log-arquivo-import.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class LogArquivoImportService {
-  create(createLogArquivoImportDto: CreateLogArquivoImportDto) {
-    console.log(createLogArquivoImportDto);
-
-    return 'This action adds a new logArquivoImport';
+  constructor(
+    @InjectRepository(LogImportacaoArquivo)
+    private readonly logArquivoImportRepository: Repository<LogImportacaoArquivo>,
+  ) {}
+  async create(createLogArquivoImportDto: CreateLogArquivoImportDto) {
+    try {
+      console.log(createLogArquivoImportDto);
+      const newFileDto = {
+        ...createLogArquivoImportDto,
+        data_importacao: new Date(),
+        //duracao: '00:00:00', // retirar - arrumar isso, tem que vir do tempo de leitura
+      };
+      const newFile = this.logArquivoImportRepository.create(newFileDto);
+      await this.logArquivoImportRepository.save(newFile);
+      return newFile;
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
+        throw new ConflictException(
+          `O arquivo ${createLogArquivoImportDto.nome_arquivo} ja foi importado`,
+        );
+      }
+    }
   }
 
   findAll() {
