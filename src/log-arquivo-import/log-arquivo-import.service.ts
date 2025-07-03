@@ -4,6 +4,7 @@ import { UpdateLogArquivoImportDto } from './dto/update-log-arquivo-import.dto';
 import { LogImportacaoArquivo } from './entities/log-arquivo-import.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { StatusImportacao } from './enum/log-arquivo.enum';
 
 @Injectable()
 export class LogArquivoImportService {
@@ -11,25 +12,6 @@ export class LogArquivoImportService {
     @InjectRepository(LogImportacaoArquivo)
     private readonly logArquivoImportRepository: Repository<LogImportacaoArquivo>,
   ) {}
-  async create(createLogArquivoImportDto: CreateLogArquivoImportDto) {
-    try {
-      console.log(createLogArquivoImportDto);
-      const newFileDto = {
-        ...createLogArquivoImportDto,
-        data_importacao: new Date(),
-        //duracao: '00:00:00', // retirar - arrumar isso, tem que vir do tempo de leitura
-      };
-      const newFile = this.logArquivoImportRepository.create(newFileDto);
-      await this.logArquivoImportRepository.save(newFile);
-      return newFile;
-    } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-        throw new ConflictException(
-          `O arquivo ${createLogArquivoImportDto.nome_arquivo} ja foi importado`,
-        );
-      }
-    }
-  }
 
   findAll() {
     return `This action returns all logArquivoImport`;
@@ -47,5 +29,79 @@ export class LogArquivoImportService {
 
   remove(id: number) {
     return `This action removes a #${id} logArquivoImport`;
+  }
+  async create(createLogArquivoImportDto: CreateLogArquivoImportDto) {
+    try {
+      console.log(createLogArquivoImportDto);
+      const newFileDto = {
+        ...createLogArquivoImportDto,
+        data_importacao: new Date(),
+      };
+      const newFile = this.logArquivoImportRepository.create(newFileDto);
+      await this.logArquivoImportRepository.save(newFile);
+      return newFile;
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
+        throw new ConflictException(
+          `O arquivo ${createLogArquivoImportDto.nome_arquivo} ja foi importado`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  // Novo método para atualizar status
+  async updateStatus(
+    logId: number,
+    updateData: Partial<{
+      status: StatusImportacao;
+      total_registros: number;
+      registros_processados: number;
+      registros_com_erro: number;
+      detalhes_erro: string;
+      duracao: string;
+    }>,
+  ) {
+    try {
+      await this.logArquivoImportRepository.update(logId, updateData);
+    } catch (error) {
+      console.error('Erro ao atualizar log de importação:', error);
+      // Não lançar erro aqui para não quebrar o fluxo principal
+    }
+  }
+
+  // Novo método para atualizar progresso
+  async updateProgress(
+    logId: number,
+    progressData: Partial<{
+      total_registros: number;
+      registros_processados: number;
+      registros_com_erro: number;
+    }>,
+  ) {
+    try {
+      await this.logArquivoImportRepository.update(logId, progressData);
+    } catch (error) {
+      console.error('Erro ao atualizar progresso do log:', error);
+      // Não lançar erro aqui para não quebrar o fluxo principal
+    }
+  }
+
+  // Método para buscar logs de importação
+  async findByUser(userId: number, page: number = 1, limit: number = 10) {
+    const [logs, total] = await this.logArquivoImportRepository.findAndCount({
+      where: { fk_usuario: userId },
+      order: { data_importacao: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      logs,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

@@ -6,6 +6,8 @@ import { DataValidation } from '@app/common/utils/xmlValidation.util';
 import { TransformationResult } from '@app/common/utils/dataTransform';
 import { ImportPersistenceService } from '../services/import-persistence.service';
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
+import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
+import { StatusImportacao } from '@app/log-arquivo-import/enum/log-arquivo.enum';
 
 // Definição das interfaces para a estrutura do XML
 interface ExcelData {
@@ -43,6 +45,7 @@ export class XmlImportStrategy implements ImportStrategy {
     private readonly dataValidation: DataValidation,
     private readonly transformationResult: TransformationResult,
     private readonly importPersistenceService: ImportPersistenceService,
+    private readonly logArquivoImportService: LogArquivoImportService,
   ) {}
 
   canHandle(mimeType: string): boolean {
@@ -198,40 +201,98 @@ export class XmlImportStrategy implements ImportStrategy {
       }
       // Se não é linha principal nem tem dados de devedor, ignora a linha
     }
-
     return processedData;
   }
 
-  // FUNÇÃO RECEBE OS DADOS DE IMPORT E ENVIA PARA AS VALIDAÇÕES, TRANSFORM E POR FIM PERSISTENCIA(xmlCreate())
+  // FUNÇÃO RECEBE OS DADOS DE IMPORT E ENVIA PARA AS VALIDAÇÕES(salva erros em LogArquivoImport se tiver), TRANSFORM E POR FIM PERSISTENCIA(xmlCreate())
   async processFile(
     fileBuffer: Buffer,
     tokenPayload: TokenPayloadDto,
+    logImportId: number,
   ): Promise<void> {
-    const dadosImportados = await this.import(fileBuffer);
-    //console.log('dadosImportados::::  ', dadosImportados);
+    const startTime = Date.now();
+    let totalRegistros = 0;
+    let registrosProcessados = 0;
+    let registrosComErro = 0;
+    let detalhesErros: string[] = [];
 
-    // lógica de processamento específica para CSV
+    console.log('processFile de Strategy - logImport.id:::::: ', logImportId);
+    try {
+      // 1. Importar dados
+      const dadosImportados = await this.import(fileBuffer);
+      totalRegistros = dadosImportados.length;
 
-    // Validação dos dados (a validação aceita Record<string, string>[])
-    // melhorar a validação --> esta perdendo retorno(erros) atualmente
-    const validationResult =
-      await this.dataValidation.validate(dadosImportados);
+      // Atualizar log com total de registros
+      if (logImportId) {
+        await this.logArquivoImportService.updateProgress(logImportId, {
+          total_registros: totalRegistros,
+        });
+      }
 
-    if (!validationResult.isValid) {
-      const dataTransform =
-        await this.transformationResult.tranformCsvData(dadosImportados);
+      // 2. Validação dos dados
+      const validationResult =
+        await this.dataValidation.validate(dadosImportados);
 
-      await this.importPersistenceService.xmlCreate(
-        dataTransform,
-        tokenPayload,
-      );
+      if (!validationResult.isValid) {
+        // 3. Transformação dos dados
+        const dataTransform =
+          await this.transformationResult.tranformCsvData(dadosImportados);
+
+        // 4. Persistência com auditoria
+        const persistenceResult = await this.importPersistenceService.xmlCreate(
+          dataTransform,
+          tokenPayload,
+          logImportId,
+        );
+
+        registrosProcessados = persistenceResult.processedCount;
+        registrosComErro = persistenceResult.errorCount;
+        detalhesErros = persistenceResult.errors;
+      }
+
+      // 5. Determinar status final
+      let finalStatus: StatusImportacao;
+      if (registrosComErro === 0) {
+        finalStatus = StatusImportacao.SUCESSO;
+      } else if (registrosProcessados > 0) {
+        finalStatus = StatusImportacao.PARCIAL;
+      } else {
+        finalStatus = StatusImportacao.FALHA;
+      }
+
+      // 6. Atualizar log final
+      if (logImportId) {
+        await this.logArquivoImportService.updateStatus(logImportId, {
+          status: finalStatus,
+          registros_processados: registrosProcessados,
+          registros_com_erro: registrosComErro,
+          detalhes_erro:
+            detalhesErros.length > 0 ? JSON.stringify(detalhesErros) : null,
+          duracao: this.calculateDuration(startTime),
+        });
+      }
+    } catch (error) {
+      // Atualizar log com erro
+      if (logImportId) {
+        await this.logArquivoImportService.updateStatus(logImportId, {
+          status: StatusImportacao.FALHA,
+          total_registros: totalRegistros,
+          registros_processados: registrosProcessados,
+          registros_com_erro: totalRegistros - registrosProcessados,
+          detalhes_erro: JSON.stringify([...detalhesErros, error.message]),
+          duracao: this.calculateDuration(startTime),
+        });
+      }
+      throw error;
     }
+  }
 
-    // se os dados nao são validos e podem ser formatados (como data, mascaras de documento e valores...)
-    // então passa por um formatador dependendo da estrategia,
-    // nesse caso o dataTransform. Algo como:
-    // se não prossegue para a persistência...
-    // Se chegou até aqui, os dados são válidos
-    // Proceder com a persistência
+  private calculateDuration(startTime: number): string {
+    const duration = Date.now() - startTime;
+    const seconds = Math.floor(duration / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    return `${hours.toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
   }
 }

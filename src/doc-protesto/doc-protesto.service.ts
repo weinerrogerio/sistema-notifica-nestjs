@@ -24,6 +24,7 @@ export class DocProtestoService {
         valor: createDocProtestoDto.valor,
         saldo: createDocProtestoDto.saldo,
         vencimento: createDocProtestoDto.vencimento,
+        fk_file: createDocProtestoDto.fk_file,
         fk_apresentante: createDocProtestoDto.fk_apresentante,
       };
       const newDocProtesto =
