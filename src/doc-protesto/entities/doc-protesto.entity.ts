@@ -1,5 +1,6 @@
 import { Apresentante } from '@app/apresentante/entities/apresentante.entity';
 import { DocProtestoCredor } from '@app/doc-protesto-credor/entities/doc-protesto-credor.entity';
+import { LogImportacaoArquivo } from '@app/log-arquivo-import/entities/log-arquivo-import.entity';
 import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 import {
   Column,
@@ -41,10 +42,19 @@ export class DocProtesto {
   @Column({ nullable: true })
   vencimento: string; // data astring pois pode ser "a vista"
 
+  //RELAÇÃO COM ARQUIIVO --> um arquivo tem muitos registros
+  @Column()
+  fk_file: number;
+  @ManyToOne(() => LogImportacaoArquivo, (file) => file.id, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({ name: 'fk_file' })
+  file: LogImportacaoArquivo;
+
   //FAZER RELAÇÃO COM OUTRAS TABELAS depois
   @Column()
   fk_apresentante: number;
-
   //muitos para muitos com devedores(1:n -- log_notificacao:n)
   //muitos para um --> um protesto pode ter muitos devedores
   // Relacionamento Many-to-One com Apresentante

@@ -5,9 +5,11 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity'; // ajuste o caminho conforme sua estrutura
 import { StatusImportacao } from '../enum/log-arquivo.enum';
+import { DocProtesto } from '@app/doc-protesto/entities/doc-protesto.entity';
 
 @Entity('log_arquivo_import')
 export class LogImportacaoArquivo {
@@ -56,4 +58,7 @@ export class LogImportacaoArquivo {
 
   @Column()
   fk_usuario: number;
+
+  @OneToMany(() => DocProtesto, (docProtesto) => docProtesto.file)
+  registros: DocProtesto[];
 }
