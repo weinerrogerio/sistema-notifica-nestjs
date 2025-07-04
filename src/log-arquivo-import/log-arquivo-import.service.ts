@@ -31,21 +31,42 @@ export class LogArquivoImportService {
     return `This action removes a #${id} logArquivoImport`;
   }
   async create(createLogArquivoImportDto: CreateLogArquivoImportDto) {
+    console.log(createLogArquivoImportDto);
+
+    // 1. Procurar por um registro "sucesso" com o mesmo nome
+    const existingSuccessFile = await this.logArquivoImportRepository.findOne({
+      where: {
+        nome_arquivo: createLogArquivoImportDto.nome_arquivo,
+        status: StatusImportacao.SUCESSO, // Apenas verificamos por sucesso
+      },
+    });
+
+    if (existingSuccessFile) {
+      // Se um registro de sucesso já existe, lançar uma exceção de conflito
+      throw new ConflictException(
+        `O arquivo ${createLogArquivoImportDto.nome_arquivo} já foi importado com sucesso.`,
+      );
+    }
+
+    // Se não houver um registro de sucesso, ou se houver um de "falha" (que não impedirá a nova inserção)
+    // Criar um novo registro no log
+    const newFileDto = {
+      ...createLogArquivoImportDto,
+      data_importacao: new Date(),
+      // Se desejar, pode definir um status inicial aqui
+      // status: 'pendente',
+    };
+    const newFile = this.logArquivoImportRepository.create(newFileDto);
+
     try {
-      console.log(createLogArquivoImportDto);
-      const newFileDto = {
-        ...createLogArquivoImportDto,
-        data_importacao: new Date(),
-      };
-      const newFile = this.logArquivoImportRepository.create(newFileDto);
       await this.logArquivoImportRepository.save(newFile);
       return newFile;
     } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-        throw new ConflictException(
-          `O arquivo ${createLogArquivoImportDto.nome_arquivo} ja foi importado`,
-        );
-      }
+      // Embora tenhamos verificado o status 'sucesso' explicitamente,
+      // ainda podemos ter erros de banco de dados por outros motivos (ex: tamanho da string, constraints diferentes).
+      // Para esta lógica, 'ER_DUP_ENTRY' não deve ocorrer no nome_arquivo se removeu a constraint unique.
+      // Deixamos um catch genérico para outros erros de persistência.
+      console.error('Erro ao salvar novo log de arquivo:', error);
       throw error;
     }
   }
