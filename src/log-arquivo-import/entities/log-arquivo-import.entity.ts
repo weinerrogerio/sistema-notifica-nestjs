@@ -51,6 +51,9 @@ export class LogImportacaoArquivo {
   @Column({ type: 'varchar', length: 100, nullable: true })
   duracao: string; // formato: "00:01:23"
 
+  @Column()
+  id_session: number;
+
   // Relacionamento com usuário
   @ManyToOne(() => User)
   @JoinColumn({ name: 'fk_usuario' })

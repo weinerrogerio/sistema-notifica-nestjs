@@ -30,6 +30,9 @@ export class CreateLogArquivoImportDto {
   @IsString()
   duracao?: string; // formato: "00:01:23"
 
+  @IsNumber()
+  id_session?: number;
+
   // Relacionamento com usuário
   @IsNumber()
   @IsNotEmpty()
