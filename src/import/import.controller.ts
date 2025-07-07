@@ -66,6 +66,10 @@ export class ImportController {
     console.log(file.originalname);
     console.log(file.buffer.toString('utf-8').substring(0, 200));
     console.log(file);
-    return this.importService.importFile(file, tokenPayload);
+    return this.importService.importFile(
+      file,
+      tokenPayload,
+      tokenPayload.sessionId,
+    );
   }
 }

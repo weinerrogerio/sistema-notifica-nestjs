@@ -37,7 +37,11 @@ export class ImportService {
     return `This action removes a #${id} import`;
   }
 
-  async importFile(file: Express.Multer.File, tokenPayload: TokenPayloadDto) {
+  async importFile(
+    file: Express.Multer.File,
+    tokenPayload: TokenPayloadDto,
+    sessionId: number,
+  ) {
     console.log('tokenPayload: ', tokenPayload);
 
     const startTime = Date.now();
@@ -55,6 +59,7 @@ export class ImportService {
         registros_com_erro: 0,
         detalhes_erro: null,
         duracao: null,
+        id_session: sessionId, // tokenPayload.sessionId, dependendo da estrutura
         fk_usuario: tokenPayload.sub, // ou tokenPayload.userId, dependendo da estrutura
       };
 

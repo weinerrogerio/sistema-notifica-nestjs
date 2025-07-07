@@ -68,7 +68,7 @@ export class LogUsersService {
     userId: number,
     refreshToken: string,
     ipAddress: string,
-    userAgent: string,
+    userAgent: string, // de onde veio a requisição --> cliente - vscode-restclient? - postman? - browser?
     refreshTokenTtl: number,
   ): Promise<LogUser> {
     // Fecha todas as sessões ativas anteriores para o usuário

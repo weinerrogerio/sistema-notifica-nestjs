@@ -12,11 +12,14 @@ export class LogEventAdminUser {
 
   // fazer relacionamento com user(sessão)--> logUser: fk_id_user --> 1:n
   @Column()
-  fk_id_user: number;
+  id_user: number;
 
   // fazer relacionamento com target --> fk_id_target:user --> 1:1
   @Column()
-  fk_id_target: number;
+  id_target: number;
+
+  @Column()
+  id_session: number;
 
   @Column()
   event: string;
