@@ -40,12 +40,13 @@ async function bootstrap() {
         },
         {
           sub: 1,
-          email: adminEmail,
+          name: 'admin', // ou use o nome do usuário admin
           role: Role.ADMIN,
-          iat: 1,
-          exp: 1,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 3600,
           iss: '',
           aud: '',
+          sessionId: 1, // Mock sessionId para o seed
         },
       );
 

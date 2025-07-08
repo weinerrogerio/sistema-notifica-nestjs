@@ -1,6 +1,6 @@
 export class TokenPayloadDto {
   sub: number; //nome do usuário
-  email: string;
+  name: string;
   iat: number;
   exp: number;
   aud: string;

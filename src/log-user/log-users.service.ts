@@ -74,7 +74,10 @@ export class LogUsersService {
     // Fecha todas as sessões ativas anteriores para o usuário
     await this.closeActiveSession(userId);
 
-    const refreshTokenHash = await this.hashingService.hash(refreshToken);
+    //const refreshTokenHash = await this.hashingService.hash(refreshToken);
+    const refreshTokenHash = refreshToken
+      ? await this.hashingService.hash(refreshToken)
+      : null;
     const refreshExpiryDate = this.calculateRefreshTokenExpiry(refreshTokenTtl);
 
     const logUser = this.logUserRepository.create({
@@ -189,6 +192,15 @@ export class LogUsersService {
     });
   }
 
+  async findActiveSessionById(sessionId: number): Promise<LogUser | null> {
+    return await this.logUserRepository.findOne({
+      where: {
+        id: sessionId,
+        session_active: true,
+      },
+      relations: ['user'],
+    });
+  }
   /**
    * Revoga todas as sessões ativas de um usuário.
    * @param userId ID do usuário.
