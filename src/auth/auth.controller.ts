@@ -66,7 +66,8 @@ export class AuthController {
   async logout(
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
   ): Promise<LogoutResponse> {
-    return this.authService.logout(tokenPayload.sub);
+    return this.authService.logout(tokenPayload.sessionId);
+    //return this.authService.logout(tokenPayload.sub);
   }
   /*   async logout(@Req() request: Request): Promise<LogoutResponse> {
     const payload = request['REQUEST_TOKEN_PAYLOAD_KEY'] as TokenPayloadDto & {
@@ -108,7 +109,7 @@ export class AuthController {
   ): Promise<ValidateTokenResponse> {
     return {
       id: payload.sub,
-      nome: payload.email,
+      nome: payload.name,
       role: payload.role,
       sessionId: payload.sessionId,
     };

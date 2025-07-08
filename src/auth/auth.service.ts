@@ -36,13 +36,22 @@ export class AuthService {
     const user = await this.findActiveUserByName(loginDto.nome);
     await this.validatePassword(loginDto.password, user.password_hash);
 
-    const tokens = await this.generateTokens(user);
-
+    // Primeiro cria a sessão para obter o sessionId
     const session = await this.logUsersService.createLoginEntry(
       user.id,
-      tokens.refreshToken,
+      null, // temporário, pois o refresh token ainda não foi gerado
       ipAddress,
       userAgent,
+      this.jwtConfiguration.refreshTokenTtl,
+    );
+
+    // Agora gera os tokens incluindo o sessionId
+    const tokens = await this.generateTokens(user, session.id);
+
+    // Atualiza a sessão com o refresh token real
+    await this.logUsersService.updateRefreshToken(
+      session.id,
+      tokens.refreshToken,
       this.jwtConfiguration.refreshTokenTtl,
     );
 
@@ -85,8 +94,8 @@ export class AuthService {
       // throw new UnauthorizedException('IP da sessão não corresponde.');
     }
 
-    // Gera novos tokens
-    const tokens = await this.generateTokens(session.user);
+    // Gera novos tokens incluindo o sessionId
+    const tokens = await this.generateTokens(session.user, session.id);
 
     // Atualiza o refresh token na sessão
     await this.logUsersService.updateRefreshToken(
@@ -132,14 +141,40 @@ export class AuthService {
     }
   }
 
-  async logout(userId: number): Promise<LogoutResponse> {
-    const session =
-      await this.logUsersService.findActiveSessionByUserId(userId);
+  async logout(sessionId: number): Promise<LogoutResponse> {
+    const session = await this.logUsersService.findActiveSessionById(sessionId); // Usa o método existente para buscar por ID
     if (!session) {
-      return { message: 'Nenhuma sessão ativa encontrada.' };
+      return { message: 'Nenhuma sessão ativa encontrada para este ID.' };
     }
     await this.logUsersService.logoutSession(session.id, 'explicit');
     return { message: 'Logout realizado com sucesso.', sessionId: session.id };
+  }
+
+  // Novo método: Logout por sessionId específico (já existia, mas o método acima foi modificado para usá-lo)
+  async logoutBySessionId(sessionId: number): Promise<LogoutResponse> {
+    const session = await this.logUsersService.findActiveSessionById(sessionId);
+    if (!session) {
+      return { message: 'Sessão não encontrada ou já expirada.' };
+    }
+    await this.logUsersService.logoutSession(sessionId, 'explicit');
+    return { message: 'Logout realizado com sucesso.', sessionId };
+  }
+
+  // Novo método: Validação de sessão por token (já existia, está ok)
+  async validateTokenSession(token: string): Promise<boolean> {
+    try {
+      const decoded = this.jwtService.decode(token) as JwtPayload;
+      if (!decoded || !decoded.sessionId) {
+        return false;
+      }
+
+      const session = await this.logUsersService.findActiveSessionById(
+        decoded.sessionId,
+      );
+      return !!session;
+    } catch {
+      return false;
+    }
   }
 
   private async findActiveUserByName(nome: string): Promise<User> {
@@ -163,11 +198,15 @@ export class AuthService {
     }
   }
 
-  private async generateTokens(user: User): Promise<TokenPair> {
+  private async generateTokens(
+    user: User,
+    sessionId: number,
+  ): Promise<TokenPair> {
     const payload: JwtPayload = {
       sub: user.id,
       name: user.nome,
       role: user.role,
+      sessionId, // Já inclui o sessionId no payload, ótimo!
     };
 
     const [accessToken, refreshToken] = await Promise.all([

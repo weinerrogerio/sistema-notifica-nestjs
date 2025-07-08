@@ -4,6 +4,7 @@ export interface JwtPayload {
   role: string;
   iat?: number;
   exp?: number;
+  sessionId: number;
 }
 
 export interface TokenPair {

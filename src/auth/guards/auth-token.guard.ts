@@ -42,12 +42,24 @@ export class AuthTokenGuard implements CanActivate {
         throw new UnauthorizedException('Token inválido.');
       }
 
-      // 2. Verifica se a sessão ainda é válida
+      // 2. Verifica se a sessão ainda é válida e se o sessionId do token corresponde
+      // Busca a sessão ativa para o usuário
       const activeSession =
         await this.logUsersService.findActiveSessionByUserId(payload.sub);
 
       if (!activeSession) {
         throw new UnauthorizedException('Sessão inválida ou expirada.');
+      }
+
+      // NOVO: Verifica se o sessionId no token corresponde à sessão ativa encontrada.
+      // Isso é crucial para invalidar tokens de sessões que foram substituídas (e.g., novo login).
+      if (activeSession.id !== payload.sessionId) {
+        // Se o sessionId do token não corresponde à sessão ativa mais recente,
+        // significa que este token é de uma sessão antiga que foi implicitamente encerrada
+        // por um novo login do mesmo usuário.
+        throw new UnauthorizedException(
+          'Sessão do token inválida ou substituída por um novo login.',
+        );
       }
 
       // 3. Apenas atualiza a última atividade (sem renovar token aqui)
@@ -56,7 +68,7 @@ export class AuthTokenGuard implements CanActivate {
       // 4. Anexa informações à requisição
       request['REQUEST_TOKEN_PAYLOAD_KEY'] = {
         ...payload,
-        sessionId: activeSession.id,
+        sessionId: activeSession.id, // Garante que o sessionId anexado é o da sessão ativa
       };
 
       return true;

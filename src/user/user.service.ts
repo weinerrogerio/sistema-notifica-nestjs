@@ -47,8 +47,9 @@ export class UserService {
       await this.logEventUserService.createLogEntry({
         fk_id_user: userId, // ID do admin executando a ação
         fk_id_target: newUser.id,
+        sessionId: tokenPayload.sessionId,
         event: 'CREATE',
-        descricao: 'Criação de usuário',
+        descricao: 'Criação de usuário com SEED',
       });
       return newUser;
     } catch (error) {
