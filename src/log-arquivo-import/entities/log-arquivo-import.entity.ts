@@ -54,7 +54,7 @@ export class LogImportacaoArquivo {
   @Column()
   id_session: number;
 
-  // Relacionamento com usuário
+  //Relacionamento com usuário
   @ManyToOne(() => User)
   @JoinColumn({ name: 'fk_usuario' })
   usuario: User;

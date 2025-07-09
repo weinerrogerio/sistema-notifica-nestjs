@@ -45,8 +45,8 @@ export class ImportService {
     console.log('tokenPayload: ', tokenPayload);
 
     const startTime = Date.now();
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     let logImport: any = null;
-
     try {
       // 1. Criar log inicial
       const initialLogData: CreateLogArquivoImportDto = {
