@@ -48,8 +48,7 @@ export class LogArquivoImportService {
       );
     }
 
-    // Se não houver um registro de sucesso, ou se houver um de "falha" (que não impedirá a nova inserção)
-    // Criar um novo registro no log
+    // 2. Criar um novo registro
     const newFileDto = {
       ...createLogArquivoImportDto,
       data_importacao: new Date(),
@@ -62,10 +61,7 @@ export class LogArquivoImportService {
       await this.logArquivoImportRepository.save(newFile);
       return newFile;
     } catch (error) {
-      // Embora tenhamos verificado o status 'sucesso' explicitamente,
-      // ainda podemos ter erros de banco de dados por outros motivos (ex: tamanho da string, constraints diferentes).
-      // Para esta lógica, 'ER_DUP_ENTRY' não deve ocorrer no nome_arquivo se removeu a constraint unique.
-      // Deixamos um catch genérico para outros erros de persistência.
+      // Melhorar esse tratamento de erro
       console.error('Erro ao salvar novo log de arquivo:', error);
       throw error;
     }
@@ -109,14 +105,13 @@ export class LogArquivoImportService {
   }
 
   // Método para buscar logs de importação
-  async findByUser(userId: number, page: number = 1, limit: number = 10) {
+  async findByUser(userId: number, page: number = 1, limit: number = 25) {
     const [logs, total] = await this.logArquivoImportRepository.findAndCount({
       where: { fk_usuario: userId },
       order: { data_importacao: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
-
     return {
       logs,
       total,
@@ -124,5 +119,23 @@ export class LogArquivoImportService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async findAllAndUser() {
+    const arquivosImportados = await this.logArquivoImportRepository
+      .createQueryBuilder('log_arquivo_import')
+      .leftJoinAndSelect('log_arquivo_import.usuario', 'usuario') // Nome da relação na entity
+      .select([
+        'log_arquivo_import.id',
+        'log_arquivo_import.nome_arquivo',
+        'log_arquivo_import.tamanho_arquivo',
+        'log_arquivo_import.status',
+        'log_arquivo_import.total_registros',
+        'log_arquivo_import.registros_com_erro',
+        'log_arquivo_import.data_importacao',
+        'usuario.nome', // Apenas o nome do usuário
+      ])
+      .getMany();
+    return arquivosImportados;
   }
 }

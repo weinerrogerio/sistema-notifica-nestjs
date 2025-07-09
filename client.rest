@@ -304,7 +304,10 @@ Content-Type: application/json
    "detalhes_erro": "",
    "duracao": "00:00:00",
    "fk_usuario": 3
-
 }
+
+###
+GET {{baseUrl}}/log-arquivo-import/all-and-user
+Authorization: Bearer {{authToken}}
 
 

@@ -35,6 +35,12 @@ export class LogArquivoImportController {
     return this.logArquivoImportService.findAll();
   }
 
+  @Get('all-and-user')
+  @Roles(Role.USER, Role.ADMIN)
+  findAllAndUser() {
+    return this.logArquivoImportService.findAllAndUser();
+  }
+
   @Get(':id')
   @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {
