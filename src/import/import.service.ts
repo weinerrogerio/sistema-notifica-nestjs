@@ -6,6 +6,7 @@ import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
 import { StatusImportacao } from '@app/log-arquivo-import/enum/log-arquivo.enum';
 import { CreateLogArquivoImportDto } from '@app/log-arquivo-import/dto/create-log-arquivo-import.dto';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
+import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
 
 @Injectable()
 export class ImportService {
@@ -41,6 +42,7 @@ export class ImportService {
     file: Express.Multer.File,
     tokenPayload: TokenPayloadDto,
     sessionId: number,
+    options: ImportOptionsDto = { allowPartialImport: false },
   ) {
     console.log('tokenPayload: ', tokenPayload);
 
@@ -48,28 +50,41 @@ export class ImportService {
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     let logImport: any = null;
     try {
-      // 1. Criar log inicial
+      // 1. Verificar se arquivo já foi importado com sucesso
+      const existingImport = await this.logArquivoImportService.findByFileName(
+        file.originalname,
+      );
+
+      if (
+        existingImport &&
+        existingImport.status === StatusImportacao.SUCESSO
+      ) {
+        throw new BadRequestException(
+          `Arquivo '${file.originalname}' já foi importado com sucesso anteriormente.`,
+        );
+      }
+
+      // 2. Criar log inicial
       const initialLogData: CreateLogArquivoImportDto = {
         nome_arquivo: file.originalname,
         mimetype: file.mimetype,
         tamanho_arquivo: file.size,
-        status: StatusImportacao.FALHA, // Inicia como falha, muda para sucesso no final
+        status: StatusImportacao.FALHA,
         total_registros: 0,
         registros_processados: 0,
         registros_com_erro: 0,
         detalhes_erro: null,
         duracao: null,
-        id_session: sessionId, // tokenPayload.sessionId, dependendo da estrutura
-        fk_usuario: tokenPayload.sub, // ou tokenPayload.userId, dependendo da estrutura
+        id_session: sessionId,
+        fk_usuario: tokenPayload.sub,
       };
 
       logImport = await this.logArquivoImportService.create(initialLogData);
       console.log('ImportService logImport.id:::::: ', logImport.id);
 
-      // 2. Escolha da estratégia
+      // 3. Escolha da estratégia
       const strategy = this.strategies.find((s) => s.canHandle(file.mimetype));
       if (!strategy) {
-        // Atualizar log com erro de estratégia
         await this.logArquivoImportService.updateStatus(logImport.id, {
           status: StatusImportacao.FALHA,
           detalhes_erro: `Formato de arquivo não suportado: ${file.mimetype}`,
@@ -81,10 +96,13 @@ export class ImportService {
         );
       }
 
-      // 3. Processar arquivo com auditoria
-      await strategy.processFile(file.buffer, tokenPayload, logImport.id);
-
-      // 4. Atualizar log como sucesso (será feito dentro da strategy)
+      // 4. Processar arquivo com validação prévia
+      await strategy.processFile(
+        file.buffer,
+        tokenPayload,
+        logImport.id,
+        options,
+      );
     } catch (error) {
       // Atualizar log com erro, se o log foi criado
       if (logImport) {

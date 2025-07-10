@@ -79,6 +79,23 @@ Authorization: Bearer {{authToken}}
 //   "startDate":"2025-06-02",
 //   "endDate":"2025-06-17"
 //}
+### TESDE DE GRAVAÇÃO DE DISTRIBUIÇÃO:
+
+POST {{baseUrl}}/doc-protesto
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{  
+   "data_apresentacao": "2022-11-29T00:00:00.000Z",
+   "num_distribuicao": "5556688",
+   "data_distribuicao": "2022-03-08T00:00:00.000Z",
+   "cart_protesto": "2° Oficio de Protesto de Títulos de Curitiba",
+   "num_titulo": "71230",
+   "valor": 85218,
+   "saldo": 85218,
+   "vencimento": "11/03/2022",
+   "fk_apresentante": 4
+},
 
 
 ##------------------------- BUSCA EMAIL - DEVEDOR PJ -------------------------------

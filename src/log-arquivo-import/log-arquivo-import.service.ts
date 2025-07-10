@@ -138,4 +138,12 @@ export class LogArquivoImportService {
       .getMany();
     return arquivosImportados;
   }
+
+  async findByFileName(fileName: string) {
+    return await this.logArquivoImportRepository.findOne({
+      where: {
+        nome_arquivo: fileName,
+      },
+    });
+  }
 }
