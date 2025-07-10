@@ -1,4 +1,5 @@
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
+import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
 
 export interface ImportStrategy {
   canHandle(fileMimeType: string): boolean;
@@ -7,5 +8,6 @@ export interface ImportStrategy {
     fileBuffer: Buffer,
     tokenPayload: TokenPayloadDto,
     logImportId: number,
+    options?: ImportOptionsDto,
   ): Promise<void>;
 }

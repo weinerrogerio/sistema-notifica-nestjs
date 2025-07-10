@@ -15,6 +15,27 @@ export class DocProtestoService {
   //relacionamento apresentante:doc-protesto(1:n)
   async create(createDocProtestoDto: CreateDocProtestoDto) {
     try {
+      const existingDocProtesto = await this.docProtestoRepository.findOne({
+        where: {
+          num_distribuicao: createDocProtestoDto.num_distribuicao,
+          cart_protesto: createDocProtestoDto.cart_protesto,
+          num_titulo: createDocProtestoDto.num_titulo,
+          fk_apresentante: createDocProtestoDto.fk_apresentante,
+          vencimento: createDocProtestoDto.vencimento,
+          // Adicione outros campos que, combinados, definem a unicidade
+          // Por exemplo, para um protesto único:
+          // data_apresentacao: createDocProtestoDto.data_apresentacao,
+          // cart_protesto: createDocProtestoDto.cart_protesto,
+        },
+      });
+
+      if (existingDocProtesto) {
+        // Se um registro duplicado for encontrado, lançar uma exceção específica
+        throw new BadRequestException(
+          `Registro duplicado: Título '${createDocProtestoDto.num_titulo}' do apresentante '${createDocProtestoDto.fk_apresentante}' já existe.`,
+        );
+      }
+
       const newDocProtestoDto = {
         data_apresentacao: createDocProtestoDto.data_apresentacao,
         num_distribuicao: createDocProtestoDto.num_distribuicao,
@@ -27,14 +48,22 @@ export class DocProtestoService {
         fk_file: createDocProtestoDto.fk_file,
         fk_apresentante: createDocProtestoDto.fk_apresentante,
       };
+
+      if (newDocProtestoDto) {
+        // Se um registro duplicado for encontrado, lançar uma exceção específica
+        throw new BadRequestException(
+          `Registro duplicado: Título '${createDocProtestoDto.num_titulo}' do apresentante '${createDocProtestoDto.fk_apresentante}' já existe.`,
+        );
+      }
+
       const newDocProtesto =
         this.docProtestoRepository.create(newDocProtestoDto);
       return await this.docProtestoRepository.save(newDocProtesto);
     } catch (error) {
       console.log(error);
       /* throw new Error(
-        'Falha ao processar os dados importados para Documento de protesto.',
-      ); */
+          'Falha ao processar os dados importados para Documento de protesto.',
+        ); */
       throw new BadRequestException(
         `Falha ao processar os dados importados para Documento de protesto.  ${createDocProtestoDto}       ${error}   `,
       );

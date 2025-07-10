@@ -20,6 +20,7 @@ import { AuthTokenGuard } from '@app/auth/guards/auth-token.guard';
 import { RolesGuard } from '@app/auth/guards/roles.guard';
 import { Roles } from '@app/auth/decorators/roles.decorator';
 import { Role } from '@app/common/enums/role.enum';
+import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
 
 @UseGuards(AuthTokenGuard, RolesGuard)
 @Controller('import')
@@ -61,6 +62,7 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   async upload(
     @UploadedFile() file: Express.Multer.File,
+    @Body() importOptions: ImportOptionsDto,
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
   ) {
     console.log(file.originalname);
@@ -70,6 +72,7 @@ export class ImportController {
       file,
       tokenPayload,
       tokenPayload.sessionId,
+      importOptions,
     );
   }
 }

@@ -11,6 +11,7 @@ import { TransformationResult } from '@app/common/utils/dataTransform';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
 import { AddressValidator, DocumentValidator } from '@app/common';
+import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
 
 interface CriticalValidationResult {
   isValid: boolean;
@@ -116,6 +117,8 @@ export class ImportPersistenceService {
     data: ImportData[],
     tokenPayload: TokenPayloadDto,
     logImportId?: number,
+    //eslint-disable-next-line
+    options: ImportOptionsDto = { allowPartialImport: false },
   ): Promise<{
     processedCount: number;
     errorCount: number;
@@ -123,7 +126,6 @@ export class ImportPersistenceService {
     errors: string[];
   }> {
     console.log('xmlCreate: ', data.length, tokenPayload);
-
     console.log('xmlCreate -  logImport.id:::::: ', logImportId);
 
     let processedCount = 0;
@@ -131,7 +133,6 @@ export class ImportPersistenceService {
     let skippedCount = 0;
     const errors: string[] = [];
 
-    // SALVANDO DADOS NO BANCO
     try {
       for (let i = 0; i < data.length; i++) {
         const dado = data[i];
@@ -145,21 +146,22 @@ export class ImportPersistenceService {
             const errorMsg = `Registro ${recordNumber} pulado - Erros críticos: ${criticalValidation.errors.join(', ')}`;
             errors.push(errorMsg);
             console.warn(errorMsg);
-            continue; // Pula para o próximo registro
+            continue;
           }
 
-          // 2. Validação de ressalvas - não impede salvamento
+          // 2. Validação de ressalvas - não impede salvamento mas conta como erro
           const warnings = this.validateWarningFields(dado);
           if (warnings.length > 0) {
-            errorCount++; // Conta como erro, mas salva mesmo assim
             const warningMsg = `Registro ${recordNumber} salvo com ressalvas: ${warnings.join(', ')}`;
             errors.push(warningMsg);
             console.warn(warningMsg);
+            // Não incrementa errorCount aqui, pois será salvo
           }
 
           if (!logImportId) {
             throw new Error('logImportId é obrigatório para salvar registros');
           }
+
           // 3. Salvamento no banco
           await this.saveRecord(dado, logImportId);
           processedCount++;
@@ -168,7 +170,7 @@ export class ImportPersistenceService {
           if ((i + 1) % 100 === 0) {
             await this.logArquivoImportService.updateProgress(logImportId, {
               registros_processados: processedCount,
-              registros_com_erro: errorCount,
+              registros_com_erro: errorCount + skippedCount,
             });
           }
         } catch (itemError) {
@@ -176,7 +178,7 @@ export class ImportPersistenceService {
           const errorMsg = `Erro no registro ${recordNumber}: ${itemError.message}`;
           errors.push(errorMsg);
           console.error(errorMsg, itemError);
-          continue; // Continua processando os próximos registros
+          continue;
         }
       }
 

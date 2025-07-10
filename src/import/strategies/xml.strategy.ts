@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ImportStrategy } from './import.strategy';
 import { XMLParser } from 'fast-xml-parser';
 import { remove as removeAcentos } from 'diacritics';
@@ -8,6 +8,7 @@ import { ImportPersistenceService } from '../services/import-persistence.service
 import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
 import { StatusImportacao } from '@app/log-arquivo-import/enum/log-arquivo.enum';
+import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
 
 // Definição das interfaces para a estrutura do XML
 interface ExcelData {
@@ -209,6 +210,7 @@ export class XmlImportStrategy implements ImportStrategy {
     fileBuffer: Buffer,
     tokenPayload: TokenPayloadDto,
     logImportId: number,
+    options: ImportOptionsDto = { allowPartialImport: false },
   ): Promise<void> {
     const startTime = Date.now();
     let totalRegistros = 0;
@@ -217,6 +219,7 @@ export class XmlImportStrategy implements ImportStrategy {
     let detalhesErros: string[] = [];
 
     console.log('processFile de Strategy - logImport.id:::::: ', logImportId);
+
     try {
       // 1. Importar dados
       const dadosImportados = await this.import(fileBuffer);
@@ -229,28 +232,44 @@ export class XmlImportStrategy implements ImportStrategy {
         });
       }
 
-      // 2. Validação dos dados
+      // 2. Validação prévia dos dados
       const validationResult =
         await this.dataValidation.validate(dadosImportados);
 
-      if (!validationResult.isValid) {
-        // 3. Transformação dos dados
-        const dataTransform =
-          await this.transformationResult.tranformCsvData(dadosImportados);
+      // 3. Se há erros e não permite importação parcial, cancelar tudo
+      if (!validationResult.isValid && !options.allowPartialImport) {
+        const errorMessage = `Arquivo contém ${validationResult.linhasComErro} registro(s) com erro(s). Deseja salvar apenas os registros válidos? Se sim, reenvie o arquivo com allowPartialImport=true.`;
 
-        // 4. Persistência com auditoria
-        const persistenceResult = await this.importPersistenceService.xmlCreate(
-          dataTransform,
-          tokenPayload,
-          logImportId,
-        );
+        await this.logArquivoImportService.updateStatus(logImportId, {
+          status: StatusImportacao.FALHA,
+          total_registros: totalRegistros,
+          registros_processados: 0,
+          registros_com_erro: validationResult.linhasComErro,
+          detalhes_erro: JSON.stringify([errorMessage]),
+          duracao: this.calculateDuration(startTime),
+        });
 
-        registrosProcessados = persistenceResult.processedCount;
-        registrosComErro = persistenceResult.errorCount;
-        detalhesErros = persistenceResult.errors;
+        throw new BadRequestException(errorMessage);
       }
 
-      // 5. Determinar status final
+      // 4. Transformação dos dados
+      const dataTransform =
+        await this.transformationResult.tranformCsvData(dadosImportados);
+
+      // 5. Persistência com auditoria
+      const persistenceResult = await this.importPersistenceService.xmlCreate(
+        dataTransform,
+        tokenPayload,
+        logImportId,
+        options,
+      );
+
+      registrosProcessados = persistenceResult.processedCount;
+      registrosComErro =
+        persistenceResult.errorCount + persistenceResult.skippedCount;
+      detalhesErros = persistenceResult.errors;
+
+      // 6. Determinar status final
       let finalStatus: StatusImportacao;
       if (registrosComErro === 0) {
         finalStatus = StatusImportacao.SUCESSO;
@@ -260,7 +279,7 @@ export class XmlImportStrategy implements ImportStrategy {
         finalStatus = StatusImportacao.FALHA;
       }
 
-      // 6. Atualizar log final
+      // 7. Atualizar log final
       if (logImportId) {
         await this.logArquivoImportService.updateStatus(logImportId, {
           status: finalStatus,
@@ -272,7 +291,6 @@ export class XmlImportStrategy implements ImportStrategy {
         });
       }
     } catch (error) {
-      // Atualizar log com erro
       if (logImportId) {
         await this.logArquivoImportService.updateStatus(logImportId, {
           status: StatusImportacao.FALHA,
