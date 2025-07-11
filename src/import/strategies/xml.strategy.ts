@@ -9,6 +9,7 @@ import { TokenPayloadDto } from '@app/auth/dto/token-payload.dto';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
 import { StatusImportacao } from '@app/log-arquivo-import/enum/log-arquivo.enum';
 import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
+import { DuplicateInfo } from '@app/common/interfaces/doc-protesto.interface';
 
 // Definição das interfaces para a estrutura do XML
 interface ExcelData {
@@ -216,7 +217,9 @@ export class XmlImportStrategy implements ImportStrategy {
     let totalRegistros = 0;
     let registrosProcessados = 0;
     let registrosComErro = 0;
+    let registrosDuplicados = 0;
     let detalhesErros: string[] = [];
+    let detalhesDuplicados: DuplicateInfo[] = [];
 
     console.log('processFile de Strategy - logImport.id:::::: ', logImportId);
 
@@ -256,7 +259,7 @@ export class XmlImportStrategy implements ImportStrategy {
       const dataTransform =
         await this.transformationResult.tranformCsvData(dadosImportados);
 
-      // 5. Persistência com auditoria
+      // 5. Persistência com auditoria (agora retorna também duplicidades)
       const persistenceResult = await this.importPersistenceService.xmlCreate(
         dataTransform,
         tokenPayload,
@@ -267,11 +270,13 @@ export class XmlImportStrategy implements ImportStrategy {
       registrosProcessados = persistenceResult.processedCount;
       registrosComErro =
         persistenceResult.errorCount + persistenceResult.skippedCount;
+      registrosDuplicados = persistenceResult.duplicateCount;
       detalhesErros = persistenceResult.errors;
+      detalhesDuplicados = persistenceResult.duplicates;
 
       // 6. Determinar status final
       let finalStatus: StatusImportacao;
-      if (registrosComErro === 0) {
+      if (registrosComErro === 0 && registrosDuplicados === 0) {
         finalStatus = StatusImportacao.SUCESSO;
       } else if (registrosProcessados > 0) {
         finalStatus = StatusImportacao.PARCIAL;
@@ -287,6 +292,12 @@ export class XmlImportStrategy implements ImportStrategy {
           registros_com_erro: registrosComErro,
           detalhes_erro:
             detalhesErros.length > 0 ? JSON.stringify(detalhesErros) : null,
+          registros_duplicados: registrosDuplicados,
+          detalhes_duplicidade:
+            detalhesDuplicados.length > 0
+              ? JSON.stringify(detalhesDuplicados)
+              : null,
+          // DETALHES?????
           duracao: this.calculateDuration(startTime),
         });
       }

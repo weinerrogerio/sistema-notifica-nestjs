@@ -86,3 +86,24 @@ export interface FiltrosDistribuicao {
   status?: string;
   email?: string;
 }
+
+/* export interface DuplicateRecord {
+  linha: number;
+  num_distribuicao: string;
+  cart_protesto: string;
+  num_titulo: string;
+  apresentante: string;
+  vencimento: string;
+  motivo: 'já_existe_bd' | 'duplicado_arquivo';
+  data_importacao_original?: Date;
+} */
+
+export interface DuplicateInfo {
+  linha: number;
+  num_distribuicao: string;
+  cart_protesto: string;
+  num_titulo: string;
+  apresentante: string;
+  vencimento: string;
+  motivo: string;
+}

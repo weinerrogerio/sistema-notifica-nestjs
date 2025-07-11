@@ -2,7 +2,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateLogArquivoImportDto } from './dto/create-log-arquivo-import.dto';
 import { UpdateLogArquivoImportDto } from './dto/update-log-arquivo-import.dto';
 import { LogImportacaoArquivo } from './entities/log-arquivo-import.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StatusImportacao } from './enum/log-arquivo.enum';
 
@@ -37,7 +37,7 @@ export class LogArquivoImportService {
     const existingSuccessFile = await this.logArquivoImportRepository.findOne({
       where: {
         nome_arquivo: createLogArquivoImportDto.nome_arquivo,
-        status: StatusImportacao.SUCESSO, // Apenas verificamos por sucesso
+        status: Not(StatusImportacao.FALHA), // Ignorar falhas... StatusImportacao.SUCESSO, // Apenas verificamos por sucesso
       },
     });
 
@@ -67,24 +67,20 @@ export class LogArquivoImportService {
     }
   }
 
-  // Novo método para atualizar status
   async updateStatus(
-    logId: number,
-    updateData: Partial<{
-      status: StatusImportacao;
-      total_registros: number;
-      registros_processados: number;
-      registros_com_erro: number;
-      detalhes_erro: string;
-      duracao: string;
-    }>,
-  ) {
-    try {
-      await this.logArquivoImportRepository.update(logId, updateData);
-    } catch (error) {
-      console.error('Erro ao atualizar log de importação:', error);
-      // Não lançar erro aqui para não quebrar o fluxo principal
-    }
+    id: number,
+    updateData: {
+      status?: StatusImportacao;
+      total_registros?: number;
+      registros_processados?: number;
+      registros_com_erro?: number;
+      detalhes_erro?: string;
+      registros_duplicados?: number;
+      detalhes_duplicidade?: string;
+      duracao?: string;
+    },
+  ): Promise<void> {
+    await this.logArquivoImportRepository.update(id, updateData);
   }
 
   // Novo método para atualizar progresso

@@ -6,6 +6,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -14,6 +15,17 @@ import {
 } from 'typeorm';
 
 @Entity('doc_protesto')
+@Index(
+  'idx_doc_protesto_unique',
+  [
+    'num_distribuicao',
+    'cart_protesto',
+    'num_titulo',
+    'fk_apresentante',
+    'vencimento',
+  ],
+  { unique: true },
+)
 export class DocProtesto {
   @PrimaryGeneratedColumn()
   id: number;

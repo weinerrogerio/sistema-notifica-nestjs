@@ -16,7 +16,6 @@ export class LogImportacaoArquivo {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // alterar para unique --> nao pode importar o mesmo arquivo mais de uma vez
   @Column({ type: 'varchar', length: 255 })
   nome_arquivo: string;
 
@@ -44,6 +43,12 @@ export class LogImportacaoArquivo {
 
   @Column({ type: 'text', nullable: true })
   detalhes_erro: string; // JSON com detalhes dos erros
+
+  @Column({ type: 'int', default: 0 })
+  registros_duplicados: number; // total de registros duplicados
+
+  @Column({ type: 'text', nullable: true })
+  detalhes_duplicidade: string; // JSON com duplicidades
 
   @CreateDateColumn()
   data_importacao: Date;
