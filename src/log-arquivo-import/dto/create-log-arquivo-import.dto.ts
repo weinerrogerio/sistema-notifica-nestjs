@@ -22,7 +22,7 @@ export class CreateLogArquivoImportDto {
   registros_processados?: number;
 
   @IsNumber()
-  registros_com_erro?: number;
+  registros_com_erro?: number; // total de registros com erro
 
   @IsString()
   detalhes_erro?: string; // JSON com detalhes dos erros

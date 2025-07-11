@@ -12,6 +12,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
 import { AddressValidator, DocumentValidator } from '@app/common';
 import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
+import { DuplicateInfo } from '@app/common/interfaces/doc-protesto.interface';
 
 interface CriticalValidationResult {
   isValid: boolean;
@@ -112,6 +113,27 @@ export class ImportPersistenceService {
     return false;
   }
 
+  // Função para busca em lote de duplicidades
+  private async checkForDuplicates(data: ImportData[]): Promise<Set<string>> {
+    const uniqueKeys = data.map(
+      (item) =>
+        `${item.protocolo}|${item.cartorio}|${item.numero_do_titulo}|${item.apresentante}|${item.vencimento}`,
+    );
+
+    // Buscar todos os registros existentes de uma vez
+    const existingRecords =
+      await this.docProtestoService.findByUniqueKeys(uniqueKeys);
+
+    // Criar Set com chaves dos registros existentes
+    const duplicateKeys = new Set<string>();
+    existingRecords.forEach((record) => {
+      const key = `${record.num_distribuicao}|${record.cart_protesto}|${record.num_titulo}|${record.apresentante?.nome || record.fk_apresentante}|${record.vencimento}`;
+      duplicateKeys.add(key);
+    });
+
+    return duplicateKeys;
+  }
+
   // FUNÇÃO RESPONSAVEL POR GUARDAR OS DADOS NO BANCO SO ARQUIVO XML --> CHAMAR ESSA FUNÇAÕ EM STRATEGY XML(xml.strategy.ts)
   async xmlCreate(
     data: ImportData[],
@@ -123,7 +145,9 @@ export class ImportPersistenceService {
     processedCount: number;
     errorCount: number;
     skippedCount: number;
+    duplicateCount: number;
     errors: string[];
+    duplicates: DuplicateInfo[];
   }> {
     console.log('xmlCreate: ', data.length, tokenPayload);
     console.log('xmlCreate -  logImport.id:::::: ', logImportId);
@@ -131,15 +155,42 @@ export class ImportPersistenceService {
     let processedCount = 0;
     let errorCount = 0;
     let skippedCount = 0;
+    let duplicateCount = 0;
     const errors: string[] = [];
+    const duplicates: DuplicateInfo[] = [];
 
     try {
+      // Verificar duplicidades em lote antes de processar
+      const duplicateKeys = await this.checkForDuplicates(data);
+
       for (let i = 0; i < data.length; i++) {
         const dado = data[i];
         const recordNumber = i + 1;
 
         try {
-          // 1. Validação crítica - impede salvamento
+          // 2. Verificar se é duplicado
+          const uniqueKey = `${dado.protocolo}|${dado.cartorio}|${dado.numero_do_titulo}|${dado.apresentante}|${dado.vencimento}`;
+
+          if (duplicateKeys.has(uniqueKey)) {
+            duplicateCount++;
+            const duplicateInfo: DuplicateInfo = {
+              linha: recordNumber,
+              num_distribuicao: dado.protocolo,
+              cart_protesto: dado.cartorio,
+              num_titulo: dado.numero_do_titulo,
+              apresentante: dado.apresentante,
+              vencimento: dado.vencimento,
+              motivo: 'Registro já existe na base de dados',
+            };
+            duplicates.push(duplicateInfo);
+
+            console.warn(
+              `Registro ${recordNumber} duplicado - Distribuição: ${dado.protocolo}`,
+            );
+            continue;
+          }
+
+          // 3. Validação crítica - impede salvamento
           const criticalValidation = this.validateCriticalFields(dado);
           if (!criticalValidation.isValid) {
             skippedCount++;
@@ -149,24 +200,23 @@ export class ImportPersistenceService {
             continue;
           }
 
-          // 2. Validação de ressalvas - não impede salvamento mas conta como erro
+          // 4. Validação de ressalvas - não impede salvamento mas conta como erro
           const warnings = this.validateWarningFields(dado);
           if (warnings.length > 0) {
             const warningMsg = `Registro ${recordNumber} salvo com ressalvas: ${warnings.join(', ')}`;
             errors.push(warningMsg);
             console.warn(warningMsg);
-            // Não incrementa errorCount aqui, pois será salvo
           }
 
           if (!logImportId) {
             throw new Error('logImportId é obrigatório para salvar registros');
           }
 
-          // 3. Salvamento no banco
+          // 5. Salvamento no banco
           await this.saveRecord(dado, logImportId);
           processedCount++;
 
-          // 4. Atualizar progresso a cada 100 registros
+          // 6. Atualizar progresso a cada 100 registros
           if ((i + 1) % 100 === 0) {
             await this.logArquivoImportService.updateProgress(logImportId, {
               registros_processados: processedCount,
@@ -182,7 +232,14 @@ export class ImportPersistenceService {
         }
       }
 
-      return { processedCount, errorCount, skippedCount, errors };
+      return {
+        processedCount,
+        errorCount,
+        skippedCount,
+        duplicateCount,
+        errors,
+        duplicates,
+      };
     } catch (error) {
       console.error('Erro ao iterar pelos dados:', error);
       throw new InternalServerErrorException(

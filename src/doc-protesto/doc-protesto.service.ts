@@ -11,9 +11,9 @@ export class DocProtestoService {
     @InjectRepository(DocProtesto)
     private readonly docProtestoRepository: Repository<DocProtesto>,
   ) {}
-  //ATENÇÃO: para salvar tem de existir um apresntenta pois ele associa o protesto ao apresentante
+  //ATENÇÃO: para salvar tem de existir um apresntente pois ele associa o /distribuição ao apresentante
   //relacionamento apresentante:doc-protesto(1:n)
-  async create(createDocProtestoDto: CreateDocProtestoDto) {
+  /* async create(createDocProtestoDto: CreateDocProtestoDto) {
     try {
       const existingDocProtesto = await this.docProtestoRepository.findOne({
         where: {
@@ -61,11 +61,97 @@ export class DocProtestoService {
       return await this.docProtestoRepository.save(newDocProtesto);
     } catch (error) {
       console.log(error);
-      /* throw new Error(
-          'Falha ao processar os dados importados para Documento de protesto.',
-        ); */
+      
       throw new BadRequestException(
         `Falha ao processar os dados importados para Documento de protesto.  ${createDocProtestoDto}       ${error}   `,
+      );
+    }
+  } */
+
+  // Nova função para busca em lote de registros únicos
+  async findByUniqueKeys(uniqueKeys: string[]): Promise<DocProtesto[]> {
+    if (uniqueKeys.length === 0) return [];
+
+    // Criar condições WHERE para busca em lote
+    const whereConditions = uniqueKeys.map((key) => {
+      const [
+        num_distribuicao,
+        cart_protesto,
+        num_titulo,
+        apresentante,
+        vencimento,
+      ] = key.split('|');
+      return {
+        num_distribuicao,
+        cart_protesto,
+        num_titulo,
+        vencimento,
+        // Buscar por apresentante através do relacionamento
+        apresentante: apresentante ? { nome: apresentante } : undefined,
+      };
+    });
+
+    // Usar IN ou OR para buscar todos de uma vez
+    const queryBuilder = this.docProtestoRepository
+      .createQueryBuilder('doc')
+      .leftJoinAndSelect('doc.apresentante', 'apresentante');
+
+    // Adicionar condições OR para cada registro único
+    whereConditions.forEach((condition, index) => {
+      const paramPrefix = `param${index}`;
+      if (index === 0) {
+        queryBuilder.where(`(
+          doc.num_distribuicao = :${paramPrefix}_dist AND 
+          doc.cart_protesto = :${paramPrefix}_cart AND 
+          doc.num_titulo = :${paramPrefix}_titulo AND 
+          doc.vencimento = :${paramPrefix}_venc
+          ${condition.apresentante ? `AND apresentante.nome = :${paramPrefix}_apres` : ''}
+        )`);
+      } else {
+        queryBuilder.orWhere(`(
+          doc.num_distribuicao = :${paramPrefix}_dist AND 
+          doc.cart_protesto = :${paramPrefix}_cart AND 
+          doc.num_titulo = :${paramPrefix}_titulo AND 
+          doc.vencimento = :${paramPrefix}_venc
+          ${condition.apresentante ? `AND apresentante.nome = :${paramPrefix}_apres` : ''}
+        )`);
+      }
+
+      // Definir parâmetros
+      queryBuilder.setParameter(
+        `${paramPrefix}_dist`,
+        condition.num_distribuicao,
+      );
+      queryBuilder.setParameter(`${paramPrefix}_cart`, condition.cart_protesto);
+      queryBuilder.setParameter(`${paramPrefix}_titulo`, condition.num_titulo);
+      queryBuilder.setParameter(`${paramPrefix}_venc`, condition.vencimento);
+      if (condition.apresentante) {
+        queryBuilder.setParameter(
+          `${paramPrefix}_apres`,
+          condition.apresentante.nome,
+        );
+      }
+    });
+
+    return await queryBuilder.getMany();
+  }
+
+  // Função create simplificada (sem verificação de duplicidade)
+  async create(createDocProtestoDto: CreateDocProtestoDto) {
+    try {
+      const newDocProtesto =
+        this.docProtestoRepository.create(createDocProtestoDto);
+      return await this.docProtestoRepository.save(newDocProtesto);
+    } catch (error) {
+      // Se der erro de constraint unique, será capturado aqui
+      if (error.code === '23505') {
+        // PostgreSQL unique violation
+        throw new BadRequestException(
+          `Registro duplicado: Distribuição '${createDocProtestoDto.num_distribuicao}' já existe.`,
+        );
+      }
+      throw new BadRequestException(
+        `Falha ao processar documento de protesto: ${error.message}`,
       );
     }
   }
