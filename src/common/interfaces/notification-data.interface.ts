@@ -1,3 +1,20 @@
+import { Apresentante } from '@app/apresentante/entities/apresentante.entity';
+import { Credor } from '@app/credor/entities/credor.entity';
+import { Devedor } from '@app/devedor/entities/devedor.entity';
+import { DocProtesto } from '@app/doc-protesto/entities/doc-protesto.entity';
+import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
+
+// Interface para envio de intimações - Com todos os dados de todas as tabelas - BAIXA PERFORMACE
+export type IntimacaoDataCompleto = LogNotificacao & {
+  devedor: Devedor;
+  protesto: DocProtesto & {
+    apresentante: Apresentante;
+    credores: Array<{
+      credor: Credor;
+    }>;
+  };
+};
+
 export interface IntimacaoData {
   logNotificacaoId: number;
   //dados do devedor
@@ -7,6 +24,7 @@ export interface IntimacaoData {
   //dados do titulo
   distribuicao: string;
   dataDistribuicao: Date;
+  numTitulo: string;
   valorTotal: number;
   dataVencimento: string; // data string pois pode ser "a vista"
   tabelionato: string;

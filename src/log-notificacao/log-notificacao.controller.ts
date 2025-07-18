@@ -33,6 +33,49 @@ export class LogNotificacaoController {
     return this.logNotificacaoService.findAll();
   }
 
+  /* -------------------------------------   BUSCAS  -------------------------------------- */
+
+  @Get('busca-completa')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentesCompletas() {
+    return await this.logNotificacaoService.buscarNotificacoesPendentesCompletas();
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES
+  @Get('busca')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentes() {
+    const intimacoes =
+      await this.logNotificacaoService.buscarNotificacoesPendentes();
+    return intimacoes;
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DEVEDOR
+  @Get('busca/:devedorId')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentesPorDevedor(@Body() devedorId: number) {
+    const intimacoes =
+      await this.logNotificacaoService.buscarNotificacoesPendentesPorDevedor(
+        devedorId,
+      );
+    return intimacoes;
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DISTRIBUIÇÃO
+  @Get('busca/distribuicao/:numDistribuicao')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentesPorDistribuicao(
+    @Body() numDistribuicao: string,
+  ) {
+    const intimacoes =
+      await this.logNotificacaoService.buscarNotificacoesPendentesPorDistribuicao(
+        numDistribuicao,
+      );
+
+    return intimacoes;
+  }
+
+  // ------------------------------ ROTAS COM PARAMETROS DINAMICOS ------------------------------
   @Get(':id')
   @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {

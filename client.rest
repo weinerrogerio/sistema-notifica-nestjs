@@ -210,8 +210,14 @@ Content-Type: application/json
 POST {{baseUrl}}/notification/teste
 Authorization: Bearer {{authToken}}
 
+### -------------------- BUSCA - LOG NOTIFICAÇÕES -----------------
 ###
-GET {{baseUrl}}/notification/busca
+GET {{baseUrl}}/log-notificacao/busca-completa
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{baseUrl}}/log-notificacao/busca
 Authorization: Bearer {{authToken}}
 
 ### --> NAO ESQUECER DE RODAR ISSO ANTES DE ENVIAR NOTIFICAÇÕES EM TESTE

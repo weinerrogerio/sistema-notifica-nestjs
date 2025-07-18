@@ -2,9 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TrackingService } from '@app/tracking/tracking.service';
 import { IntimacaoData } from '@app/common/interfaces/notification-data.interface';
-import { NotificationQueryService } from './notification-search.service';
 import { EmailService } from './notification-email.service';
 import { NotificationResult } from '../interfaces/notification.interface';
+import { LogNotificationQueryService } from '@app/log-notificacao/services/log-notification-search.service';
 
 @Injectable()
 export class NotificationOrchestratorService {
@@ -13,14 +13,14 @@ export class NotificationOrchestratorService {
   constructor(
     private trackingService: TrackingService,
     private configService: ConfigService,
-    private notificationQueryService: NotificationQueryService,
+    private logNotificationQueryService: LogNotificationQueryService,
     private emailService: EmailService,
   ) {}
 
   async sendNotificationsWithTracking(): Promise<NotificationResult> {
     // Uma única consulta que já traz todos os dados necessários para o envio
     const intimacoesPendentes =
-      await this.notificationQueryService.buscarNotificacoesPendentes();
+      await this.logNotificationQueryService.buscarNotificacoesPendentes();
 
     const resultados: NotificationResult = {
       enviados: 0,
@@ -92,7 +92,7 @@ export class NotificationOrchestratorService {
 
       if (success) {
         // Atualizar log que email foi enviado
-        await this.notificationQueryService.marcarComoEnviada(
+        await this.logNotificationQueryService.marcarComoEnviada(
           dados.logNotificacaoId,
         );
       }

@@ -124,11 +124,14 @@ export class LogArquivoImportService {
       .select([
         'log_arquivo_import.id',
         'log_arquivo_import.nome_arquivo',
-        'log_arquivo_import.tamanho_arquivo',
-        'log_arquivo_import.status',
         'log_arquivo_import.total_registros',
-        'log_arquivo_import.registros_com_erro',
         'log_arquivo_import.data_importacao',
+        'log_arquivo_import.status',
+        'log_arquivo_import.registros_com_erro',
+        'log_arquivo_import.detalhes_erro',
+        'log_arquivo_import.registros_duplicados',
+        'log_arquivo_import.detalhes_duplicidade',
+        'log_arquivo_import.tamanho_arquivo',
         'usuario.nome', // Apenas o nome do usuário
       ])
       .getMany();

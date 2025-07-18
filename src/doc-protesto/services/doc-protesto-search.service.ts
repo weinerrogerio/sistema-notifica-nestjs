@@ -47,7 +47,6 @@ export class DocProtestoSearchService {
       .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
       .leftJoinAndSelect('protesto.notificacao', 'logNotificacao')
       .leftJoinAndSelect('logNotificacao.devedor', 'devedor');
-
     queryBuilder.andWhere('devedor.email IS NOT NULL');
     // Aplicar filtros dinamicamente
     if (filtros.devedorNome) {
@@ -78,7 +77,6 @@ export class DocProtestoSearchService {
       );
     }
 
-    // Adicionar outros filtros conforme necessário
     const distribuicoes = await queryBuilder
       .orderBy('protesto.data_distribuicao', 'DESC')
       .getMany();
