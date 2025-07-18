@@ -19,6 +19,9 @@ export class SendNotificationDto {
   @IsString()
   dataDistribuicao: Date;
 
+  @IsString()
+  numTitulo: string;
+
   @IsNumber()
   valorTotal: number;
 

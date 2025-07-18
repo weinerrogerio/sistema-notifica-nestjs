@@ -56,19 +56,6 @@ export class NotificationController {
     };
   }
 
-  // Buscar notificações pendentes (com IDs para tracking)
-  @Get('pendentes-com-id')
-  @Roles(Role.USER, Role.ADMIN)
-  async buscarNotificacoesPendentesComId() {
-    const intimacoes =
-      await this.notificationService.buscarNotificacoesPendentes();
-    return {
-      success: true,
-      total: intimacoes.length,
-      data: intimacoes,
-    };
-  }
-
   // Estatísticas de abertura
   @Get('stats')
   @Roles(Role.USER, Role.ADMIN)
@@ -113,42 +100,5 @@ export class NotificationController {
         ? 'Intimação enviada com sucesso!'
         : 'Falha ao enviar intimação',
     };
-  }
-
-  /* -------------------------------------   BUSCAS  -------------------------------------- */
-  //BUSCA POR NOTIFICAÇÕES PENDENTES
-  @Get('busca')
-  @Roles(Role.USER, Role.ADMIN)
-  async buscarNotificacoesPendentes() {
-    const intimacoes =
-      await this.notificationService.buscarNotificacoesPendentes();
-
-    return intimacoes;
-  }
-
-  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DEVEDOR
-  @Get('busca/:devedorId')
-  @Roles(Role.USER, Role.ADMIN)
-  async buscarNotificacoesPendentesPorDevedor(@Body() devedorId: number) {
-    const intimacoes =
-      await this.notificationService.buscarNotificacoesPendentesPorDevedor(
-        devedorId,
-      );
-
-    return intimacoes;
-  }
-
-  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DISTRIBUIÇÃO
-  @Get('busca/distribuicao/:numDistribuicao')
-  @Roles(Role.USER, Role.ADMIN)
-  async buscarNotificacoesPendentesPorDistribuicao(
-    @Body() numDistribuicao: string,
-  ) {
-    const intimacoes =
-      await this.notificationService.buscarNotificacoesPendentesPorDistribuicao(
-        numDistribuicao,
-      );
-
-    return intimacoes;
   }
 }

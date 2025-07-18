@@ -173,6 +173,7 @@ export class DocProtestoService {
       throw new Error('endDate inválida');
     }
 
+    // Usar datas atuais se nenhuma for fornecida
     if (!startDate || !endDate) {
       endDate = new Date();
       startDate = new Date();

@@ -4,12 +4,18 @@ import { UpdateLogNotificacaoDto } from './dto/update-log-notificacao.dto';
 import { LogNotificacao } from './entities/log-notificacao.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { LogNotificationQueryService } from './services/log-notification-search.service';
+import {
+  IntimacaoData,
+  IntimacaoDataCompleto,
+} from '@app/common/interfaces/notification-data.interface';
 //NOTA: ALTERARA ENTIDADE--> LOG_NOTIFICACAO -> ADICIONAR COLUNA DE EMAIL ENCONTRADO, COLUNAR DE ENVIADO, E DATA DE ENVIO != DATA GRAVAÇÃO
 @Injectable()
 export class LogNotificacaoService {
   constructor(
     @InjectRepository(LogNotificacao)
     private readonly logNotificacaoRepository: Repository<LogNotificacao>,
+    private readonly logNotificationQueryService: LogNotificationQueryService,
   ) {}
   async create(createLogNotificacaoDto: CreateLogNotificacaoDto) {
     console.log('createLogNotificacaoDto recebido:', createLogNotificacaoDto);
@@ -68,5 +74,77 @@ export class LogNotificacaoService {
 
   remove(id: number) {
     return `This action removes a #${id} logNotificacao`;
+  }
+
+  // ------------------------------------- Métodos de busca ------------------------------------- //
+
+  async buscarNotificacoesPendentesCompletas(): Promise<
+    IntimacaoDataCompleto[]
+  > {
+    return this.logNotificationQueryService.buscarNotificacoesPendentesCompletas();
+  }
+
+  async buscarNotificacoesPendentes(): Promise<IntimacaoData[]> {
+    return this.logNotificationQueryService.buscarNotificacoesPendentes();
+  }
+
+  async buscarIntimacoesPorDevedorENumProtesto(
+    devedorNome: string,
+    numDistribuicaoProtesto: string,
+  ): Promise<IntimacaoData[]> {
+    return this.logNotificationQueryService.buscarIntimacoesPorDevedorENumProtesto(
+      devedorNome,
+      numDistribuicaoProtesto,
+    );
+  }
+
+  async buscarNotificacoesPendentesPorDevedor(
+    devedorId: number,
+  ): Promise<IntimacaoData[]> {
+    return this.logNotificationQueryService.buscarNotificacoesPendentesPorDevedor(
+      devedorId,
+    );
+  }
+
+  async buscarNotificacoesPendentesPorDistribuicao(
+    numDistribuicao: string,
+  ): Promise<IntimacaoData[]> {
+    return this.logNotificationQueryService.buscarNotificacoesPendentesPorDistribuicao(
+      numDistribuicao,
+    );
+  }
+
+  async buscarNotificacoesComPaginacao(
+    page: number = 1,
+    limit: number = 10,
+    filtros?: {
+      emailEnviado?: boolean;
+      devedorComEmail?: boolean;
+      dataInicio?: Date;
+      dataFim?: Date;
+    },
+  ): Promise<{
+    dados: IntimacaoData[];
+    total: number;
+    pagina: number;
+    totalPaginas: number;
+  }> {
+    return this.logNotificationQueryService.buscarNotificacoesComPaginacao(
+      page,
+      limit,
+      filtros,
+    );
+  }
+
+  async marcarComoEnviada(logNotificacaoId: number): Promise<void> {
+    return this.logNotificationQueryService.marcarComoEnviada(logNotificacaoId);
+  }
+
+  async marcarMultiplasComoEnviadas(
+    logNotificacaoIds: number[],
+  ): Promise<void> {
+    return this.logNotificationQueryService.marcarMultiplasComoEnviadas(
+      logNotificacaoIds,
+    );
   }
 }

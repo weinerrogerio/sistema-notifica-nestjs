@@ -1,17 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
-import { IntimacaoData } from '@app/common/interfaces/notification-data.interface';
+import {
+  IntimacaoData,
+  IntimacaoDataCompleto,
+} from '@app/common/interfaces/notification-data.interface';
+import { LogNotificacao } from '../entities/log-notificacao.entity';
 
 @Injectable()
-export class NotificationQueryService {
-  private readonly logger = new Logger(NotificationQueryService.name);
+export class LogNotificationQueryService {
+  private readonly logger = new Logger(LogNotificationQueryService.name);
 
   constructor(
     @InjectRepository(LogNotificacao)
     private readonly logNotificacaoRepository: Repository<LogNotificacao>,
   ) {}
+
+  async buscarNotificacoesPendentesCompletas(): Promise<
+    IntimacaoDataCompleto[]
+  > {
+    return await this.logNotificacaoRepository
+      .createQueryBuilder('log_notificacao')
+      .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
+      .leftJoinAndSelect('log_notificacao.protesto', 'protesto')
+      .leftJoinAndSelect('protesto.apresentante', 'apresentante')
+      .leftJoinAndSelect('protesto.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      .where('log_notificacao.email_enviado = :emailEnviado', {
+        emailEnviado: false,
+      })
+      .andWhere('devedor.email IS NOT NULL')
+      .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
+      .getMany();
+  }
 
   // Buscar notificações não enviadas de devedores que possuem email
   async buscarNotificacoesPendentes(): Promise<IntimacaoData[]> {
@@ -28,7 +49,6 @@ export class NotificationQueryService {
       .andWhere('devedor.email IS NOT NULL')
       .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
       .getMany();
-
     return this.mapearParaIntimacaoData(logNotificacoes);
   }
 
@@ -93,7 +113,6 @@ export class NotificationQueryService {
       })
       .andWhere('devedor.email IS NOT NULL')
       .getMany();
-
     return this.mapearParaIntimacaoData(logNotificacoes);
   }
 
@@ -204,6 +223,7 @@ export class NotificationQueryService {
         nomeDevedor: logNotificacao.devedor?.nome || '',
         devedorEmail: logNotificacao.devedor?.email || '',
         docDevedor: logNotificacao.devedor?.doc_devedor || '',
+        numTitulo: logNotificacao.protesto?.num_titulo || '',
         distribuicao: logNotificacao.protesto?.num_distribuicao || '',
         dataDistribuicao:
           logNotificacao.protesto?.data_distribuicao || new Date(),
@@ -213,6 +233,10 @@ export class NotificationQueryService {
         credor: nomeCredor,
         portador:
           logNotificacao.protesto?.apresentante?.nome || 'Não informado',
+        // propriedades para status
+        dataEnvio: logNotificacao.data_envio || null,
+        emailEnviado: logNotificacao.email_enviado,
+        lido: logNotificacao.lido,
       };
     });
   }
