@@ -8,12 +8,14 @@ import { NotificationService } from './notification.service';
 import { EmailService } from './services/notification-email.service';
 import { NotificationOrchestratorService } from './services/notification-log.service';
 import { NotificationController } from './notification.controller';
+import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([LogNotificacao]),
     ConfigModule,
     TrackingPixelModule,
+    LogNotificacaoModule,
   ],
   controllers: [NotificationController],
   providers: [
