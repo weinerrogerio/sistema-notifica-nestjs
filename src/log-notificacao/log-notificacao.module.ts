@@ -9,6 +9,6 @@ import { LogNotificationQueryService } from './services/log-notification-search.
   imports: [TypeOrmModule.forFeature([LogNotificacao])],
   controllers: [LogNotificacaoController],
   providers: [LogNotificacaoService, LogNotificationQueryService],
-  exports: [LogNotificacaoService],
+  exports: [LogNotificacaoService, LogNotificationQueryService],
 })
 export class LogNotificacaoModule {}
