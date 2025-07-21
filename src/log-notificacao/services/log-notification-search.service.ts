@@ -16,10 +16,23 @@ export class LogNotificationQueryService {
     private readonly logNotificacaoRepository: Repository<LogNotificacao>,
   ) {}
 
-  async buscarNotificacoesPendentesCompletas(): Promise<
-    IntimacaoDataCompleto[]
-  > {
+  // Busca todas as notificaççoes +  todas as colunas das tabelas relacionadas - BAIXA PERFORMANCE
+  async buscarNotificacoesPendentesAllData(): Promise<IntimacaoDataCompleto[]> {
     return await this.logNotificacaoRepository
+      .createQueryBuilder('log_notificacao')
+      .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
+      .leftJoinAndSelect('log_notificacao.protesto', 'protesto')
+      .leftJoinAndSelect('protesto.apresentante', 'apresentante')
+      .leftJoinAndSelect('protesto.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      .andWhere('devedor.email IS NOT NULL')
+      .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
+      .getMany();
+  }
+
+  // Buscar notificações NÃO ENVIADAS de devedores que possuem email
+  async buscarNotificacoesPendentesNaoEnviadas(): Promise<IntimacaoData[]> {
+    const logNotificacoes = await this.logNotificacaoRepository
       .createQueryBuilder('log_notificacao')
       .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
       .leftJoinAndSelect('log_notificacao.protesto', 'protesto')
@@ -32,10 +45,11 @@ export class LogNotificationQueryService {
       .andWhere('devedor.email IS NOT NULL')
       .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
       .getMany();
+    return this.mapearParaIntimacaoData(logNotificacoes);
   }
 
-  // Buscar notificações não enviadas de devedores que possuem email
-  async buscarNotificacoesPendentes(): Promise<IntimacaoData[]> {
+  // Busca todas as notificações ENVIADAS e NÃO ENVIADAS
+  async buscarNotificacoesPendentesAll(): Promise<IntimacaoData[]> {
     const logNotificacoes = await this.logNotificacaoRepository
       .createQueryBuilder('log_notificacao')
       .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
@@ -43,9 +57,6 @@ export class LogNotificationQueryService {
       .leftJoinAndSelect('protesto.apresentante', 'apresentante')
       .leftJoinAndSelect('protesto.credores', 'docProtestoCredor')
       .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
-      .where('log_notificacao.email_enviado = :emailEnviado', {
-        emailEnviado: false,
-      })
       .andWhere('devedor.email IS NOT NULL')
       .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
       .getMany();
@@ -237,6 +248,7 @@ export class LogNotificationQueryService {
         dataEnvio: logNotificacao.data_envio || null,
         emailEnviado: logNotificacao.email_enviado,
         lido: logNotificacao.lido,
+        createdAt: logNotificacao.createdAt,
       };
     });
   }

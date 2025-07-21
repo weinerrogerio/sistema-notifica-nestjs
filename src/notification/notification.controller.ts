@@ -15,7 +15,7 @@ export class NotificationController {
     private readonly trackingService: TrackingService,
   ) {}
 
-  // Envia várias notificações COM tracking (versão otimizada)
+  // Envia várias notificações COM tracking
   @Post('intimacoes-tracking')
   @Roles(Role.USER, Role.ADMIN)
   async sendMultipleNotificationsWithTracking() {
