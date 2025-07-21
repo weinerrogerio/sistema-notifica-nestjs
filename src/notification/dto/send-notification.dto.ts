@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsEmail } from 'class-validator';
+import { IsString, IsNumber, IsEmail, IsDate } from 'class-validator';
 
 export class SendNotificationDto {
   @IsNumber()
@@ -36,4 +36,7 @@ export class SendNotificationDto {
 
   @IsString()
   portador: string;
+
+  @IsDate()
+  createdAt: Date;
 }

@@ -38,15 +38,24 @@ export class LogNotificacaoController {
   @Get('busca-completa')
   @Roles(Role.USER, Role.ADMIN)
   async buscarNotificacoesPendentesCompletas() {
-    return await this.logNotificacaoService.buscarNotificacoesPendentesCompletas();
+    return await this.logNotificacaoService.buscarNotificacoesPendentesAllData();
   }
 
   //BUSCA POR NOTIFICAÇÕES PENDENTES
-  @Get('busca')
+  @Get('busca-all')
   @Roles(Role.USER, Role.ADMIN)
-  async buscarNotificacoesPendentes() {
+  async buscarNotificacoesPendentesAll() {
     const intimacoes =
-      await this.logNotificacaoService.buscarNotificacoesPendentes();
+      await this.logNotificacaoService.buscarNotificacoesPendentesAll();
+    return intimacoes;
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES NÃO ENVIADAS
+  @Get('busca-nao-enviadas')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentesNnaoEnviadas() {
+    const intimacoes =
+      await this.logNotificacaoService.buscarNotificacoesPendentesNaoEnviadas();
     return intimacoes;
   }
 

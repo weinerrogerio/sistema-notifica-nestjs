@@ -78,14 +78,16 @@ export class LogNotificacaoService {
 
   // ------------------------------------- Métodos de busca ------------------------------------- //
 
-  async buscarNotificacoesPendentesCompletas(): Promise<
-    IntimacaoDataCompleto[]
-  > {
-    return this.logNotificationQueryService.buscarNotificacoesPendentesCompletas();
+  async buscarNotificacoesPendentesAllData(): Promise<IntimacaoDataCompleto[]> {
+    return this.logNotificationQueryService.buscarNotificacoesPendentesAllData();
   }
 
-  async buscarNotificacoesPendentes(): Promise<IntimacaoData[]> {
-    return this.logNotificationQueryService.buscarNotificacoesPendentes();
+  async buscarNotificacoesPendentesAll(): Promise<IntimacaoData[]> {
+    return this.logNotificationQueryService.buscarNotificacoesPendentesAll();
+  }
+
+  async buscarNotificacoesPendentesNaoEnviadas(): Promise<IntimacaoData[]> {
+    return this.logNotificationQueryService.buscarNotificacoesPendentesNaoEnviadas();
   }
 
   async buscarIntimacoesPorDevedorENumProtesto(

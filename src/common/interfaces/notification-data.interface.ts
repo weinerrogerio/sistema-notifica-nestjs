@@ -32,6 +32,7 @@ export interface IntimacaoData {
   credor: string;
   //dados apresentante
   portador: string; //apresentante
+  createdAt: Date;
 }
 
 export interface ContatoCartorio {

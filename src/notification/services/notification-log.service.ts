@@ -20,7 +20,7 @@ export class NotificationOrchestratorService {
   async sendNotificationsWithTracking(): Promise<NotificationResult> {
     // Uma única consulta que já traz todos os dados necessários para o envio
     const intimacoesPendentes =
-      await this.logNotificationQueryService.buscarNotificacoesPendentes();
+      await this.logNotificationQueryService.buscarNotificacoesPendentesNaoEnviadas();
 
     const resultados: NotificationResult = {
       enviados: 0,
