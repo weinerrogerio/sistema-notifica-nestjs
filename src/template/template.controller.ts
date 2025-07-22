@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Delete,
-  Body,
   Param,
   ParseIntPipe,
   HttpException,
@@ -14,6 +13,8 @@ import {
 } from '@nestjs/common';
 import { TemplateService } from './template.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from '@app/auth/decorators/roles.decorator';
+import { Role } from '@app/common/enums/role.enum';
 
 export interface UploadTemplateRequest {
   nome: string;
@@ -28,10 +29,12 @@ export interface PreviewRequest {
   dadosTeste: any;
 }
 
+//@UseGuards(AuthTokenGuard, RolesGuard)
 @Controller('template')
 export class TemplateController {
   constructor(private templateService: TemplateService) {}
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Get()
   async listarTemplates() {
     try {
@@ -45,6 +48,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Get('estatisticas')
   async obterEstatisticas() {
     try {
@@ -58,10 +62,11 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Get('padrao')
   async obterTemplatePadrao() {
     try {
-      return await this.templateService.buscarTemplatePadrao();
+      return await this.templateService.getDefaultTemplate();
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new HttpException(
@@ -71,6 +76,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Get(':id')
   async buscarTemplate(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -84,6 +90,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Get(':id/conteudo')
   async obterConteudoTemplate(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -98,6 +105,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Get(':id/verificar-integridade')
   async verificarIntegridade(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -112,6 +120,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file')) // 'templateFile' deve ser o nome do campo no Postman
   async uploadTemplate(
@@ -170,6 +179,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   @Post(':id/set-padrao')
   async definirTemplatePadrao(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -182,9 +192,11 @@ export class TemplateController {
       );
     }
   }
+
+  @Roles(Role.USER, Role.ADMIN)
   // ARRUMAR ESSE ENDPOINT - FRONT-END NAO ESTA ATUALIZANDO - BOLAR UMA SOLUÇÃO
   @Post('preview')
-  async gerarPreview(@Body() dados: PreviewRequest) {
+  /* async gerarPreview(@Body() dados: PreviewRequest) {
     try {
       if (!dados.conteudoHtml) {
         throw new HttpException(
@@ -204,8 +216,8 @@ export class TemplateController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
-
+  } */
+  //@Roles(Role.USER, Role.ADMIN)
   @Delete(':id')
   async deletarTemplate(
     @Param('id', ParseIntPipe) id: number,
@@ -228,6 +240,7 @@ export class TemplateController {
     }
   }
 
+  //@Roles(Role.USER, Role.ADMIN)
   private isValidHtml(html: string): boolean {
     // Validação básica - verifica estrutura mínima de HTML
     const htmlTrimmed = html.trim();

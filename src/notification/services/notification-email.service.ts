@@ -8,6 +8,7 @@ import {
   IntimacaoData,
 } from '@app/common/interfaces/notification-data.interface';
 import { NotificationTemplate } from '../templates/notification.template';
+import { TemplateService } from '@app/template/template.service';
 
 @Injectable()
 export class EmailService {
@@ -15,7 +16,10 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly contatoTabelionato: ContatoTabelionato;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private readonly templateService: TemplateService,
+  ) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
       port: this.configService.get<number>('SMTP_PORT'),
@@ -109,17 +113,18 @@ export class EmailService {
       this.logger.log(`🔗 Tracking URL: ${trackingPixelUrl}`);
 
       // Gerar HTML com tracking
-      const html = NotificationTemplate.gerar(
+      /* const html = NotificationTemplate.gerar(
         dados,
         this.contatoTabelionato,
         trackingPixelUrl,
-      );
+      );*/
 
+      const html = await this.templateService.getDefaultTemplate();
       // Enviar email
       const success = await this.sendEmail({
         to: dados.devedorEmail,
         subject: 'Intimação de Protesto - Ação Requerida',
-        html,
+        html: html.conteudoHtml,
       });
 
       if (success) {

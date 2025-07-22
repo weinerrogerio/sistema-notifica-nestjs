@@ -32,7 +32,7 @@ export class NotificationController {
   // ENVIA UMA INTIMAÇÃO com tracking (se você tiver o logNotificacaoId)
   @Post('intimacao-tracking')
   @Roles(Role.USER, Role.ADMIN)
-  async sendNotificationWithTracking(@Body() dados: SendNotificationDto) {
+  async sendOneNotificationWithTracking(@Body() dados: SendNotificationDto) {
     console.log('TESTES DADOS: ', dados);
 
     // dados deve incluir logNotificacaoId
@@ -81,7 +81,7 @@ export class NotificationController {
     };
   }
 
-  //envia varias notificacoes
+  //envia varias notificacoes -- CUIDADO
   @Post('intimacoes')
   @Roles(Role.USER, Role.ADMIN)
   async sendMultipleNotifications() {

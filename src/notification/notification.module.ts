@@ -9,6 +9,7 @@ import { EmailService } from './services/notification-email.service';
 import { NotificationOrchestratorService } from './services/notification-log.service';
 import { NotificationController } from './notification.controller';
 import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
+import { TemplateModule } from '@app/template/template.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.modul
     ConfigModule,
     TrackingPixelModule,
     LogNotificacaoModule,
+    TemplateModule,
   ],
   controllers: [NotificationController],
   providers: [
