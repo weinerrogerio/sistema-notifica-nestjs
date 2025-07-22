@@ -24,7 +24,7 @@ export interface IntimacaoData {
   //dados do titulo
   distribuicao: string;
   dataDistribuicao: Date;
-  numTitulo: string;
+  numTitulo: string; // pode ser "123A ou 123B..."
   valorTotal: number;
   dataVencimento: string; // data string pois pode ser "a vista"
   tabelionato: string;
@@ -32,7 +32,6 @@ export interface IntimacaoData {
   credor: string;
   //dados apresentante
   portador: string; //apresentante
-  createdAt: Date;
 }
 
 export interface ContatoCartorio {

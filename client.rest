@@ -194,10 +194,11 @@ Content-Type: application/json
 {
   "logNotificacaoId":1,
   "nomeDevedor": "DEVEDOR",
-  "devedorEmail": "weinerrogerio@hotmail.com",
+  "devedorEmail": "weinerrogerio@gmail.com",
   "docDevedor": "08764191982",
   "distribuicao": "1234",
   "dataDistribuicao": "15/06/2025",
+  "numTitulo": "123a",
   "valorTotal": 2000,
   "dataVencimento": "15/06/2024", 
   "tabelionato": "1° Oficio de Protesto de Títulos de Curitiba",
@@ -206,30 +207,13 @@ Content-Type: application/json
 }
 
 
+
 ###
 POST {{baseUrl}}/notification/teste
 Authorization: Bearer {{authToken}}
 
-### -------------------- BUSCA - LOG NOTIFICAÇÕES -----------------
-###
-GET {{baseUrl}}/log-notificacao/busca-completa
-Authorization: Bearer {{authToken}}
 
-
-###
-GET {{baseUrl}}/log-notificacao/busca-all
-Authorization: Bearer {{authToken}}
-
-###
-GET {{baseUrl}}/log-notificacao/busca-nao-enviadas
-Authorization: Bearer {{authToken}}
-
-### --> NAO ESQUECER DE RODAR ISSO ANTES DE ENVIAR NOTIFICAÇÕES EM TESTE
-GET {{baseUrl}}/devedor/teste-update-email
-Authorization: Bearer {{authToken}}
-
-
-### ------------------> INTIMAÇÃO -------
+### ------------------> INTIMAÇÃO 2 -------
 POST {{baseUrl}}/notification/intimacao-tracking
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
@@ -252,6 +236,27 @@ Content-Type: application/json
 ###
 GET {{baseUrl}}/tracking/pixel/73511f945eef88283da4b853034a60e0
 Authorization: Bearer {{authToken}}
+
+### -------------------- BUSCA - LOG NOTIFICAÇÕES -----------------
+###
+GET {{baseUrl}}/log-notificacao/busca-completa
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{baseUrl}}/log-notificacao/busca-all
+Authorization: Bearer {{authToken}}
+
+###
+GET {{baseUrl}}/log-notificacao/busca-nao-enviadas
+Authorization: Bearer {{authToken}}
+
+### --> NAO ESQUECER DE RODAR ISSO ANTES DE ENVIAR NOTIFICAÇÕES EM TESTE
+GET {{baseUrl}}/devedor/teste-update-email
+Authorization: Bearer {{authToken}}
+
+
+
 
 
 
@@ -300,17 +305,17 @@ Authorization: Bearer {{authToken}}
 
 ### ----------------------------- TEMPLATE -----------
 ## ----> ERRO ERRO ERRO....
-{{baseUrl}}/TEMPLATE/1/conteudo
+GET {{baseUrl}}/TEMPLATE/1/conteudo
 Authorization: Bearer {{authToken}}
 
 
 ###
-{{baseUrl}}/template/1
+GET {{baseUrl}}/template/1
 Authorization: Bearer {{authToken}}
 
 
 ###
-{{baseUrl}}/template/
+GET {{baseUrl}}/template/
 Authorization: Bearer {{authToken}}
 
 

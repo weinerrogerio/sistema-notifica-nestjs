@@ -54,7 +54,7 @@ export class TemplateService {
     return template;
   }
 
-  async buscarTemplatePadrao(): Promise<Template> {
+  async getDefaultTemplate(): Promise<Template> {
     const template = await this.templateRepository.findOne({
       where: { ehPadrao: true, ativo: true },
     });
