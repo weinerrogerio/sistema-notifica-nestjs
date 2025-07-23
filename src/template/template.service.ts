@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Template } from './entities/template.entity';
 import * as Handlebars from 'handlebars';
 import * as crypto from 'crypto';
+import { IntimacaoData } from '@app/common/interfaces/notification-data.interface';
+import { ContatoTabelionato } from '@app/contato-tabelionato/entities/contato-tabelionato.entity';
 
 export interface CriarTemplateDto {
   originalname: string;
@@ -54,6 +56,7 @@ export class TemplateService {
     return template;
   }
 
+  // Retorna o template padrão
   async getDefaultTemplate(): Promise<Template> {
     const template = await this.templateRepository.findOne({
       where: { ehPadrao: true, ativo: true },
@@ -61,12 +64,46 @@ export class TemplateService {
 
     if (!template) {
       throw new HttpException(
-        'Nenhum template padrão encontrado',
+        'Template padrão não encontrado no banco de dados.',
         HttpStatus.NOT_FOUND,
       );
     }
 
     return template;
+  }
+
+  // Renderiza o template com os dados fornecidos
+  async renderTemplate(
+    templateHtml: string,
+    dados: IntimacaoData,
+    trackingPixelUrl?: string, // Pode ser opcional
+    contatoTabelionato?: ContatoTabelionato,
+  ): Promise<string> {
+    // Compile o template Handlebars
+    const template = Handlebars.compile(templateHtml);
+
+    // Prepare os dados para o template. É importante que os nomes aqui correspondam
+    // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
+    const context = {
+      dados: {
+        ...dados,
+        // Formate o valorTotal aqui, se necessário, para evitar lógica no template
+        valorTotal: dados.valorTotal.toFixed(2).replace('.', ','),
+        // Se dataDistribuicao é um Date, formate-o para string
+        dataDistribuicao:
+          dados.dataDistribuicao instanceof Date
+            ? dados.dataDistribuicao.toLocaleDateString('pt-BR')
+            : dados.dataDistribuicao,
+      },
+      contato: contatoTabelionato, // Passa o objeto de contato
+      // Para o pixel de tracking, o template pode ter um placeholder como {{trackingPixel}}
+      trackingPixel: trackingPixelUrl
+        ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`
+        : '',
+    };
+
+    // Renderize o template com o contexto
+    return template(context);
   }
 
   //  async criar(dadosTemplate: CriarTemplateDto): Promise<Template> {
