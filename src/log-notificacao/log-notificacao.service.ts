@@ -82,6 +82,14 @@ export class LogNotificacaoService {
     return this.logNotificationQueryService.buscarNotificacoesPendentesAllData();
   }
 
+  async buscarNotificacaoPendenteAllDataById(
+    id: number,
+  ): Promise<IntimacaoDataCompleto[]> {
+    return this.logNotificationQueryService.buscarNotificacaoPendenteAllDataById(
+      id,
+    );
+  }
+
   async buscarNotificacoesPendentesAll(): Promise<IntimacaoData[]> {
     return this.logNotificationQueryService.buscarNotificacoesPendentesAll();
   }

@@ -242,6 +242,9 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/log-notificacao/busca-completa
 Authorization: Bearer {{authToken}}
 
+###
+GET {{baseUrl}}/log-notificacao/busca-completa/1
+Authorization: Bearer {{authToken}}
 
 ###
 GET {{baseUrl}}/log-notificacao/busca-all
@@ -251,10 +254,10 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/log-notificacao/busca-nao-enviadas
 Authorization: Bearer {{authToken}}
 
+
 ### --> NAO ESQUECER DE RODAR ISSO ANTES DE ENVIAR NOTIFICAÇÕES EM TESTE
 GET {{baseUrl}}/devedor/teste-update-email
 Authorization: Bearer {{authToken}}
-
 
 
 
