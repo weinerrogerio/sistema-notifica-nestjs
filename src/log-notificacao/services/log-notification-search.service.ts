@@ -30,6 +30,23 @@ export class LogNotificationQueryService {
       .getMany();
   }
 
+  // Busca todas as notificaççoes +  todas as colunas das tabelas relacionadas - Por ID - Util para envio de totificação - testar
+  async buscarNotificacaoPendenteAllDataById(
+    id: number,
+  ): Promise<IntimacaoDataCompleto[]> {
+    return await this.logNotificacaoRepository
+      .createQueryBuilder('log_notificacao')
+      .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
+      .leftJoinAndSelect('log_notificacao.protesto', 'protesto')
+      .leftJoinAndSelect('protesto.apresentante', 'apresentante')
+      .leftJoinAndSelect('protesto.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      .andWhere('devedor.email IS NOT NULL')
+      .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
+      .andWhere('log_notificacao.id = :id', { id })
+      .getMany();
+  }
+
   // Buscar notificações NÃO ENVIADAS de devedores que possuem email
   async buscarNotificacoesPendentesNaoEnviadas(): Promise<IntimacaoData[]> {
     const logNotificacoes = await this.logNotificacaoRepository

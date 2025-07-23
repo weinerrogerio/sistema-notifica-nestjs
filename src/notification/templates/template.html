@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cobrança - Fatura ${dados.numeroFatura}</title>
-    ${this.getHeader()}
-    <title>Document</title>
-  </head>
-  <body>
+    <title>Notificação extrajudicial de protesto de Titulos</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -49,7 +45,7 @@
         font-size: 24px;
         font-weight: bold;
         margin: 20px 0;
-      }     
+      }   
       .contato-box {
         background: #f9f9f9;
         border: 0.2px solid #0d1120;
@@ -74,45 +70,47 @@
         margin: 10px 0;
       }
     </style>
-
+    <title>Document</title>
+  </head>
+  <body>  
     <div class="header">
       <h1>Intimação de Cobrança</h1>
     </div>
 
     <div class="content">
-      <h2>Olá, ${dados.clienteNome}!</h2>
+      <h2>Olá, {{dado.nomeDevedor}}!</h2>
 
       <p>
         Esta é uma intimação automática de protesto enviada pelo 3º Distribuidor
         de Curitiba.
       </p>
       <p>
-        A partir da data dessa notificação, é iniciado o prazo de 48 horas para
+        A partir da data desta notificação, inicia-se o prazo de 48 horas para
         pagamento em cartorio.
       </p>
       <h3>Detalhes do titulo:</h3>
 
       <div class="titulo-box">
-        <p><strong>Devedor:</strong> R$ ${dado.nome}</p>
-        <p><strong>Valor:</strong> R$ ${dado.valor}</p>
-        <p><strong>Data de Vencimento:</strong> ${dado.vencimento}</p>
+        <p><strong>Devedor:</strong> R$ {{dado.nomeDevedor}}</p>
+        <p><strong>Valor:</strong> R$ {{dado.valor}}</p>
+        <p><strong>Data de Vencimento:</strong> {{dado.vencimento}}</p>
         <p>
-          <strong>Distribuição:</strong> ${dados.distribuicao} de
-          ${dados.dataDistribuicao} para o ${dados.tabelionato}
+          <strong>Distribuição:</strong> {{dados.distribuicao}} de
+          {{dados.dataDistribuicao}} para o {{dados.tabelionato}}
         </p>
-        <p><strong>Portador:</strong> R$ ${dado.portador}</p>
-        <p><strong>Credor:</strong> R$ ${dado.credor}</p>
+        <p><strong>Portador:</strong> {{dados.nomePortador}}</p>
+        <p><strong>Credor:</strong> {{dados.nomeCredor}}</p>
       </div>
 
       <p>
         Em caso de duvida e/ou interesse do pagamento em cartorio, entrar em
-        contao diretamente com o ${dado.cartorio} com os dados abaixo:
+        contao diretamente com o {{dado.cartorio}} com os dados abaixo:
       </p>
       <div class="contato-box">
-        <p><strong>Nome:</strong> ${contato.tabelionato}</p>
-        <p><strong>Telefone:</strong> ${contato.telefone}</p>
-        <p><strong>Email:</strong> ${contato.email}</p>
-        <p><strong>Endereço:</strong> ${contato.endereco}</p>
+        <p><strong>Nome:</strong> {{contato.tabelionato}}</p>
+        <p><strong>Telefone:</strong> {{contato.telefone}}</p>
+        <p><strong>Email:</strong> {{contato.email}}</p>
+        <p><strong>Endereço:</strong> {{contato.endereco}}</p>
       </div>
 
       <p>
@@ -122,7 +120,7 @@
       <p>Após o pagamento ao tabelionato, o processamento pode levar até 48 horas úteis.</p>
     </div>
 
-    ${this.getFooter(contato)}
+  
 
     <div class="footer">
       <h3>3º Distribuidor de Protesto de Curitiba</h3>
@@ -132,6 +130,7 @@
       </br>
       <p><small>Este é um email automático, não responda.</small></p>
     </div>
-    <img src="" width="100" height="100" style="background-color: red;border: 5px solid #27ae60; padding: 5px;" alt="" />
+    <img src="" width="100" height="100" style="background-color: red;border: 5px solid #27ae60; padding: 5px;" alt={{trackingPixel}} />
+    {{trackingPixel}}
   </body>
 </html>

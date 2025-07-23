@@ -35,12 +35,6 @@ export class LogNotificacaoController {
 
   /* -------------------------------------   BUSCAS  -------------------------------------- */
 
-  @Get('busca-completa')
-  @Roles(Role.USER, Role.ADMIN)
-  async buscarNotificacoesPendentesCompletas() {
-    return await this.logNotificacaoService.buscarNotificacoesPendentesAllData();
-  }
-
   //BUSCA POR NOTIFICAÇÕES PENDENTES
   @Get('busca-all')
   @Roles(Role.USER, Role.ADMIN)
@@ -68,6 +62,22 @@ export class LogNotificacaoController {
         devedorId,
       );
     return intimacoes;
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES COMPLETAS
+  @Get('busca-completa')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentesCompletas() {
+    return await this.logNotificacaoService.buscarNotificacoesPendentesAllData();
+  }
+
+  //BUSCA POR NOTIFICAÇÕES PENDENTES POR DEVEDOR - id notificação
+  @Get('busca-completa/:id')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesPendentesCompletasById(@Param('id') id: number) {
+    return await this.logNotificacaoService.buscarNotificacaoPendenteAllDataById(
+      id,
+    );
   }
 
   //BUSCA POR NOTIFICAÇÕES PENDENTES POR DISTRIBUIÇÃO
