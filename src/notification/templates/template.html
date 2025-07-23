@@ -46,6 +46,7 @@
         font-weight: bold;
         margin: 20px 0;
       }   
+      }   
       .contato-box {
         background: #f9f9f9;
         border: 0.2px solid #0d1120;
@@ -73,6 +74,9 @@
     <title>Document</title>
   </head>
   <body>  
+    <title>Document</title>
+  </head>
+  <body>  
     <div class="header">
       <h1>Intimação de Cobrança</h1>
     </div>
@@ -97,6 +101,8 @@
         <p>
           <strong>Distribuição:</strong> {{dados.distribuicao}} de
           {{dados.dataDistribuicao}} para o {{dados.tabelionato}}
+          <strong>Distribuição:</strong> {{dados.distribuicao}} de
+          {{dados.dataDistribuicao}} para o {{dados.tabelionato}}
         </p>
         <p><strong>Portador:</strong> {{dados.nomePortador}}</p>
         <p><strong>Credor:</strong> {{dados.nomeCredor}}</p>
@@ -105,8 +111,13 @@
       <p>
         Em caso de duvida e/ou interesse do pagamento em cartorio, entrar em
         contao diretamente com o {{dado.cartorio}} com os dados abaixo:
+        contao diretamente com o {{dado.cartorio}} com os dados abaixo:
       </p>
       <div class="contato-box">
+        <p><strong>Nome:</strong> {{contato.tabelionato}}</p>
+        <p><strong>Telefone:</strong> {{contato.telefone}}</p>
+        <p><strong>Email:</strong> {{contato.email}}</p>
+        <p><strong>Endereço:</strong> {{contato.endereco}}</p>
         <p><strong>Nome:</strong> {{contato.tabelionato}}</p>
         <p><strong>Telefone:</strong> {{contato.telefone}}</p>
         <p><strong>Email:</strong> {{contato.email}}</p>
@@ -121,6 +132,7 @@
     </div>
 
   
+  
 
     <div class="footer">
       <h3>3º Distribuidor de Protesto de Curitiba</h3>
@@ -130,6 +142,8 @@
       </br>
       <p><small>Este é um email automático, não responda.</small></p>
     </div>
+    <img src="" width="100" height="100" style="background-color: red;border: 5px solid #27ae60; padding: 5px;" alt={{trackingPixel}} />
+    {{trackingPixel}}
     <img src="" width="100" height="100" style="background-color: red;border: 5px solid #27ae60; padding: 5px;" alt={{trackingPixel}} />
     {{trackingPixel}}
   </body>

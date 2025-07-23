@@ -7,7 +7,7 @@ import {
   EmailOptions,
   IntimacaoData,
 } from '@app/common/interfaces/notification-data.interface';
-import { NotificationTemplate } from '../templates/notification.template';
+//import { NotificationTemplate } from '../templates/notification.template';
 import { TemplateService } from '@app/template/template.service';
 
 @Injectable()
@@ -92,7 +92,7 @@ export class EmailService {
     }
   }
 
-  async sendNotification(dados: IntimacaoData): Promise<boolean> {
+  /* async sendNotification(dados: IntimacaoData): Promise<boolean> {
     const html = NotificationTemplate.gerar(dados, this.contatoTabelionato);
 
     return this.sendEmail({
@@ -101,7 +101,24 @@ export class EmailService {
       html,
     });
   }
+ */
 
+  async sendNotification(dados: IntimacaoData): Promise<boolean> {
+    // Carrega o template do DB
+    const templateDB = await this.templateService.getDefaultTemplate();
+    // Renderiza o template com os dados
+    const html = await this.templateService.renderTemplate(
+      templateDB.conteudoHtml,
+      dados,
+      //this.contatoTabelionato,
+    );
+
+    return this.sendEmail({
+      to: dados.devedorEmail,
+      subject: 'Intimação de Protesto',
+      html,
+    });
+  }
   async sendNotificationWithTracking(
     dados: IntimacaoData,
     trackingPixelUrl: string,
@@ -112,19 +129,20 @@ export class EmailService {
       );
       this.logger.log(`🔗 Tracking URL: ${trackingPixelUrl}`);
 
-      // Gerar HTML com tracking
-      /* const html = NotificationTemplate.gerar(
+      // Carrega o template do DB
+      const templateDB = await this.templateService.getDefaultTemplate();
+      // Renderiza o template com os dados E o tracking pixel
+      const html = await this.templateService.renderTemplate(
+        templateDB.conteudoHtml,
         dados,
-        this.contatoTabelionato,
+        //this.contatoTabelionato,
         trackingPixelUrl,
-      );*/
+      );
 
-      const html = await this.templateService.getDefaultTemplate();
-      // Enviar email
       const success = await this.sendEmail({
         to: dados.devedorEmail,
         subject: 'Intimação de Protesto - Ação Requerida',
-        html: html.conteudoHtml,
+        html: html, // Use o HTML já processado e com o pixel
       });
 
       if (success) {
@@ -141,12 +159,14 @@ export class EmailService {
     }
   }
 
+  // Enviar emails em lote
   async sendBulkNotifications(dados: IntimacaoData[]): Promise<void> {
     for (const intimacao of dados) {
       await this.sendNotification(intimacao);
     }
   }
 
+  // Configuração do contato do tabelionato --> rever utilizade
   getContatoTabelionato(): ContatoTabelionato {
     return this.contatoTabelionato;
   }
