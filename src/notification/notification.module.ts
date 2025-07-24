@@ -10,6 +10,7 @@ import { NotificationOrchestratorService } from './services/notification-log.ser
 import { NotificationController } from './notification.controller';
 import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
 import { TemplateModule } from '@app/template/template.module';
+import { ContatoTabelionatoModule } from '@app/contato-tabelionato/contato-tabelionato.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TemplateModule } from '@app/template/template.module';
     TrackingPixelModule,
     LogNotificacaoModule,
     TemplateModule,
+    ContatoTabelionatoModule,
   ],
   controllers: [NotificationController],
   providers: [

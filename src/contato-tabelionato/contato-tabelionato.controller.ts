@@ -28,6 +28,7 @@ export class ContatoTabelionatoController {
   findAll() {
     return this.contatoTabelionatoService.findAll();
   }
+
   @Roles(Role.USER, Role.ADMIN)
   @Post()
   create(@Body() createContatoTabelionatoDto: CreateContatoTabelionatoDto) {
@@ -35,10 +36,17 @@ export class ContatoTabelionatoController {
   }
 
   @Roles(Role.USER, Role.ADMIN)
+  @Get(':nomeTabelionato')
+  findOneByName(@Param('nomeTabelionato') nomeTabelionato: string) {
+    return this.contatoTabelionatoService.findOneByName(nomeTabelionato);
+  }
+
+  @Roles(Role.USER, Role.ADMIN)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.contatoTabelionatoService.findOne(+id);
   }
+
   @Roles(Role.ADMIN)
   @Patch(':id')
   update(

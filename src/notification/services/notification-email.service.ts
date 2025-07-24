@@ -3,18 +3,20 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import {
-  ContatoTabelionato,
+  ContatoTabelionatoInterface,
   EmailOptions,
   IntimacaoData,
+  IntimacaoDataCompleto,
 } from '@app/common/interfaces/notification-data.interface';
 //import { NotificationTemplate } from '../templates/notification.template';
 import { TemplateService } from '@app/template/template.service';
+import { ContatoTabelionato } from '@app/contato-tabelionato/entities/contato-tabelionato.entity';
 
 @Injectable()
 export class EmailService {
   private transporter: Transporter;
   private readonly logger = new Logger(EmailService.name);
-  private readonly contatoTabelionato: ContatoTabelionato;
+  private readonly contatoTabelionato: ContatoTabelionatoInterface;
 
   constructor(
     private configService: ConfigService,
@@ -37,7 +39,7 @@ export class EmailService {
     });
 
     // Configuração do contato do tabelionato
-    this.contatoTabelionato = {
+    /* this.contatoTabelionato = {
       nomeTabelionato:
         this.configService.get<string>('COMPANY_NAME') || 'Sua Empresa LTDA',
       telefone:
@@ -46,14 +48,14 @@ export class EmailService {
         this.configService.get<string>('COMPANY_EMAIL') ||
         'contato@empresa.com',
       endereco: 'Rua Exemplo, 123 - Centro - Curitiba/PR',
-    };
+    }; */
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       const mailOptions = {
         from: {
-          name: this.contatoTabelionato.nomeTabelionato,
+          name: options.from,
           address:
             this.configService.get<string>('SMTP_FROM') ||
             this.configService.get<string>('SMTP_USER'),
@@ -70,7 +72,7 @@ export class EmailService {
           // Header para permitir imagens
           'Content-Type': 'text/html; charset=UTF-8',
           // Anti-spam headers
-          'List-Unsubscribe': `<mailto:${this.contatoTabelionato.email}?subject=Unsubscribe>`,
+          'List-Unsubscribe': `<mailto:${options.to}?subject=Unsubscribe>`,
           'List-Id': 'Intimacoes de Protesto',
         },
         // Configurações de tracking
@@ -159,15 +161,110 @@ export class EmailService {
     }
   }
 
+  async sendNotificationWithTrackingTeste(
+    dados: IntimacaoDataCompleto,
+    trackingPixelUrl: string,
+    contatoTabelionato?: ContatoTabelionato,
+  ): Promise<boolean> {
+    try {
+      this.logger.log(
+        `Iniciando envio de email com tracking para: ${dados.devedor.email}`,
+      );
+      this.logger.log(`🔗 Tracking URL: ${trackingPixelUrl}`);
+
+      // 1. Validações básicas
+      if (!dados.devedor?.email) {
+        this.logger.error('Email do devedor não fornecido');
+        return false;
+      }
+
+      if (!trackingPixelUrl) {
+        this.logger.error('URL do tracking pixel não fornecida');
+        return false;
+      }
+
+      // 2. Validar dados do cartório
+      if (!contatoTabelionato) {
+        this.logger.error('Dados do cartório não fornecidos');
+        return false;
+      }
+
+      // 3. Carrega o template do DB
+      const templateDB = await this.templateService.getDefaultTemplate();
+
+      if (!templateDB?.conteudoHtml) {
+        this.logger.error(
+          'Template padrão não encontrado ou sem conteúdo HTML',
+        );
+        return false;
+      }
+
+      // 4. Log detalhado dos dados (corrigido)
+      console.log('📧 DADOS PARA ENVIO:');
+      console.log('🔍 Dados completos:', JSON.stringify(dados, null, 2));
+      console.log(
+        '🏢 Contato Tabelionato:',
+        JSON.stringify(contatoTabelionato, null, 2),
+      );
+      console.log('🔗 Tracking Pixel URL:', trackingPixelUrl);
+
+      // 5. Renderiza o template com os dados E o tracking pixel
+      const html = await this.templateService.renderTemplateTeste(
+        templateDB.conteudoHtml,
+        dados,
+        trackingPixelUrl,
+        contatoTabelionato,
+      );
+
+      if (!html) {
+        this.logger.error('Falha na renderização do template HTML');
+        return false;
+      }
+
+      // 6. Prepara o assunto do email
+      const subject = `Intimação de Protesto - ${dados.devedor.nome || 'Devedor'} - Título: ${dados.protesto.num_titulo || 'N/A'}`;
+
+      // 7. Determinar o remetente (verificar qual propriedade existe)
+
+      console.log(
+        `Dados para sendEmail - Para: ${dados.devedor.email}, De: ${contatoTabelionato.nomeTabelionato}`,
+      );
+
+      // 8. Envia o email
+      const success = await this.sendEmail({
+        to: dados.devedor.email,
+        subject: subject,
+        html: html,
+        from: contatoTabelionato?.nomeTabelionato || 'Sistema de Notificações',
+      });
+
+      // 9. Log do resultado
+      if (success) {
+        this.logger.log(
+          `✅ Email enviado com sucesso para ${dados.devedor.email}`,
+        );
+      } else {
+        this.logger.error(
+          `❌ Falha no envio do email para ${dados.devedor.email}`,
+        );
+      }
+
+      return success;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao enviar notificação com tracking para ${dados.devedor?.email}: ${
+          error instanceof Error ? error.message : 'Erro desconhecido'
+        }`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      return false;
+    }
+  }
+
   // Enviar emails em lote
   async sendBulkNotifications(dados: IntimacaoData[]): Promise<void> {
     for (const intimacao of dados) {
       await this.sendNotification(intimacao);
     }
-  }
-
-  // Configuração do contato do tabelionato --> rever utilizade
-  getContatoTabelionato(): ContatoTabelionato {
-    return this.contatoTabelionato;
   }
 }

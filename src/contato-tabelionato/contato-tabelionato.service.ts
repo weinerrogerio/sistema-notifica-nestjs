@@ -92,6 +92,79 @@ export class ContatoTabelionatoService {
     return contatoTabelionato;
   }
 
+  async findOneByName(
+    nomeTabelionato: string,
+  ): Promise<ContatoTabelionato | null> {
+    if (!nomeTabelionato?.trim()) {
+      return null;
+    }
+
+    // 1. Primeira tentativa: busca exata (case insensitive)
+    let tabelionato = await this.contatoTabelionatoRepository
+      .createQueryBuilder('ct')
+      .where('LOWER(ct.nomeTabelionato) = LOWER(:nome)', {
+        nome: nomeTabelionato,
+      })
+      .getOne();
+
+    if (tabelionato) return tabelionato;
+
+    // 2. Segunda tentativa: busca com LIKE (busca parcial)
+    tabelionato = await this.contatoTabelionatoRepository
+      .createQueryBuilder('ct')
+      .where('LOWER(ct.nomeTabelionato) LIKE LOWER(:nome)', {
+        nome: `%${nomeTabelionato.trim()}%`,
+      })
+      .getOne();
+
+    if (tabelionato) return tabelionato;
+
+    // 3. Terceira tentativa: busca invertida (o que foi enviado contém o nome do banco)
+    tabelionato = await this.contatoTabelionatoRepository
+      .createQueryBuilder('ct')
+      .where("LOWER(:nome) LIKE LOWER(CONCAT('%', ct.nomeTabelionato, '%'))", {
+        nome: nomeTabelionato.trim(),
+      })
+      .getOne();
+
+    return tabelionato;
+  }
+
+  private normalizarNome(nome: string): string {
+    return nome
+      .trim()
+      .replace(/[°ºª]/g, '') // Remove símbolos de ordinais
+      .replace(/\s+/g, ' ') // Remove espaços extras
+      .replace(/[^\w\s]/g, '') // Remove pontuações especiais
+      .toLowerCase();
+  }
+
+  /**
+   * Extrai palavras-chave relevantes do nome
+   */
+  private extrairPalavrasChave(nome: string): string[] {
+    const palavrasIrrelevantes = [
+      'de',
+      'da',
+      'do',
+      'dos',
+      'das',
+      'e',
+      'em',
+      'na',
+      'no',
+    ];
+
+    return nome
+      .split(/\s+/)
+      .filter(
+        (palavra) =>
+          palavra.length > 2 &&
+          !palavrasIrrelevantes.includes(palavra.toLowerCase()),
+      )
+      .slice(0, 3); // Limita a 3 palavras principais
+  }
+
   async update(
     id: number,
     updateContatoTabelionatoDto: UpdateContatoTabelionatoDto,

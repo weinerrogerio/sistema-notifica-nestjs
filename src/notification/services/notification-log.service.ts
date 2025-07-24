@@ -5,6 +5,7 @@ import { IntimacaoData } from '@app/common/interfaces/notification-data.interfac
 import { EmailService } from './notification-email.service';
 import { NotificationResult } from '../interfaces/notification.interface';
 import { LogNotificationQueryService } from '@app/log-notificacao/services/log-notification-search.service';
+import { ContatoTabelionatoService } from '@app/contato-tabelionato/contato-tabelionato.service';
 
 @Injectable()
 export class NotificationOrchestratorService {
@@ -15,6 +16,7 @@ export class NotificationOrchestratorService {
     private configService: ConfigService,
     private logNotificationQueryService: LogNotificationQueryService,
     private emailService: EmailService,
+    private contatoTabelionatoService: ContatoTabelionatoService,
   ) {}
 
   async sendNotificationsWithTracking(): Promise<NotificationResult> {
@@ -101,6 +103,85 @@ export class NotificationOrchestratorService {
     } catch (error) {
       this.logger.error(
         `Erro ao enviar notificação com tracking: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      return false;
+    }
+  }
+
+  //sendOneNotificationTeste
+  async sendOneNotificationTeste(
+    dadosRequisicao: IntimacaoData,
+  ): Promise<boolean> {
+    try {
+      // 1. Buscar dados completos
+      const dadosCompletos =
+        await this.logNotificationQueryService.buscarNotificacaoPendenteAllDataById(
+          dadosRequisicao.logNotificacaoId,
+        );
+
+      // 2. Validar se encontrou dados
+      if (!dadosCompletos || dadosCompletos.length === 0) {
+        this.logger.error(
+          `Notificação não encontrada para ID: ${dadosRequisicao.logNotificacaoId}`,
+        );
+        return false;
+      }
+
+      const dados = dadosCompletos[0];
+
+      // 3. Validar dados essenciais
+      if (!dados.devedor?.email) {
+        this.logger.error('Email do devedor não encontrado');
+        return false;
+      }
+
+      if (!dados.protesto?.cart_protesto) {
+        this.logger.error('Cartório de protesto não encontrado');
+        return false;
+      }
+
+      // 4. Buscar dados do cartório
+      const dadosCartorio = await this.contatoTabelionatoService.findOneByName(
+        dados.protesto.cart_protesto,
+      );
+
+      // 5. Gerar e armazenar o token
+      const token = await this.trackingService.generateAndStoreToken(dados.id);
+
+      // 6. Criar URLs
+      const baseUrl =
+        this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+      const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
+
+      // 7. Log detalhado para debug
+      this.logger.log(`Preparando envio para: ${dados.devedor.email}`);
+      this.logger.log(`Token gerado: ${token}`);
+      this.logger.log(`Tracking URL: ${trackingPixelUrl}`);
+
+      // 8. Enviar email com tracking
+      const success = await this.emailService.sendNotificationWithTrackingTeste(
+        dados,
+        trackingPixelUrl,
+        dadosCartorio,
+      );
+
+      // 9. Atualizar status se enviado com sucesso
+      if (success) {
+        await this.logNotificationQueryService.marcarComoEnviada(dados.id);
+        this.logger.log(
+          `Notificação enviada e marcada como enviada para ID: ${dados.id}`,
+        );
+      } else {
+        this.logger.error(`Falha no envio da notificação para ID: ${dados.id}`);
+      }
+
+      return success;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao enviar notificação com tracking para ID ${dadosRequisicao.logNotificacaoId}: ${
+          error instanceof Error ? error.message : 'Erro desconhecido'
+        }`,
         error instanceof Error ? error.stack : undefined,
       );
       return false;
