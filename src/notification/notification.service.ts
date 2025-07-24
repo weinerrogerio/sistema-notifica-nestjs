@@ -25,6 +25,11 @@ export class NotificationService {
     return this.orchestratorService.sendOneNotificationWithTracking(dados);
   }
 
+  //sendOneNotificationTeste
+  async sendOneNotificationTeste(dados: IntimacaoData): Promise<boolean> {
+    return this.orchestratorService.sendOneNotificationTeste(dados);
+  }
+
   async sendNotification(dados: IntimacaoData): Promise<boolean> {
     return this.orchestratorService.sendSimpleNotification(dados);
   }

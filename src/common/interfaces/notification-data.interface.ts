@@ -41,11 +41,15 @@ export interface ContatoCartorio {
   endereco?: string;
 }
 
-export interface ContatoTabelionato {
+export interface ContatoTabelionatoInterface {
   nomeTabelionato: string;
+  codTabelionato: string; //01, 02, 03,...
   telefone: string;
   email: string;
   endereco?: string;
+  cidade?: string;
+  uf?: string;
+  cep?: string;
 }
 
 export interface EmailOptions {
@@ -57,4 +61,5 @@ export interface EmailOptions {
     content: Buffer;
     contentType: string;
   }>;
+  from?: string;
 }

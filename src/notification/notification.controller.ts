@@ -33,8 +33,7 @@ export class NotificationController {
   @Post('intimacao-tracking')
   @Roles(Role.USER, Role.ADMIN)
   async sendOneNotificationWithTracking(@Body() dados: SendNotificationDto) {
-    console.log('TESTES DADOS: ', dados);
-
+    console.log('Dados Para Notificação::: ', dados);
     // dados deve incluir logNotificacaoId
     const intimacaoData = dados;
 
@@ -49,6 +48,30 @@ export class NotificationController {
       await this.notificationService.sendOneNotificationWithTracking(
         intimacaoData,
       );
+
+    return {
+      success,
+      message: success ? 'Intimação enviada com tracking!' : 'Falha no envio',
+    };
+  }
+
+  @Post('intimacao-tracking-teste')
+  @Roles(Role.USER, Role.ADMIN)
+  async sendOneNotificationTeste(@Body() dados: SendNotificationDto) {
+    console.log('TESTES DADOS: ', dados);
+
+    // dados deve incluir logNotificacaoId
+    const intimacaoData = dados;
+
+    if (!intimacaoData.logNotificacaoId) {
+      return {
+        success: false,
+        message: 'logNotificacaoId é obrigatório',
+      };
+    }
+
+    const success =
+      await this.notificationService.sendOneNotificationTeste(intimacaoData);
 
     return {
       success,

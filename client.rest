@@ -206,6 +206,28 @@ Content-Type: application/json
   "portador": "Prefeitura do Município de Curitiba"
 }
 
+###intimacao-tracking-teste
+POST {{baseUrl}}/notification/intimacao-tracking-teste/
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "logNotificacaoId":1,
+  "nomeDevedor": "DEVEDOR",
+  "devedorEmail": "weinerrogerio@gmail.com",
+  "docDevedor": "08764191982",
+  "distribuicao": "1234",
+  "dataDistribuicao": "15/06/2025",
+  "numTitulo": "123a",
+  "valorTotal": 2000,
+  "dataVencimento": "15/06/2024", 
+  "tabelionato": "1° Oficio de Protesto de Títulos de Curitiba",
+  "credor": "Prefeitura do Município de Curitiba",
+  "portador": "Prefeitura do Município de Curitiba"
+}
+
+
+
 
 
 ###
@@ -270,18 +292,24 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "nomeTabelionato": "TESTE",
+   "nomeTabelionato": "3° Oficio de Protesto de Títulos de Curitiba",
    "codTabelionato": "03",
    "cnpj": "75.590.133/0001-64",
    "titular": "Nome Titular",
    "telefone": "(41) 3053-4360",
-   "email": "certidao@3distrib.com.br",
-   "endereco": "Rua Visconde do Rio branco, 1341",
+   "email": "3cartorio@3distrib.com.br",
+   "endereco": "Rua Tal, 1341",
    "cidade": "Curitiba",
    "uf": "pr", 
    "cep": "12345678",
-   "observacao": "3 Distribuidor de curitiba..."
+   "observacao": "3 Tableionato de curitiba..."
 }
+
+###
+
+
+GET {{baseUrl}}/contato-tabelionato/80
+Authorization: Bearer {{authToken}}
 
 
 ###
