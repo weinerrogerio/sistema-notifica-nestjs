@@ -15,26 +15,15 @@ export class NotificationService {
 
   // ------------------------------------- Métodos de envio ------------------------------------- //
 
+  // envia varias intimações com tracking
   async sendNotificationsWithTracking(): Promise<NotificationResult> {
     return this.orchestratorService.sendNotificationsWithTracking();
   }
 
+  // envia UMA intimação com tracking
   async sendOneNotificationWithTracking(
     dados: IntimacaoData,
   ): Promise<boolean> {
     return this.orchestratorService.sendOneNotificationWithTracking(dados);
-  }
-
-  //sendOneNotificationTeste
-  async sendOneNotificationTeste(dados: IntimacaoData): Promise<boolean> {
-    return this.orchestratorService.sendOneNotificationTeste(dados);
-  }
-
-  async sendNotification(dados: IntimacaoData): Promise<boolean> {
-    return this.orchestratorService.sendSimpleNotification(dados);
-  }
-
-  async sendNotifications(dados: IntimacaoData[]): Promise<void> {
-    return this.orchestratorService.sendBulkNotifications(dados);
   }
 }

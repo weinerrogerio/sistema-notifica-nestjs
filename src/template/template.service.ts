@@ -4,10 +4,7 @@ import { Repository } from 'typeorm';
 import { Template } from './entities/template.entity';
 import * as Handlebars from 'handlebars';
 import * as crypto from 'crypto';
-import {
-  IntimacaoData,
-  IntimacaoDataCompleto,
-} from '@app/common/interfaces/notification-data.interface';
+import { IntimacaoDataCompleto } from '@app/common/interfaces/notification-data.interface';
 import { ContatoTabelionato } from '@app/contato-tabelionato/entities/contato-tabelionato.entity';
 
 export interface CriarTemplateDto {
@@ -76,7 +73,7 @@ export class TemplateService {
   }
 
   // Renderiza o template com os dados fornecidos
-  async renderTemplate(
+  /* async renderTemplate(
     templateHtml: string,
     dados: IntimacaoData,
     trackingPixelUrl?: string, // Pode ser opcional
@@ -84,7 +81,6 @@ export class TemplateService {
   ): Promise<string> {
     // Compile o template Handlebars
     const template = Handlebars.compile(templateHtml);
-
     // Prepare os dados para o template. É importante que os nomes aqui correspondam
     // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
     const context = {
@@ -107,16 +103,18 @@ export class TemplateService {
 
     // Renderize o template com o contexto
     return template(context);
-  }
+  } */
 
-  async renderTemplateTeste(
+  async renderTemplate(
     templateHtml: string,
     dados: IntimacaoDataCompleto,
-    trackingPixelUrl?: string, // Pode ser opcional
+    trackingPixelUrl: string,
     contatoTabelionato?: ContatoTabelionato,
   ): Promise<string> {
     // Compile o template Handlebars
     const template = Handlebars.compile(templateHtml);
+
+    console.log('TrackingPixelUrl: ', trackingPixelUrl);
 
     // Prepare os dados para o template. É importante que os nomes aqui correspondam
     // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
@@ -133,9 +131,10 @@ export class TemplateService {
       },
       contato: contatoTabelionato, // Passa o objeto de contato
       // Para o pixel de tracking, o template pode ter um placeholder como {{trackingPixel}}
-      trackingPixel: trackingPixelUrl
-        ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`
-        : '',
+      trackingPixelUrl: trackingPixelUrl,
+      /* trackingPixelUrl: trackingPixelUrl
+        ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="Teste" />`
+        : '', */
     };
 
     // Renderize o template com o contexto

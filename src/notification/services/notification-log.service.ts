@@ -72,45 +72,8 @@ export class NotificationOrchestratorService {
     return resultados;
   }
 
-  async sendOneNotificationWithTracking(
-    dados: IntimacaoData,
-  ): Promise<boolean> {
-    try {
-      // Gerar e armazenar o token
-      const token = await this.trackingService.generateAndStoreToken(
-        dados.logNotificacaoId,
-      );
-
-      // Criar URLs (usar HTTPS se possível)
-      const baseUrl =
-        this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
-      const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
-
-      // Enviar email com tracking
-      const success = await this.emailService.sendNotificationWithTracking(
-        dados,
-        trackingPixelUrl,
-      );
-
-      if (success) {
-        // Atualizar log que email foi enviado
-        await this.logNotificationQueryService.marcarComoEnviada(
-          dados.logNotificacaoId,
-        );
-      }
-
-      return success;
-    } catch (error) {
-      this.logger.error(
-        `Erro ao enviar notificação com tracking: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-      return false;
-    }
-  }
-
   //sendOneNotificationTeste
-  async sendOneNotificationTeste(
+  async sendOneNotificationWithTracking(
     dadosRequisicao: IntimacaoData,
   ): Promise<boolean> {
     try {
@@ -150,8 +113,9 @@ export class NotificationOrchestratorService {
       const token = await this.trackingService.generateAndStoreToken(dados.id);
 
       // 6. Criar URLs
-      const baseUrl =
-        this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+      /* const baseUrl =
+        this.configService.get<string>('BASE_URL') || 'http://localhost:3000'; */
+      const baseUrl = this.configService.get<string>('BASE_URL');
       const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
 
       // 7. Log detalhado para debug
@@ -160,7 +124,7 @@ export class NotificationOrchestratorService {
       this.logger.log(`Tracking URL: ${trackingPixelUrl}`);
 
       // 8. Enviar email com tracking
-      const success = await this.emailService.sendNotificationWithTrackingTeste(
+      const success = await this.emailService.sendNotificationWithTracking(
         dados,
         trackingPixelUrl,
         dadosCartorio,
@@ -186,13 +150,5 @@ export class NotificationOrchestratorService {
       );
       return false;
     }
-  }
-
-  async sendSimpleNotification(dados: IntimacaoData): Promise<boolean> {
-    return this.emailService.sendNotification(dados);
-  }
-
-  async sendBulkNotifications(dados: IntimacaoData[]): Promise<void> {
-    return this.emailService.sendBulkNotifications(dados);
   }
 }

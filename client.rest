@@ -192,7 +192,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "logNotificacaoId":1,
+  "logNotificacaoId":2,
   "nomeDevedor": "DEVEDOR",
   "devedorEmail": "weinerrogerio@gmail.com",
   "docDevedor": "08764191982",

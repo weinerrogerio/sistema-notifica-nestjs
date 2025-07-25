@@ -3,7 +3,7 @@ import { BaseTemplate } from './base.template';
 import {
   ContatoCartorio,
   IntimacaoData,
-} from '../../common/interfaces/notification-data.interface';
+} from '../../src/common/interfaces/notification-data.interface';
 
 export class NotificationTemplate extends BaseTemplate {
   static gerar(
