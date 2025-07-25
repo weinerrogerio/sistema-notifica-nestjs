@@ -15,7 +15,7 @@ export class NotificationController {
     private readonly trackingService: TrackingService,
   ) {}
 
-  // Envia várias notificações COM tracking
+  // Envia várias notificações COM tracking ---- CUIDADO - CONSERTAR - PRECISA DE MAIS VALIDAÇÃOES
   @Post('intimacoes-tracking')
   @Roles(Role.USER, Role.ADMIN)
   async sendMultipleNotificationsWithTracking() {
@@ -29,13 +29,15 @@ export class NotificationController {
     };
   }
 
-  // ENVIA UMA INTIMAÇÃO com tracking (se você tiver o logNotificacaoId)
+  // ENVIA UMA INTIMAÇÃO com tracking (se tiver o logNotificacaoId)
   @Post('intimacao-tracking')
   @Roles(Role.USER, Role.ADMIN)
-  async sendOneNotificationWithTracking(@Body() dados: SendNotificationDto) {
-    console.log('Dados Para Notificação::: ', dados);
+  async sendOneNotificationTeste(@Body() dados: SendNotificationDto) {
+    console.log('TESTES DADOS: ', dados);
+
     // dados deve incluir logNotificacaoId
     const intimacaoData = dados;
+    console.log();
 
     if (!intimacaoData.logNotificacaoId) {
       return {
@@ -48,30 +50,6 @@ export class NotificationController {
       await this.notificationService.sendOneNotificationWithTracking(
         intimacaoData,
       );
-
-    return {
-      success,
-      message: success ? 'Intimação enviada com tracking!' : 'Falha no envio',
-    };
-  }
-
-  @Post('intimacao-tracking-teste')
-  @Roles(Role.USER, Role.ADMIN)
-  async sendOneNotificationTeste(@Body() dados: SendNotificationDto) {
-    console.log('TESTES DADOS: ', dados);
-
-    // dados deve incluir logNotificacaoId
-    const intimacaoData = dados;
-
-    if (!intimacaoData.logNotificacaoId) {
-      return {
-        success: false,
-        message: 'logNotificacaoId é obrigatório',
-      };
-    }
-
-    const success =
-      await this.notificationService.sendOneNotificationTeste(intimacaoData);
 
     return {
       success,
@@ -109,19 +87,5 @@ export class NotificationController {
   @Roles(Role.USER, Role.ADMIN)
   async sendMultipleNotifications() {
     return 'fazer rota depois';
-  }
-
-  //ENVIA UMA INTIMAÇÃO
-  @Post('intimacao')
-  @Roles(Role.USER, Role.ADMIN)
-  async sendNotification(@Body() dados: SendNotificationDto) {
-    const success = await this.notificationService.sendNotification(dados);
-
-    return {
-      success,
-      message: success
-        ? 'Intimação enviada com sucesso!'
-        : 'Falha ao enviar intimação',
-    };
   }
 }
