@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IntimacaoData } from '@app/common/interfaces/notification-data.interface';
 import { EmailService } from './services/notification-email.service';
 import { NotificationOrchestratorService } from './services/notification-log.service';
-import { NotificationResult } from './interfaces/notification.interface';
+import { SendNotification } from './dto/send-notification.dto';
+import {
+  NotificationResult,
+  NotificationResultAll,
+} from '@app/common/interfaces/notification-data.interface';
 
 @Injectable()
 export class NotificationService {
@@ -16,14 +19,14 @@ export class NotificationService {
   // ------------------------------------- Métodos de envio ------------------------------------- //
 
   // envia varias intimações com tracking
-  async sendNotificationsWithTracking(): Promise<NotificationResult> {
+  async sendNotificationsWithTracking(): Promise<NotificationResultAll> {
     return this.orchestratorService.sendNotificationsWithTracking();
   }
 
   // envia UMA intimação com tracking
   async sendOneNotificationWithTracking(
-    dados: IntimacaoData,
-  ): Promise<boolean> {
+    dados: SendNotification,
+  ): Promise<NotificationResult> {
     return this.orchestratorService.sendOneNotificationWithTracking(dados);
   }
 }

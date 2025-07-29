@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { SendNotificationDto } from './dto/send-notification.dto';
 import { TrackingService } from '@app/tracking/tracking.service';
 import { AuthTokenGuard } from '@app/auth/guards/auth-token.guard';
 import { RolesGuard } from '@app/auth/guards/roles.guard';
 import { Roles } from '@app/auth/decorators/roles.decorator';
 import { Role } from '@app/common/enums/role.enum';
+import { SendNotification } from './dto/send-notification.dto';
 
 @UseGuards(AuthTokenGuard, RolesGuard)
 @Controller('notification')
@@ -32,29 +32,34 @@ export class NotificationController {
   // ENVIA UMA INTIMAÇÃO com tracking (se tiver o logNotificacaoId)
   @Post('intimacao-tracking')
   @Roles(Role.USER, Role.ADMIN)
-  async sendOneNotificationTeste(@Body() dados: SendNotificationDto) {
+  async sendOneNotificationTeste(@Body() dados: SendNotification) {
     console.log('TESTES DADOS: ', dados);
 
     // dados deve incluir logNotificacaoId
-    const intimacaoData = dados;
-    console.log();
+    /* const intimacaoData = dados;
+    console.log(); */
 
-    if (!intimacaoData.logNotificacaoId) {
+    if (!dados.logNotificacaoId) {
       return {
         success: false,
         message: 'logNotificacaoId é obrigatório',
       };
     }
 
-    const success =
-      await this.notificationService.sendOneNotificationWithTracking(
-        intimacaoData,
-      );
+    const result =
+      await this.notificationService.sendOneNotificationWithTracking(dados);
 
-    return {
-      success,
-      message: success ? 'Intimação enviada com tracking!' : 'Falha no envio',
-    };
+    if (result.success) {
+      return {
+        success: true,
+        message: result.message || 'Notificação enviada com sucesso',
+      };
+    } else {
+      return {
+        success: false,
+        message: result.message || 'Falha no envio',
+      };
+    }
   }
 
   // Estatísticas de abertura

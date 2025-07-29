@@ -142,7 +142,7 @@ export class EmailService {
         return false;
       }
 
-      // ---- SALVAR O HTML EM UM ARQUIVO TEMPORÁRIO PARA VISUALIZAÇÃO -- RETIRAR DEPOIS-----
+      // ---- SALVAR O HTML EM UM ARQUIVO TEMPORÁRIO PARA VISUALIZAÇÃO -- RETIRAR DEPOIS--------------------
       const filePath = path.join(
         process.cwd(),
         'temp',
@@ -160,7 +160,7 @@ export class EmailService {
       } catch (fileError) {
         this.logger.error(`Erro ao salvar arquivo HTML: ${fileError.message}`);
       }
-      //-------------------------------------------------------------
+      //-----------------------------------------------------------------------------------------------------
 
       // 6. Prepara o assunto do email
       const subject = `Intimação de Protesto - ${dados.devedor.nome || 'Devedor'} - Título: ${dados.protesto.num_titulo || 'N/A'}`;
@@ -172,25 +172,14 @@ export class EmailService {
       );
 
       // 8. Envia o email
-      const success = await this.sendEmail({
+      const result = await this.sendEmail({
         to: dados.devedor.email,
         subject: subject,
         html: html,
         from: contatoTabelionato?.nomeTabelionato || 'Sistema de Notificações',
       });
 
-      // 9. Log do resultado
-      if (success) {
-        this.logger.log(
-          `✅ Email enviado com sucesso para ${dados.devedor.email}`,
-        );
-      } else {
-        this.logger.error(
-          `❌ Falha no envio do email para ${dados.devedor.email}`,
-        );
-      }
-
-      return success;
+      return result;
     } catch (error) {
       this.logger.error(
         `Erro ao enviar notificação com tracking para ${dados.devedor?.email}: ${

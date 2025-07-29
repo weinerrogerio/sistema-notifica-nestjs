@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TrackingService } from '@app/tracking/tracking.service';
-import { IntimacaoData } from '@app/common/interfaces/notification-data.interface';
 import { EmailService } from './notification-email.service';
-import { NotificationResult } from '../interfaces/notification.interface';
 import { LogNotificationQueryService } from '@app/log-notificacao/services/log-notification-search.service';
 import { ContatoTabelionatoService } from '@app/contato-tabelionato/contato-tabelionato.service';
+import { SendNotification } from '../dto/send-notification.dto';
+import {
+  NotificationResult,
+  NotificationResultAll,
+} from '@app/common/interfaces/notification-data.interface';
 
 @Injectable()
 export class NotificationOrchestratorService {
@@ -19,12 +22,12 @@ export class NotificationOrchestratorService {
     private contatoTabelionatoService: ContatoTabelionatoService,
   ) {}
 
-  async sendNotificationsWithTracking(): Promise<NotificationResult> {
+  async sendNotificationsWithTracking(): Promise<NotificationResultAll> {
     // Uma única consulta que já traz todos os dados necessários para o envio
     const intimacoesPendentes =
       await this.logNotificationQueryService.buscarNotificacoesPendentesNaoEnviadas();
 
-    const resultados: NotificationResult = {
+    const resultados: NotificationResultAll = {
       enviados: 0,
       erros: 0,
       detalhes: [],
@@ -74,8 +77,8 @@ export class NotificationOrchestratorService {
 
   //sendOneNotificationTeste
   async sendOneNotificationWithTracking(
-    dadosRequisicao: IntimacaoData,
-  ): Promise<boolean> {
+    dadosRequisicao: SendNotification,
+  ): Promise<NotificationResult> {
     try {
       // 1. Buscar dados completos
       const dadosCompletos =
@@ -85,23 +88,24 @@ export class NotificationOrchestratorService {
 
       // 2. Validar se encontrou dados
       if (!dadosCompletos || dadosCompletos.length === 0) {
-        this.logger.error(
-          `Notificação não encontrada para ID: ${dadosRequisicao.logNotificacaoId}`,
-        );
-        return false;
+        const errorMessage = `Notificação não encontrada para ID: ${dadosRequisicao.logNotificacaoId}`;
+        this.logger.error(errorMessage);
+        return { success: false, message: errorMessage };
       }
 
       const dados = dadosCompletos[0];
 
       // 3. Validar dados essenciais
       if (!dados.devedor?.email) {
-        this.logger.error('Email do devedor não encontrado');
-        return false;
+        const errorMessage = 'Email do devedor não encontrado';
+        this.logger.error(errorMessage);
+        return { success: false, message: errorMessage };
       }
 
       if (!dados.protesto?.cart_protesto) {
-        this.logger.error('Cartório de protesto não encontrado');
-        return false;
+        const errorMessage = 'Cartório de protesto não encontrado';
+        this.logger.error(errorMessage);
+        return { success: false, message: errorMessage };
       }
 
       // 4. Buscar dados do cartório
@@ -113,8 +117,6 @@ export class NotificationOrchestratorService {
       const token = await this.trackingService.generateAndStoreToken(dados.id);
 
       // 6. Criar URLs
-      /* const baseUrl =
-        this.configService.get<string>('BASE_URL') || 'http://localhost:3000'; */
       const baseUrl = this.configService.get<string>('BASE_URL');
       const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
 
@@ -136,19 +138,35 @@ export class NotificationOrchestratorService {
         this.logger.log(
           `Notificação enviada e marcada como enviada para ID: ${dados.id}`,
         );
+        this.logger.log(
+          `✅ Email enviado com sucesso para ${dados.devedor.email}`,
+        );
+        // INFORMAR O USUARIO QUE A NOTIFICACAO NAO FOI ENVIADA NO FRONT END---> front end tem acesso aos dados de quem esta enviando a notificacao
+        return {
+          success: true,
+          message: `Notificação enviada com sucesso`,
+        };
       } else {
-        this.logger.error(`Falha no envio da notificação para ID: ${dados.id}`);
-      }
+        this.logger.error(
+          `❌ Falha no envio do email para ${dados.devedor.email}`,
+        );
 
-      return success;
+        // INFORMAR O USUARIO QUE A NOTIFICACAO NAO FOI ENVIADA NO FRONT END---> front end tem acesso aos dados de quem esta enviando a notificacao
+        const errorMessage = `Falha no envio da notificação `;
+        this.logger.error(errorMessage);
+        return { success: false, message: errorMessage };
+      }
     } catch (error) {
+      const errorMessage = `Erro ao enviar notificação: ${
+        error instanceof Error ? error.message : 'Erro desconhecido'
+      }`;
+
       this.logger.error(
-        `Erro ao enviar notificação com tracking para ID ${dadosRequisicao.logNotificacaoId}: ${
-          error instanceof Error ? error.message : 'Erro desconhecido'
-        }`,
+        `Erro ao enviar notificação com tracking para ID ${dadosRequisicao.logNotificacaoId}: ${errorMessage}`,
         error instanceof Error ? error.stack : undefined,
       );
-      return false;
+
+      return { success: false, message: errorMessage };
     }
   }
 }
