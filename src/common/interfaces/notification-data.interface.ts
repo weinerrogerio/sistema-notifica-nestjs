@@ -15,6 +15,26 @@ export type IntimacaoDataCompleto = LogNotificacao & {
   };
 };
 
+export interface intimacaoRequest {
+  logNotificacaoId: number;
+}
+
+export interface NotificationResult {
+  success: boolean;
+  message?: string;
+}
+
+export interface NotificationResultAll {
+  enviados: number;
+  erros: number;
+  detalhes: Array<{
+    id: number;
+    email: string;
+    sucesso: boolean;
+    erro?: string;
+  }>;
+}
+
 export interface IntimacaoData {
   logNotificacaoId: number;
   //dados do devedor

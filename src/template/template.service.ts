@@ -116,18 +116,42 @@ export class TemplateService {
 
     console.log('TrackingPixelUrl: ', trackingPixelUrl);
 
+    // Função auxiliar para formatar valor em centavos para reais
+    const formatarValor = (valorCentavos: number): string => {
+      const valorReais = valorCentavos / 100;
+      return valorReais.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    };
+
+    // Função auxiliar para formatar data
+    const formatarData = (data: Date | string): string => {
+      if (data instanceof Date) {
+        return data.toLocaleDateString('pt-BR');
+      }
+      // Se for string no formato YYYY-MM-DD HH:mm:ss
+      if (typeof data === 'string' && data.includes('-')) {
+        const dateObj = new Date(data);
+        return dateObj.toLocaleDateString('pt-BR');
+      }
+
+      return data as string;
+    };
+
     // Prepare os dados para o template. É importante que os nomes aqui correspondam
     // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
     const context = {
       dados: {
         ...dados,
         // Formate o valorTotal aqui, se necessário, para evitar lógica no template
-        valorTotal: dados.protesto.saldo.toFixed(2).replace('.', ','),
+        valorTotal: formatarValor(dados.protesto.saldo),
         // Se dataDistribuicao é um Date, formate-o para string
-        dataDistribuicao:
+        /* dataDistribuicao:
           dados.protesto.data_distribuicao instanceof Date
             ? dados.protesto.data_distribuicao.toLocaleDateString('pt-BR')
-            : dados.protesto.data_distribuicao,
+            : dados.protesto.data_distribuicao, */
+        data_distribuicao: formatarData(dados.protesto.data_distribuicao),
       },
       contato: contatoTabelionato, // Passa o objeto de contato
       // Para o pixel de tracking, o template pode ter um placeholder como {{trackingPixel}}
@@ -136,6 +160,8 @@ export class TemplateService {
         ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="Teste" />`
         : '', */
     };
+
+    console.log('Contexto:::::::::::::::::::::::::: ', context);
 
     // Renderize o template com o contexto
     return template(context);

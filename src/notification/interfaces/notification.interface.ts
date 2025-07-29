@@ -1,4 +1,4 @@
-export interface NotificationResult {
+/* export interface NotificationResultAll {
   enviados: number;
   erros: number;
   detalhes: Array<{
@@ -8,3 +8,4 @@ export interface NotificationResult {
     erro?: string;
   }>;
 }
+ */

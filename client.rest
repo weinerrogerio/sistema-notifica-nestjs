@@ -192,6 +192,15 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
+  "logNotificacaoId":2
+}
+
+###
+POST {{baseUrl}}/notification/intimacao-tracking/
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
   "logNotificacaoId":2,
   "nomeDevedor": "DEVEDOR",
   "devedorEmail": "weinerrogerio@gmail.com",
@@ -205,7 +214,6 @@ Content-Type: application/json
   "credor": "Prefeitura do Município de Curitiba",
   "portador": "Prefeitura do Município de Curitiba"
 }
-
 ###intimacao-tracking-teste
 POST {{baseUrl}}/notification/intimacao-tracking-teste/
 Authorization: Bearer {{authToken}}
