@@ -180,7 +180,7 @@ export class AuthService {
   private async findActiveUserByName(nome: string): Promise<User> {
     const user = await this.userRepository.findOneBy({ nome, is_active: true });
     if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado ou inativo.');
+      throw new UnauthorizedException('Usuário Inválido ou inativo.');
     }
     return user;
   }
@@ -194,7 +194,7 @@ export class AuthService {
       passwordHash,
     );
     if (!passwordIsValid) {
-      throw new UnauthorizedException('Senha inválida.');
+      throw new UnauthorizedException('Credenciais Inválidas');
     }
   }
 

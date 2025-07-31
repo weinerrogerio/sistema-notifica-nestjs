@@ -67,6 +67,7 @@ export class DocProtesto {
   //FAZER RELAÇÃO COM OUTRAS TABELAS depois
   @Column()
   fk_apresentante: number;
+
   //muitos para muitos com devedores(1:n -- log_notificacao:n)
   //muitos para um --> um protesto pode ter muitos devedores
   // Relacionamento Many-to-One com Apresentante

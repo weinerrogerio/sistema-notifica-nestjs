@@ -172,12 +172,14 @@ export class EmailService {
       );
 
       // 8. Envia o email
-      const result = await this.sendEmail({
+      /* const result = await this.sendEmail({
         to: dados.devedor.email,
         subject: subject,
         html: html,
         from: contatoTabelionato?.nomeTabelionato || 'Sistema de Notificações',
-      });
+      }); */
+      const result = false;
+      console.log(subject);
 
       return result;
     } catch (error) {
