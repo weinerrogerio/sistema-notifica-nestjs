@@ -38,6 +38,7 @@ export class DocProtestoController {
     return this.docProtestoService.findAll();
   }
 
+  // busca simples por data de criação de registro
   @Get('date-range')
   async getByDateRange(
     @Query('startDate') startDate?: string,
@@ -47,6 +48,30 @@ export class DocProtestoController {
     const end = endDate ? new Date(endDate) : undefined;
 
     return await this.docProtestoService.findByDateRange(start, end);
+  }
+
+  // busca todas as distribuições por data de craição de registro
+  @Get('date-range-query')
+  async getByDateRangeWithQuery(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+
+    return await this.docProtestoService.findByDateRangeAllData(start, end);
+  }
+
+  //Busca todas as distribuições por data de distribuição
+  @Get('date-range-query-dist')
+  async getByDateRangeDistWithQuery(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+
+    return await this.docProtestoService.findByDateRangeDistAllData(start, end);
   }
 
   @Get(':id')

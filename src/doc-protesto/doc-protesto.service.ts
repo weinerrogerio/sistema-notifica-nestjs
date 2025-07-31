@@ -197,6 +197,115 @@ export class DocProtestoService {
       order: { createdAt: 'ASC' },
     });
   }
+
+  async findByDateRangeAllData(startDate?: Date, endDate?: Date) {
+    // Verificar se as datas são válidas
+    if (startDate && isNaN(startDate.getTime())) {
+      throw new Error('startDate inválida');
+    }
+    if (endDate && isNaN(endDate.getTime())) {
+      throw new Error('endDate inválida');
+    }
+
+    // Usar datas atuais se nenhuma for fornecida
+    if (!startDate || !endDate) {
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 15);
+      console.log('Usando período padrão:', { startDate, endDate });
+    }
+
+    // Ajustar para início e fim do dia
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return await this.docProtestoRepository
+      .createQueryBuilder('doc')
+      // Relacionamento com apresentante
+      .leftJoinAndSelect('doc.apresentante', 'apresentante')
+      // Relacionamento com arquivo de importação
+      .leftJoinAndSelect('doc.file', 'file')
+      // Relacionamento com credores (através da tabela de junção)
+      .leftJoinAndSelect('doc.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      // Relacionamento com notificações e seus devedores
+      .leftJoinAndSelect('doc.notificacao', 'logNotificacao')
+      .leftJoinAndSelect('logNotificacao.devedor', 'devedor')
+      // Filtro por data de distribuição
+      .where('doc.createdAt BETWEEN :start AND :end', {
+        start,
+        end,
+      })
+      // Ordenar por data mais recente
+      .orderBy('doc.data_distribuicao', 'DESC')
+      .getMany();
+  }
+
+  async findByDateRangeDistAllData(startDate?: Date, endDate?: Date) {
+    // Verificar se as datas são válidas
+    if (startDate && isNaN(startDate.getTime())) {
+      throw new Error('startDate inválida');
+    }
+    if (endDate && isNaN(endDate.getTime())) {
+      throw new Error('endDate inválida');
+    }
+
+    // Usar datas atuais se nenhuma for fornecida
+    if (!startDate || !endDate) {
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 15);
+      console.log('Usando período padrão:', { startDate, endDate });
+    }
+
+    // Ajustar para início e fim do dia
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return await this.docProtestoRepository
+      .createQueryBuilder('doc')
+      // Relacionamento com apresentante
+      .leftJoinAndSelect('doc.apresentante', 'apresentante')
+      // Relacionamento com arquivo de importação
+      .leftJoinAndSelect('doc.file', 'file')
+      // Relacionamento com credores (através da tabela de junção)
+      .leftJoinAndSelect('doc.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      // Relacionamento com notificações e seus devedores
+      .leftJoinAndSelect('doc.notificacao', 'logNotificacao')
+      .leftJoinAndSelect('logNotificacao.devedor', 'devedor')
+      // Filtro por data de distribuição
+      .where('doc.data_distribuicao BETWEEN :start AND :end', {
+        start,
+        end,
+      })
+      // Ordenar por data mais recente
+      .orderBy('doc.data_distribuicao', 'DESC')
+      .getMany();
+  }
+
+  /* 
+  async buscarNotificacaoPendenteAllDataById(
+      id: number,
+    ): Promise<IntimacaoDataCompleto[]> {
+      return await this.logNotificacaoRepository
+        .createQueryBuilder('log_notificacao')
+        .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
+        .leftJoinAndSelect('log_notificacao.protesto', 'protesto')
+        .leftJoinAndSelect('protesto.apresentante', 'apresentante')
+        .leftJoinAndSelect('protesto.credores', 'docProtestoCredor')
+        .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+        .andWhere('devedor.email IS NOT NULL')
+        .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
+        .andWhere('log_notificacao.id = :id', { id })
+        .getMany();
+    } */
   findOne(id: number) {
     return `This action returns a #${id} docProtesto`;
   }
