@@ -30,8 +30,7 @@ export class UserService {
       where: { role },
     });
   }
-  async create(createUserDto: CreateUserDto, tokenPayload: TokenPayloadDto) {
-    const userId = tokenPayload.sub;
+  async create(createUserDto: CreateUserDto, tokenPayload?: TokenPayloadDto) {
     const passwordHash = await this.hashingService.hash(createUserDto.password);
     try {
       const newUserDto = {
@@ -44,13 +43,15 @@ export class UserService {
       const newUser = this.userRepository.create(newUserDto);
       await this.userRepository.save(newUser);
       // Registro de evento de criação
-      await this.logEventUserService.createLogEntry({
-        fk_id_user: userId, // ID do admin executando a ação
-        fk_id_target: newUser.id,
-        sessionId: tokenPayload.sessionId,
-        event: 'CREATE',
-        descricao: 'Criação de usuário com SEED',
-      });
+      if (tokenPayload?.sub && tokenPayload.sub !== newUser.id) {
+        await this.logEventUserService.createLogEntry({
+          fk_id_user: tokenPayload.sub,
+          fk_id_target: newUser.id,
+          sessionId: tokenPayload.sessionId,
+          event: 'CREATE',
+          descricao: 'Criação de usuário',
+        });
+      }
       return newUser;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
