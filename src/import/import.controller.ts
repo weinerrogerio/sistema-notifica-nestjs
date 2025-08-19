@@ -57,7 +57,7 @@ export class ImportController {
   }
 
   // upload do aquivo
-  @Post('upload')
+  /*  @Post('upload')
   @Roles(Role.USER, Role.ADMIN)
   @UseInterceptors(FileInterceptor('file'))
   async upload(
@@ -74,5 +74,32 @@ export class ImportController {
       tokenPayload.sessionId,
       importOptions,
     );
+  } */
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @Roles(Role.ADMIN)
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() importOptions: ImportOptionsDto,
+    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
+  ) {
+    /*     const tokenPayload = req.user; // Assumindo que você tem um guard de autenticação
+    const sessionId = body.sessionId || 1; // Ou como você obtém o sessionId
+    const options = { allowPartialImport: body.allowPartialImport || false };
+ */
+    // Agora retorna o logId imediatamente
+    const result = await this.importService.importFile(
+      file,
+      tokenPayload,
+      tokenPayload.sessionId,
+      importOptions,
+    );
+
+    return {
+      message: 'Upload iniciado com sucesso',
+      logId: result.logId,
+      statusUrl: `/import/status/${result.logId}`,
+    };
   }
 }
