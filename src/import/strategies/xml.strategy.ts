@@ -232,12 +232,21 @@ export class XmlImportStrategy implements ImportStrategy {
       if (logImportId) {
         await this.logArquivoImportService.updateProgress(logImportId, {
           total_registros: totalRegistros,
+          status: StatusImportacao.PROCESSANDO, // Manter status processando
         });
       }
 
       // 2. Validação prévia dos dados
       const validationResult =
         await this.dataValidation.validate(dadosImportados);
+
+      // Update: progresso da validação
+      if (logImportId) {
+        await this.logArquivoImportService.updateProgress(logImportId, {
+          // Você pode adicionar uma propriedade para indicar a fase: "validando", "transformando", etc.
+          detalhes_progresso: JSON.stringify({ fase: 'validacao_concluida' }),
+        });
+      }
 
       // 3. Se há erros e não permite importação parcial, cancelar tudo
       if (!validationResult.isValid && !options.allowPartialImport) {
@@ -258,6 +267,15 @@ export class XmlImportStrategy implements ImportStrategy {
       // 4. Transformação dos dados
       const dataTransform =
         await this.transformationResult.tranformCsvData(dadosImportados);
+
+      // Update: progresso da transformação
+      if (logImportId) {
+        await this.logArquivoImportService.updateProgress(logImportId, {
+          detalhes_progresso: JSON.stringify({
+            fase: 'transformacao_concluida',
+          }),
+        });
+      }
 
       // 5. Persistência com auditoria (agora retorna também duplicidades)
       const persistenceResult = await this.importPersistenceService.xmlCreate(
@@ -297,8 +315,8 @@ export class XmlImportStrategy implements ImportStrategy {
             detalhesDuplicados.length > 0
               ? JSON.stringify(detalhesDuplicados)
               : null,
-          // DETALHES?????
           duracao: this.calculateDuration(startTime),
+          detalhes_progresso: JSON.stringify({ fase: 'concluido' }),
         });
       }
     } catch (error) {

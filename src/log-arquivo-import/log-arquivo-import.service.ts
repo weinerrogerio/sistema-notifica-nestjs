@@ -17,8 +17,12 @@ export class LogArquivoImportService {
     return `This action returns all logArquivoImport`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} logArquivoImport`;
+  async findOne(id: number) {
+    return await this.logArquivoImportRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
   }
 
   update(id: number, updateLogArquivoImportDto: UpdateLogArquivoImportDto) {
@@ -78,6 +82,7 @@ export class LogArquivoImportService {
       registros_duplicados?: number;
       detalhes_duplicidade?: string;
       duracao?: string;
+      detalhes_progresso?: string;
     },
   ): Promise<void> {
     await this.logArquivoImportRepository.update(id, updateData);
@@ -90,6 +95,8 @@ export class LogArquivoImportService {
       total_registros: number;
       registros_processados: number;
       registros_com_erro: number;
+      status: StatusImportacao;
+      detalhes_progresso: string;
     }>,
   ) {
     try {

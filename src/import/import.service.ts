@@ -43,12 +43,13 @@ export class ImportService {
     tokenPayload: TokenPayloadDto,
     sessionId: number,
     options: ImportOptionsDto = { allowPartialImport: false },
-  ) {
+  ): Promise<{ logId: number }> {
+    // RETORNA O ID DO LOG
     console.log('tokenPayload: ', tokenPayload);
 
     const startTime = Date.now();
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     let logImport: any = null;
+
     try {
       // 1. Verificar se arquivo já foi importado com sucesso
       const existingImport = await this.logArquivoImportService.findByFileName(
@@ -64,12 +65,12 @@ export class ImportService {
         );
       }
 
-      // 2. Criar log inicial
+      // 2. Criar log inicial com status PROCESSANDO
       const initialLogData: CreateLogArquivoImportDto = {
         nome_arquivo: file.originalname,
         mimetype: file.mimetype,
         tamanho_arquivo: file.size,
-        status: StatusImportacao.FALHA,
+        status: StatusImportacao.PROCESSANDO, // STATUS INICIAL
         total_registros: 0,
         registros_processados: 0,
         registros_com_erro: 0,
@@ -82,29 +83,21 @@ export class ImportService {
       logImport = await this.logArquivoImportService.create(initialLogData);
       console.log('ImportService logImport.id:::::: ', logImport.id);
 
-      // 3. Escolha da estratégia
-      const strategy = this.strategies.find((s) => s.canHandle(file.mimetype));
-      if (!strategy) {
-        await this.logArquivoImportService.updateStatus(logImport.id, {
-          status: StatusImportacao.FALHA,
-          detalhes_erro: `Formato de arquivo não suportado: ${file.mimetype}`,
-          duracao: this.calculateDuration(startTime),
-        });
-
-        throw new BadRequestException(
-          `Formato de arquivo não suportado. ${file.mimetype}`,
-        );
-      }
-
-      // 4. Processar arquivo com validação prévia
-      await strategy.processFile(
-        file.buffer,
+      // 3. Processar arquivo de forma assíncrona (fire and forget)
+      this.processFileAsync(
+        file,
         tokenPayload,
         logImport.id,
         options,
-      );
+        startTime,
+      ).catch((error) => {
+        console.error('Erro no processamento assíncrono:', error);
+      });
+
+      // 4. Retornar ID imediatamente
+      return { logId: logImport.id };
     } catch (error) {
-      // Atualizar log com erro, se o log foi criado
+      // Se erro na criação do log ou verificações iniciais
       if (logImport) {
         await this.logArquivoImportService.updateStatus(logImport.id, {
           status: StatusImportacao.FALHA,
@@ -113,6 +106,42 @@ export class ImportService {
         });
       }
       throw error;
+    }
+  }
+
+  private async processFileAsync(
+    file: Express.Multer.File,
+    tokenPayload: TokenPayloadDto,
+    logImportId: number,
+    options: ImportOptionsDto,
+    startTime: number,
+  ): Promise<void> {
+    try {
+      // Escolha da estratégia
+      const strategy = this.strategies.find((s) => s.canHandle(file.mimetype));
+      if (!strategy) {
+        await this.logArquivoImportService.updateStatus(logImportId, {
+          status: StatusImportacao.FALHA,
+          detalhes_erro: `Formato de arquivo não suportado: ${file.mimetype}`,
+          duracao: this.calculateDuration(startTime),
+        });
+        return;
+      }
+
+      // Processar arquivo
+      await strategy.processFile(
+        file.buffer,
+        tokenPayload,
+        logImportId,
+        options,
+      );
+    } catch (error) {
+      // Atualizar log com erro
+      await this.logArquivoImportService.updateStatus(logImportId, {
+        status: StatusImportacao.FALHA,
+        detalhes_erro: error.message,
+        duracao: this.calculateDuration(startTime),
+      });
     }
   }
 

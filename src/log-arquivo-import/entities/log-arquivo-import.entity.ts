@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   OneToMany,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity'; // ajuste o caminho conforme sua estrutura
 import { StatusImportacao } from '../enum/log-arquivo.enum';
@@ -50,6 +51,9 @@ export class LogImportacaoArquivo {
   @Column({ type: 'text', nullable: true })
   detalhes_duplicidade: string; // JSON com duplicidades
 
+  @Column({ type: 'text', nullable: true })
+  detalhes_progresso: string;
+
   @CreateDateColumn()
   data_importacao: Date;
 
@@ -69,4 +73,11 @@ export class LogImportacaoArquivo {
 
   @OneToMany(() => DocProtesto, (docProtesto) => docProtesto.file)
   registros: DocProtesto[];
+
+  //data de criação (data_registro)
+  @CreateDateColumn()
+  createdAt?: Date;
+  //data de atualização (data_registro)
+  @UpdateDateColumn()
+  updatedAt?: Date;
 }
