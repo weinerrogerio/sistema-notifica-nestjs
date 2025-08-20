@@ -28,6 +28,9 @@ export class CreateLogArquivoImportDto {
   detalhes_erro?: string; // JSON com detalhes dos erros
 
   @IsString()
+  detalhes_progresso?: string;
+
+  @IsString()
   duracao?: string; // formato: "00:01:23"
 
   @IsNumber()

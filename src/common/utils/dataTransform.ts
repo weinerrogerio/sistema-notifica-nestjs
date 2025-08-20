@@ -45,7 +45,7 @@ export interface ImportData {
 }
 
 export class TransformationResult {
-  async tranformCsvData(
+  async tranformData(
     data: Record<string, string | number>[],
   ): Promise<ImportData[]> {
     const transformedData: ImportData[] = [];
@@ -135,5 +135,25 @@ export class TransformationResult {
       // em vez de retornar null que pode ser um problema para o chamador.
       throw new Error('Falha na transformação dos dados CSV.');
     }
+  }
+
+  async calculateDuration(startTime: number): Promise<string> {
+    const duration = Date.now() - startTime;
+
+    // Calcula horas, minutos, segundos e milissegundos
+    const totalMilliseconds = duration;
+    const hours = Math.floor(totalMilliseconds / 3600000);
+    const minutes = Math.floor((totalMilliseconds % 3600000) / 60000);
+    const seconds = Math.floor((totalMilliseconds % 60000) / 1000);
+    const milliseconds = totalMilliseconds % 1000;
+
+    // Formata cada parte com preenchimento de zeros à esquerda
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+    const formattedMilliseconds = String(milliseconds).padStart(3, '0');
+
+    // Retorna a string final no formato desejado
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
   }
 }

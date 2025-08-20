@@ -7,6 +7,7 @@ import { StatusImportacao } from '@app/log-arquivo-import/enum/log-arquivo.enum'
 import { CreateLogArquivoImportDto } from '@app/log-arquivo-import/dto/create-log-arquivo-import.dto';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
 import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
+import { TransformationResult } from '@app/common/utils/dataTransform';
 
 @Injectable()
 export class ImportService {
@@ -14,6 +15,7 @@ export class ImportService {
     @Inject('IMPORT_STRATEGIES')
     private readonly strategies: ImportStrategy[],
     private readonly logArquivoImportService: LogArquivoImportService,
+    private readonly transformationResult: TransformationResult,
   ) {}
 
   create(createImportDto: CreateImportDto) {
@@ -71,6 +73,7 @@ export class ImportService {
         mimetype: file.mimetype,
         tamanho_arquivo: file.size,
         status: StatusImportacao.PROCESSANDO, // STATUS INICIAL
+        detalhes_progresso: 'iniciando_processamento',
         total_registros: 0,
         registros_processados: 0,
         registros_com_erro: 0,
@@ -102,7 +105,8 @@ export class ImportService {
         await this.logArquivoImportService.updateStatus(logImport.id, {
           status: StatusImportacao.FALHA,
           detalhes_erro: error.message,
-          duracao: this.calculateDuration(startTime),
+          //duracao: this.calculateDuration(startTime),
+          duracao: await this.transformationResult.calculateDuration(startTime),
         });
       }
       throw error;
@@ -123,7 +127,8 @@ export class ImportService {
         await this.logArquivoImportService.updateStatus(logImportId, {
           status: StatusImportacao.FALHA,
           detalhes_erro: `Formato de arquivo não suportado: ${file.mimetype}`,
-          duracao: this.calculateDuration(startTime),
+          //duracao: this.calculateDuration(startTime),
+          duracao: await this.transformationResult.calculateDuration(startTime),
         });
         return;
       }
@@ -140,17 +145,40 @@ export class ImportService {
       await this.logArquivoImportService.updateStatus(logImportId, {
         status: StatusImportacao.FALHA,
         detalhes_erro: error.message,
-        duracao: this.calculateDuration(startTime),
+        //duracao: this.calculateDuration(startTime),
+        duracao: await this.transformationResult.calculateDuration(startTime),
       });
     }
   }
 
-  private calculateDuration(startTime: number): string {
+  /*   private calculateDuration(startTime: number): string {
     const duration = Date.now() - startTime;
     const seconds = Math.floor(duration / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
     return `${hours.toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-  }
+  } */
+
+  /* private calculateDuration(startTime: number): string {
+    const duration = Date.now() - startTime;
+
+    if (duration < 1000) {
+      return `${duration}ms`;
+    } else if (duration < 60000) {
+      // < 1 minuto
+      return `${(duration / 1000).toFixed(1)}s`;
+    } else if (duration < 3600000) {
+      // < 1 hora
+      const minutes = Math.floor(duration / 60000);
+      const seconds = Math.floor((duration % 60000) / 1000);
+      return `${minutes}m ${seconds}s`;
+    } else {
+      // >= 1 hora
+      const hours = Math.floor(duration / 3600000);
+      const minutes = Math.floor((duration % 3600000) / 60000);
+      const seconds = Math.floor((duration % 60000) / 1000);
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+  } */
 }

@@ -244,7 +244,7 @@ export class XmlImportStrategy implements ImportStrategy {
       if (logImportId) {
         await this.logArquivoImportService.updateProgress(logImportId, {
           // Você pode adicionar uma propriedade para indicar a fase: "validando", "transformando", etc.
-          detalhes_progresso: JSON.stringify({ fase: 'validacao_concluida' }),
+          detalhes_progresso: 'validacao_concluida',
         });
       }
 
@@ -258,7 +258,7 @@ export class XmlImportStrategy implements ImportStrategy {
           registros_processados: 0,
           registros_com_erro: validationResult.linhasComErro,
           detalhes_erro: JSON.stringify([errorMessage]),
-          duracao: this.calculateDuration(startTime),
+          duracao: await this.transformationResult.calculateDuration(startTime),
         });
 
         throw new BadRequestException(errorMessage);
@@ -266,14 +266,12 @@ export class XmlImportStrategy implements ImportStrategy {
 
       // 4. Transformação dos dados
       const dataTransform =
-        await this.transformationResult.tranformCsvData(dadosImportados);
+        await this.transformationResult.tranformData(dadosImportados);
 
       // Update: progresso da transformação
       if (logImportId) {
         await this.logArquivoImportService.updateProgress(logImportId, {
-          detalhes_progresso: JSON.stringify({
-            fase: 'transformacao_concluida',
-          }),
+          detalhes_progresso: 'processando',
         });
       }
 
@@ -315,8 +313,8 @@ export class XmlImportStrategy implements ImportStrategy {
             detalhesDuplicados.length > 0
               ? JSON.stringify(detalhesDuplicados)
               : null,
-          duracao: this.calculateDuration(startTime),
-          detalhes_progresso: JSON.stringify({ fase: 'concluido' }),
+          duracao: await this.transformationResult.calculateDuration(startTime),
+          detalhes_progresso: 'concluido',
         });
       }
     } catch (error) {
@@ -327,19 +325,40 @@ export class XmlImportStrategy implements ImportStrategy {
           registros_processados: registrosProcessados,
           registros_com_erro: totalRegistros - registrosProcessados,
           detalhes_erro: JSON.stringify([...detalhesErros, error.message]),
-          duracao: this.calculateDuration(startTime),
+          duracao: await this.transformationResult.calculateDuration(startTime),
         });
       }
       throw error;
     }
   }
 
-  private calculateDuration(startTime: number): string {
+  /*   private calculateDuration(startTime: number): string {
     const duration = Date.now() - startTime;
     const seconds = Math.floor(duration / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
     return `${hours.toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-  }
+  } */
+  /* private calculateDuration(startTime: number): string {
+    const duration = Date.now() - startTime;
+
+    if (duration < 1000) {
+      return `${duration}ms`;
+    } else if (duration < 60000) {
+      // < 1 minuto
+      return `${(duration / 1000).toFixed(1)}s`;
+    } else if (duration < 3600000) {
+      // < 1 hora
+      const minutes = Math.floor(duration / 60000);
+      const seconds = Math.floor((duration % 60000) / 1000);
+      return `${minutes}m ${seconds}s`;
+    } else {
+      // >= 1 hora
+      const hours = Math.floor(duration / 3600000);
+      const minutes = Math.floor((duration % 3600000) / 60000);
+      const seconds = Math.floor((duration % 60000) / 1000);
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+  } */
 }
