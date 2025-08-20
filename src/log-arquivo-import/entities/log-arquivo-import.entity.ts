@@ -42,16 +42,16 @@ export class LogImportacaoArquivo {
   @Column({ type: 'int', default: 0 })
   registros_com_erro: number;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   detalhes_erro: string; // JSON com detalhes dos erros
 
   @Column({ type: 'int', default: 0 })
   registros_duplicados: number; // total de registros duplicados
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   detalhes_duplicidade: string; // JSON com duplicidades
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   detalhes_progresso: string;
 
   @CreateDateColumn()

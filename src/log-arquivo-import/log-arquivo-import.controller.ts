@@ -75,7 +75,7 @@ export class LogArquivoImportController {
       progress_percentage: progressPercentage,
       detalhes_erro: logImport.detalhes_erro,
       detalhes_duplicidade: logImport.detalhes_duplicidade,
-      detalhes_progresso: logImport.detalhes_progresso, // Nova propriedade
+      detalhes_progresso: logImport.detalhes_progresso,
       duracao: logImport.duracao,
       created_at: logImport.createdAt,
       updated_at: logImport.createdAt,
