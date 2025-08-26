@@ -386,3 +386,7 @@ GET {{baseUrl}}/log-arquivo-import/all-and-user
 Authorization: Bearer {{authToken}}
 
 
+###
+DELETE {{baseUrl}}/log-arquivo-import/13
+Authorization: Bearer {{authToken}}
+

@@ -290,22 +290,6 @@ export class DocProtestoService {
       .getMany();
   }
 
-  /* 
-  async buscarNotificacaoPendenteAllDataById(
-      id: number,
-    ): Promise<IntimacaoDataCompleto[]> {
-      return await this.logNotificacaoRepository
-        .createQueryBuilder('log_notificacao')
-        .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
-        .leftJoinAndSelect('log_notificacao.protesto', 'protesto')
-        .leftJoinAndSelect('protesto.apresentante', 'apresentante')
-        .leftJoinAndSelect('protesto.credores', 'docProtestoCredor')
-        .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
-        .andWhere('devedor.email IS NOT NULL')
-        .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
-        .andWhere('log_notificacao.id = :id', { id })
-        .getMany();
-    } */
   findOne(id: number) {
     return `This action returns a #${id} docProtesto`;
   }
@@ -316,7 +300,17 @@ export class DocProtestoService {
     return `This action updates a #${id} docProtesto`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} docProtesto`;
+  async remove(id: number) {
+    return await this.docProtestoRepository.delete(id);
+  }
+
+  async removeAllByFile(id: number) {
+    // Use o Query Builder para garantir que o 'where' seja aceito
+    return await this.docProtestoRepository
+      .createQueryBuilder()
+      .delete()
+      .from(DocProtesto)
+      .where('fk_file = :id', { id: id })
+      .execute();
   }
 }

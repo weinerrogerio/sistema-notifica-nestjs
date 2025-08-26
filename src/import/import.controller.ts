@@ -84,10 +84,6 @@ export class ImportController {
     @Body() importOptions: ImportOptionsDto,
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
   ) {
-    /*     const tokenPayload = req.user; // Assumindo que você tem um guard de autenticação
-    const sessionId = body.sessionId || 1; // Ou como você obtém o sessionId
-    const options = { allowPartialImport: body.allowPartialImport || false };
- */
     // Agora retorna o logId imediatamente
     const result = await this.importService.importFile(
       file,

@@ -150,35 +150,4 @@ export class ImportService {
       });
     }
   }
-
-  /*   private calculateDuration(startTime: number): string {
-    const duration = Date.now() - startTime;
-    const seconds = Math.floor(duration / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    return `${hours.toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-  } */
-
-  /* private calculateDuration(startTime: number): string {
-    const duration = Date.now() - startTime;
-
-    if (duration < 1000) {
-      return `${duration}ms`;
-    } else if (duration < 60000) {
-      // < 1 minuto
-      return `${(duration / 1000).toFixed(1)}s`;
-    } else if (duration < 3600000) {
-      // < 1 hora
-      const minutes = Math.floor(duration / 60000);
-      const seconds = Math.floor((duration % 60000) / 1000);
-      return `${minutes}m ${seconds}s`;
-    } else {
-      // >= 1 hora
-      const hours = Math.floor(duration / 3600000);
-      const minutes = Math.floor((duration % 3600000) / 60000);
-      const seconds = Math.floor((duration % 60000) / 1000);
-      return `${hours}h ${minutes}m ${seconds}s`;
-    }
-  } */
 }
