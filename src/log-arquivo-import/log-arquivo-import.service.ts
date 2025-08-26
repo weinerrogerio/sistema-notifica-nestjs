@@ -1,16 +1,23 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateLogArquivoImportDto } from './dto/create-log-arquivo-import.dto';
 import { UpdateLogArquivoImportDto } from './dto/update-log-arquivo-import.dto';
 import { LogImportacaoArquivo } from './entities/log-arquivo-import.entity';
 import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StatusImportacao } from './enum/log-arquivo.enum';
+import { DocProtestoService } from '@app/doc-protesto/doc-protesto.service';
 
 @Injectable()
 export class LogArquivoImportService {
   constructor(
     @InjectRepository(LogImportacaoArquivo)
     private readonly logArquivoImportRepository: Repository<LogImportacaoArquivo>,
+    private readonly docProtestoService: DocProtestoService,
   ) {}
 
   findAll() {
@@ -31,9 +38,23 @@ export class LogArquivoImportService {
     return `This action updates a #${id} logArquivoImport`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} logArquivoImport`;
+  // Remover um arquivo importado, excluindo todos os documentos relacionados
+  async remove(id: number) {
+    const file = await this.findOne(id);
+    if (!file) throw new BadRequestException('File not found');
+
+    try {
+      await this.docProtestoService.removeAllByFile(id);
+      await this.logArquivoImportRepository.delete(id);
+      return `This action removes a #${id} logArquivoImport and all related documents.`;
+    } catch (error) {
+      throw new HttpException(
+        `Erro ao remover o arquivo : ${error.message}`,
+        500,
+      );
+    }
   }
+
   async create(createLogArquivoImportDto: CreateLogArquivoImportDto) {
     console.log(createLogArquivoImportDto);
 
