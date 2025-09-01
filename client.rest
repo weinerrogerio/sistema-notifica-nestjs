@@ -387,6 +387,6 @@ Authorization: Bearer {{authToken}}
 
 
 ###
-DELETE {{baseUrl}}/log-arquivo-import/13
+DELETE {{baseUrl}}/log-arquivo-import/27
 Authorization: Bearer {{authToken}}
 
