@@ -19,9 +19,18 @@ interface CriticalValidationResult {
   errors: string[];
 }
 
-// aqui irá cnonter os create e update de importacao --> receber dados verificado e salvar em user.create , docProtesto.create...
+// Mapa para controlar protocolos já criados nesta sessão de importação
+interface ProtocoloInfo {
+  docProtestoId: number;
+  apresentanteId: number;
+  credorId: number;
+}
+
 @Injectable()
 export class ImportPersistenceService {
+  // Mapa para controlar protocolos criados durante a importação
+  private protocolosProcessados = new Map<string, ProtocoloInfo>();
+
   constructor(
     private readonly docProtestoService: DocProtestoService,
     private readonly devedorService: DevedorService,
@@ -113,12 +122,14 @@ export class ImportPersistenceService {
     return false;
   }
 
+  // Gera chave única para identificar um protocolo
+  private generateProtocolKey(data: ImportData): string {
+    return `${data.protocolo}|${data.cartorio}|${data.numero_do_titulo}|${data.apresentante}|${data.vencimento}`;
+  }
+
   // Função para busca em lote de duplicidades
   private async checkForDuplicates(data: ImportData[]): Promise<Set<string>> {
-    const uniqueKeys = data.map(
-      (item) =>
-        `${item.protocolo}|${item.cartorio}|${item.numero_do_titulo}|${item.apresentante}|${item.vencimento}`,
-    );
+    const uniqueKeys = data.map((item) => this.generateProtocolKey(item));
 
     // Buscar todos os registros existentes de uma vez
     const existingRecords =
@@ -152,6 +163,9 @@ export class ImportPersistenceService {
     console.log('xmlCreate: ', data.length, tokenPayload);
     console.log('xmlCreate -  logImport.id:::::: ', logImportId);
 
+    // Limpar o mapa de protocolos processados no início de cada importação
+    this.protocolosProcessados.clear();
+
     let processedCount = 0;
     let errorCount = 0;
     let skippedCount = 0;
@@ -168,10 +182,11 @@ export class ImportPersistenceService {
         const recordNumber = i + 1;
 
         try {
-          // 2. Verificar se é duplicado
-          const uniqueKey = `${dado.protocolo}|${dado.cartorio}|${dado.numero_do_titulo}|${dado.apresentante}|${dado.vencimento}`;
+          // 1. Gerar chave única do protocolo
+          const protocolKey = this.generateProtocolKey(dado);
 
-          if (duplicateKeys.has(uniqueKey)) {
+          // 2. Verificar se é duplicado na base de dados
+          if (duplicateKeys.has(protocolKey)) {
             duplicateCount++;
             const duplicateInfo: DuplicateInfo = {
               linha: recordNumber,
@@ -213,7 +228,7 @@ export class ImportPersistenceService {
           }
 
           // 5. Salvamento no banco
-          await this.saveRecord(dado, logImportId);
+          await this.saveRecord(dado, logImportId, protocolKey);
           processedCount++;
 
           // 6. Atualizar progresso a cada 100 registros
@@ -251,64 +266,96 @@ export class ImportPersistenceService {
   private async saveRecord(
     dado: ImportData,
     logImportId: number,
+    protocolKey: string,
   ): Promise<void> {
-    // 1. Salvando apresentante
-    const newApresentante = {
-      nome: dado.apresentante,
-      cod_apresentante: dado.codigo,
-    };
-    const savedApresentante =
-      await this.apresentanteService.findOrCreate(newApresentante);
+    let protocolInfo = this.protocolosProcessados.get(protocolKey);
 
-    // 2. Salvando credor
-    const newCredor = {
-      sacador: dado.sacador,
-      cedente: dado.cedente,
-      doc_credor: dado.documento_sacador,
-    };
-    const savedCredor = await this.credorService.findOrCreate(newCredor);
+    // Se o protocolo ainda não foi criado, criar todas as entidades relacionadas
+    if (!protocolInfo) {
+      // 1. Salvando apresentante
+      const newApresentante = {
+        nome: dado.apresentante,
+        cod_apresentante: dado.codigo,
+      };
+      const savedApresentante =
+        await this.apresentanteService.findOrCreate(newApresentante);
 
-    console.log('::::::::::::saveRecord - logImportId::::::::::', logImportId);
-    // 3. Salvando documento de protesto (com fk_file)
-    const newDocProtesto = {
-      vencimento: dado.vencimento,
-      data_apresentacao: dado.data,
-      num_distribuicao: dado.protocolo,
-      data_distribuicao: dado.data_remessa,
-      cart_protesto: dado.cartorio,
-      num_titulo: dado.numero_do_titulo,
-      valor: dado.valor,
-      saldo: dado.saldo,
-      fk_file: logImportId, // Relacionando com o arquivo de importação
-      fk_apresentante: savedApresentante.id,
-    };
-    if (!logImportId) {
-      throw new Error('logImportId é obrigatório mas está undefined');
+      // 2. Salvando credor
+      const newCredor = {
+        sacador: dado.sacador,
+        cedente: dado.cedente,
+        doc_credor: dado.documento_sacador,
+      };
+      const savedCredor = await this.credorService.findOrCreate(newCredor);
+
+      console.log(
+        '::::::::::::saveRecord - logImportId::::::::::',
+        logImportId,
+      );
+
+      // 3. Salvando documento de protesto (com fk_file)
+      const newDocProtesto = {
+        vencimento: dado.vencimento,
+        data_apresentacao: dado.data,
+        num_distribuicao: dado.protocolo,
+        data_distribuicao: dado.data_remessa,
+        cart_protesto: dado.cartorio,
+        num_titulo: dado.numero_do_titulo,
+        valor: dado.valor,
+        saldo: dado.saldo,
+        fk_file: logImportId,
+        fk_apresentante: savedApresentante.id,
+      };
+
+      if (!logImportId) {
+        throw new Error('logImportId é obrigatório mas está undefined');
+      }
+
+      const savedDocProtesto =
+        await this.docProtestoService.create(newDocProtesto);
+
+      // 4. Salvando relação protesto-credor
+      const newRelacaoProtestoCredor = {
+        fk_protesto: savedDocProtesto.id,
+        fk_credor: savedCredor.id,
+      };
+      await this.relacaoProtestoCredorService.create(newRelacaoProtestoCredor);
+
+      // Armazenar informações do protocolo para futuros devedores
+      protocolInfo = {
+        docProtestoId: savedDocProtesto.id,
+        apresentanteId: savedApresentante.id,
+        credorId: savedCredor.id,
+      };
+      this.protocolosProcessados.set(protocolKey, protocolInfo);
+
+      console.log(
+        `Protocolo criado: ${protocolKey} -> ID: ${savedDocProtesto.id}`,
+      );
+    } else {
+      console.log(
+        `Protocolo existente encontrado: ${protocolKey} -> ID: ${protocolInfo.docProtestoId}`,
+      );
     }
-    const savedDocProtesto =
-      await this.docProtestoService.create(newDocProtesto);
 
-    // 4. Salvando devedor
+    // 5. Salvando devedor (sempre criar, pois pode haver múltiplos devedores por protocolo)
     const newDevedor = {
       nome: dado.devedor,
       doc_devedor: dado.documento,
       devedor_pj: DocumentValidator.isValidCNPJ(dado.documento),
-      fk_protesto: savedDocProtesto.id,
+      fk_protesto: protocolInfo.docProtestoId,
     };
     const savedDevedor = await this.devedorService.findOrCreate(newDevedor);
 
-    // 5. Salvando log de notificação
+    // 6. Salvando log de notificação
     const newLogNotificacao = {
-      fk_protesto: savedDocProtesto.id,
+      fk_protesto: protocolInfo.docProtestoId,
       fk_devedor: savedDevedor.id,
     };
     await this.logNotificacaoService.create(newLogNotificacao);
 
-    // 6. Salvando relação protesto-credor
-    const newRelacaoProtestoCredor = {
-      fk_protesto: savedDocProtesto.id,
-      fk_credor: savedCredor.id,
-    };
-    await this.relacaoProtestoCredorService.create(newRelacaoProtestoCredor);
+    console.log(
+      `Devedor salvo: ${dado.devedor} para protocolo ID: ${protocolInfo.docProtestoId}`,
+    );
   }
 }
