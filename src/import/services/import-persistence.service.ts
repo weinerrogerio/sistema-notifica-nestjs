@@ -11,7 +11,6 @@ import { TransformationResult } from '@app/common/utils/dataTransform';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { LogArquivoImportService } from '@app/log-arquivo-import/log-arquivo-import.service';
 import { AddressValidator, DocumentValidator } from '@app/common';
-import { ImportOptionsDto } from '@app/common/interfaces/import-oprions.interface';
 import { DuplicateInfo } from '@app/common/interfaces/doc-protesto.interface';
 
 interface CriticalValidationResult {
@@ -122,14 +121,20 @@ export class ImportPersistenceService {
     return false;
   }
 
-  // Gera chave única para identificar um protocolo
+  // Gera chave única para identificar um protocolo (sem incluir o devedor)
   private generateProtocolKey(data: ImportData): string {
     return `${data.protocolo}|${data.cartorio}|${data.numero_do_titulo}|${data.apresentante}|${data.vencimento}`;
   }
 
+  // Gera chave única para identificar um registro completo (incluindo o devedor)
+  private generateCompleteRecordKey(data: ImportData): string {
+    return `${data.protocolo}|${data.cartorio}|${data.numero_do_titulo}|${data.apresentante}
+    |${data.vencimento}|${data.devedor}|${data.documento}`;
+  }
+
   // Função para busca em lote de duplicidades
   private async checkForDuplicates(data: ImportData[]): Promise<Set<string>> {
-    const uniqueKeys = data.map((item) => this.generateProtocolKey(item));
+    const uniqueKeys = data.map((item) => this.generateCompleteRecordKey(item));
 
     // Buscar todos os registros existentes de uma vez
     const existingRecords =
@@ -138,7 +143,10 @@ export class ImportPersistenceService {
     // Criar Set com chaves dos registros existentes
     const duplicateKeys = new Set<string>();
     existingRecords.forEach((record) => {
-      const key = `${record.num_distribuicao}|${record.cart_protesto}|${record.num_titulo}|${record.apresentante?.nome || record.fk_apresentante}|${record.vencimento}`;
+      // Aqui você precisa ajustar conforme a estrutura do seu registro retornado
+      // assumindo que você tem acesso aos dados do devedor associado
+      const key = `${record.num_distribuicao}|${record.cart_protesto}|${record.num_titulo}|${record.apresentante?.nome || record.fk_apresentante}
+      |${record.vencimento}|${record.fk_file}`;
       duplicateKeys.add(key);
     });
 
@@ -150,8 +158,6 @@ export class ImportPersistenceService {
     data: ImportData[],
     tokenPayload: TokenPayloadDto,
     logImportId?: number,
-    //eslint-disable-next-line
-    options: ImportOptionsDto = { allowPartialImport: false },
   ): Promise<{
     processedCount: number;
     errorCount: number;
@@ -173,20 +179,28 @@ export class ImportPersistenceService {
     const errors: string[] = [];
     const duplicates: DuplicateInfo[] = [];
 
+    // Mapa para controlar duplicidades dentro do próprio arquivo (registro completo)
+    const registrosNoArquivo = new Map<string, number>();
+    // Mapa para controlar protocolos já processados no arquivo (sem duplicar protocolos)
+    const protocolosNoArquivo = new Map<string, number>();
+
     try {
       // Verificar duplicidades em lote antes de processar
       const duplicateKeys = await this.checkForDuplicates(data);
 
       for (let i = 0; i < data.length; i++) {
         const dado = data[i];
-        const recordNumber = i + 1;
+        // A numeração de linha começa em 2 porque linha 1 é o cabeçalho
+        const recordNumber = i + 2;
 
         try {
-          // 1. Gerar chave única do protocolo
+          // 1. Gerar chave única do registro completo
+          const completeRecordKey = this.generateCompleteRecordKey(dado);
+          // 2. Gerar chave única do protocolo
           const protocolKey = this.generateProtocolKey(dado);
 
-          // 2. Verificar se é duplicado na base de dados
-          if (duplicateKeys.has(protocolKey)) {
+          // 3. Verificar se é duplicado na base de dados (registro completo)
+          if (duplicateKeys.has(completeRecordKey)) {
             duplicateCount++;
             const duplicateInfo: DuplicateInfo = {
               linha: recordNumber,
@@ -205,7 +219,31 @@ export class ImportPersistenceService {
             continue;
           }
 
-          // 3. Validação crítica - impede salvamento
+          // 4. Verificar duplicidades dentro do próprio arquivo (registro completo)
+          if (registrosNoArquivo.has(completeRecordKey)) {
+            const linhaOriginal = registrosNoArquivo.get(completeRecordKey);
+            duplicateCount++;
+            const duplicateInfo: DuplicateInfo = {
+              linha: recordNumber,
+              num_distribuicao: dado.protocolo,
+              cart_protesto: dado.cartorio,
+              num_titulo: dado.numero_do_titulo,
+              apresentante: dado.apresentante,
+              vencimento: dado.vencimento,
+              motivo: `Duplicado dentro do arquivo - primeira ocorrência na linha ${linhaOriginal}`,
+            };
+            duplicates.push(duplicateInfo);
+
+            console.warn(
+              `Registro ${recordNumber} duplicado no arquivo - primeira ocorrência linha ${linhaOriginal} - Distribuição: ${dado.protocolo}`,
+            );
+            continue;
+          }
+
+          // Registrar registro completo como processado no arquivo
+          registrosNoArquivo.set(completeRecordKey, recordNumber);
+
+          // 5. Validação crítica - impede salvamento
           const criticalValidation = this.validateCriticalFields(dado);
           if (!criticalValidation.isValid) {
             skippedCount++;
@@ -215,7 +253,7 @@ export class ImportPersistenceService {
             continue;
           }
 
-          // 4. Validação de ressalvas - não impede salvamento mas conta como erro
+          // 6. Validação de ressalvas - não impede salvamento mas conta como erro
           const warnings = this.validateWarningFields(dado);
           if (warnings.length > 0) {
             const warningMsg = `Registro ${recordNumber} salvo com ressalvas: ${warnings.join(', ')}`;
@@ -227,11 +265,17 @@ export class ImportPersistenceService {
             throw new Error('logImportId é obrigatório para salvar registros');
           }
 
-          // 5. Salvamento no banco
-          await this.saveRecord(dado, logImportId, protocolKey);
+          // 7. Salvamento no banco
+          await this.saveRecord(
+            dado,
+            logImportId,
+            protocolKey,
+            protocolosNoArquivo,
+            recordNumber,
+          );
           processedCount++;
 
-          // 6. Atualizar progresso a cada 100 registros
+          // 8. Atualizar progresso a cada 100 registros
           if ((i + 1) % 100 === 0) {
             await this.logArquivoImportService.updateProgress(logImportId, {
               registros_processados: processedCount,
@@ -267,11 +311,18 @@ export class ImportPersistenceService {
     dado: ImportData,
     logImportId: number,
     protocolKey: string,
+    protocolosNoArquivo: Map<string, number>,
+    recordNumber: number,
   ): Promise<void> {
     let protocolInfo = this.protocolosProcessados.get(protocolKey);
 
     // Se o protocolo ainda não foi criado, criar todas as entidades relacionadas
     if (!protocolInfo) {
+      // Verificar se é o primeiro devedor deste protocolo no arquivo atual
+      if (!protocolosNoArquivo.has(protocolKey)) {
+        protocolosNoArquivo.set(protocolKey, recordNumber);
+      }
+
       // 1. Salvando apresentante
       const newApresentante = {
         nome: dado.apresentante,
