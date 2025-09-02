@@ -17,7 +17,7 @@
   <AllowPNG/>
  </OfficeDocumentSettings>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>7365</WindowHeight>
+  <WindowHeight>7185</WindowHeight>
   <WindowWidth>20490</WindowWidth>
   <WindowTopX>32767</WindowTopX>
   <WindowTopY>32767</WindowTopY>
@@ -44,6 +44,42 @@
   <Table ss:ExpandedColumnCount="38" ss:ExpandedRowCount="7092" x:FullColumns="1"
    x:FullRows="1" ss:StyleID="s62" ss:DefaultColumnWidth="54"
    ss:DefaultRowHeight="15">
+   <Column ss:StyleID="s62" ss:Width="240.75"/>
+   <Column ss:StyleID="s62" ss:Width="40.5"/>
+   <Column ss:StyleID="s62" ss:Width="217.5"/>
+   <Column ss:StyleID="s62" ss:Width="62.25"/>
+   <Column ss:StyleID="s62" ss:Width="65.25"/>
+   <Column ss:StyleID="s62" ss:Width="84"/>
+   <Column ss:StyleID="s62" ss:Width="73.5"/>
+   <Column ss:StyleID="s62" ss:Width="132.75"/>
+   <Column ss:StyleID="s62" ss:Width="276" ss:Span="1"/>
+   <Column ss:Index="11" ss:StyleID="s62" ss:Width="109.5"/>
+   <Column ss:StyleID="s62" ss:Width="286.5"/>
+   <Column ss:StyleID="s62" ss:Width="105"/>
+   <Column ss:StyleID="s62" ss:Width="265.5"/>
+   <Column ss:StyleID="s62" ss:Width="53.25"/>
+   <Column ss:StyleID="s62" ss:Width="96.75"/>
+   <Column ss:StyleID="s62" ss:Width="51.75"/>
+   <Column ss:StyleID="s62" ss:Width="18"/>
+   <Column ss:StyleID="s62" ss:Width="90"/>
+   <Column ss:StyleID="s62" ss:Width="96"/>
+   <Column ss:StyleID="s62" ss:Width="56.25" ss:Span="1"/>
+   <Column ss:Index="23" ss:StyleID="s62" ss:Width="42.75"/>
+   <Column ss:StyleID="s62" ss:Width="97.5"/>
+   <Column ss:StyleID="s62" ss:Width="91.5"/>
+   <Column ss:StyleID="s62" ss:Width="57.75"/>
+   <Column ss:StyleID="s62" ss:Width="51"/>
+   <Column ss:StyleID="s62" ss:Width="72.75"/>
+   <Column ss:StyleID="s62" ss:Width="66.75"/>
+   <Column ss:StyleID="s62" ss:Width="61.5"/>
+   <Column ss:StyleID="s62" ss:Width="87.75"/>
+   <Column ss:StyleID="s62" ss:Width="97.5"/>
+   <Column ss:StyleID="s62" ss:Width="48"/>
+   <Column ss:StyleID="s62" ss:Width="114"/>
+   <Column ss:StyleID="s62" ss:Width="48"/>
+   <Column ss:StyleID="s62" ss:Width="85.5"/>
+   <Column ss:StyleID="s62" ss:Width="63.75"/>
+   <Column ss:StyleID="s62" ss:Width="57.75"/>
    <Row ss:AutoFitHeight="0" ss:Height="15.75">
     <Cell ss:StyleID="s63"><Data ss:Type="String">Apresentante</Data></Cell>
     <Cell ss:StyleID="s63"><Data ss:Type="String">Código</Data></Cell>
@@ -838,7 +874,122 @@
     <Cell><Data ss:Type="String">Sim</Data></Cell>
     <Cell><Data ss:Type="String">Não</Data></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0" ss:Height="15.75" ss:Span="7067"/>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell><Data ss:Type="String">PGFN - Procuradoria Geral da Fazenda Nacional</Data></Cell>
+    <Cell><Data ss:Type="String">978</Data></Cell>
+    <Cell><Data ss:Type="String">1° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="String">28/11/2022</Data></Cell>
+    <Cell><Data ss:Type="String">0000000421</Data></Cell>
+    <Cell><Data ss:Type="String">13/07/2018</Data></Cell>
+    <Cell><Data ss:Type="String">13/07/2018</Data></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">FAZENDA NACIONAL - DIV.ATIVA-IRPF</Data></Cell>
+    <Cell><Data ss:Type="String">FAZENDA NACIONAL - DIV.ATIVA-IRPF</Data></Cell>
+    <Cell><Data ss:Type="String">00.394.460/0216-53</Data></Cell>
+    <Cell><Data ss:Type="String">PAULO ROBERTO TODESCHINI</Data></Cell>
+    <Cell><Data ss:Type="String">530.305.679-15</Data></Cell>
+    <Cell><Data ss:Type="String">AL DAS ROSAS 82 TERREO</Data></Cell>
+    <Cell><Data ss:Type="String">81210080</Data></Cell>
+    <Cell><Data ss:Type="String">MOSSUNGUE</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">PR</Data></Cell>
+    <Cell><Data ss:Type="String">9011700044528</Data></Cell>
+    <Cell><Data ss:Type="String">90117000445</Data></Cell>
+    <Cell><Data ss:Type="String">851.52</Data></Cell>
+    <Cell><Data ss:Type="String">1642.24</Data></Cell>
+    <Cell><Data ss:Type="String">CDA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">CANCELAMENTO</Data></Cell>
+    <Cell><Data ss:Type="String">PENDENTE</Data></Cell>
+    <Cell><Data ss:Type="String">NÃO</Data></Cell>
+    <Cell><Data ss:Type="String">10/07/2018</Data></Cell>
+    <Cell><Data ss:Type="String">A VISTA</Data></Cell>
+    <Cell><Data ss:Type="String">Protestado</Data></Cell>
+    <Cell><Data ss:Type="String">19/07/2018</Data></Cell>
+    <Cell ss:Index="36"><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell><Data ss:Type="String">PGFN - Procuradoria Geral da Fazenda Nacional</Data></Cell>
+    <Cell><Data ss:Type="String">978</Data></Cell>
+    <Cell><Data ss:Type="String">1° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="String">28/11/2022</Data></Cell>
+    <Cell><Data ss:Type="String">0000000382</Data></Cell>
+    <Cell><Data ss:Type="String">11/12/2019</Data></Cell>
+    <Cell><Data ss:Type="String">11/12/2019</Data></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">FAZENDA NACIONAL - DIV.ATIVA-IRPJ</Data></Cell>
+    <Cell><Data ss:Type="String">FAZENDA NACIONAL - DIV.ATIVA-IRPJ</Data></Cell>
+    <Cell><Data ss:Type="String">00.394.460/0216-53</Data></Cell>
+    <Cell><Data ss:Type="String">RESTAURANTE DE CARNES E MASSAS PER TUTTI LTDA</Data></Cell>
+    <Cell><Data ss:Type="String">80.032.469/0001-41</Data></Cell>
+    <Cell><Data ss:Type="String">COMENDADOR FRANCO 2958 TERREO</Data></Cell>
+    <Cell><Data ss:Type="String">81520000</Data></Cell>
+    <Cell><Data ss:Type="String">GUABIROTUBA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">PR</Data></Cell>
+    <Cell><Data ss:Type="String">9021900091489</Data></Cell>
+    <Cell><Data ss:Type="String">90219000914</Data></Cell>
+    <Cell><Data ss:Type="String">41308.26</Data></Cell>
+    <Cell><Data ss:Type="String">51992.72</Data></Cell>
+    <Cell><Data ss:Type="String">CDA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">CANCELAMENTO</Data></Cell>
+    <Cell><Data ss:Type="String">PENDENTE</Data></Cell>
+    <Cell><Data ss:Type="String">NÃO</Data></Cell>
+    <Cell><Data ss:Type="String">06/12/2019</Data></Cell>
+    <Cell><Data ss:Type="String">A VISTA</Data></Cell>
+    <Cell><Data ss:Type="String">Protestado</Data></Cell>
+    <Cell><Data ss:Type="String">17/12/2019</Data></Cell>
+    <Cell ss:Index="36"><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell><Data ss:Type="String">PGFN - Procuradoria Geral da Fazenda Nacional</Data></Cell>
+    <Cell><Data ss:Type="String">978</Data></Cell>
+    <Cell><Data ss:Type="String">1° Oficio de Protesto de Títulos de Curitiba</Data></Cell>
+    <Cell><Data ss:Type="String">28/11/2022</Data></Cell>
+    <Cell><Data ss:Type="String">0000000181</Data></Cell>
+    <Cell><Data ss:Type="String">10/11/2022</Data></Cell>
+    <Cell><Data ss:Type="String">10/11/2022</Data></Cell>
+    <Cell><Data ss:Type="String">1323027</Data></Cell>
+    <Cell><Data ss:Type="String">FAZENDA NACIONAL - DIV ATIVA-SIMPLES NACIONAL</Data></Cell>
+    <Cell><Data ss:Type="String">FAZENDA NACIONAL - DIV ATIVA-SIMPLES NACIONAL</Data></Cell>
+    <Cell><Data ss:Type="String">00.394.460/0216-53</Data></Cell>
+    <Cell><Data ss:Type="String">SONIA FRANCA DOS SANTOS</Data></Cell>
+    <Cell><Data ss:Type="String">768.072.909-34</Data></Cell>
+    <Cell><Data ss:Type="String">R LEONARDO ZAVORSKI, 21</Data></Cell>
+    <Cell><Data ss:Type="String">81330480</Data></Cell>
+    <Cell><Data ss:Type="String">FAZENDINHA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">PR</Data></Cell>
+    <Cell><Data ss:Type="String">9042108035764</Data></Cell>
+    <Cell><Data ss:Type="String">90421080357</Data></Cell>
+    <Cell><Data ss:Type="String">3547.01</Data></Cell>
+    <Cell><Data ss:Type="String">3547.01</Data></Cell>
+    <Cell><Data ss:Type="String">CDA</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">CANCELAMENTO</Data></Cell>
+    <Cell><Data ss:Type="String">PENDENTE</Data></Cell>
+    <Cell><Data ss:Type="String">SIM</Data></Cell>
+    <Cell><Data ss:Type="String">04/11/2022</Data></Cell>
+    <Cell><Data ss:Type="String">A VISTA</Data></Cell>
+    <Cell><Data ss:Type="String">Protestado</Data></Cell>
+    <Cell><Data ss:Type="String">17/11/2022</Data></Cell>
+    <Cell ss:Index="36"><Data ss:Type="String">Não</Data></Cell>
+    <Cell><Data ss:Type="String">Sim</Data></Cell>
+    <Cell><Data ss:Type="String">Não</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell ss:Index="12"><Data ss:Type="String">SONIA FRANCA DOS SANTOS</Data></Cell>
+    <Cell><Data ss:Type="String">17.844.209/0001-34</Data></Cell>
+    <Cell><Data ss:Type="String">IZAAC FERREIRA DA CRUZ, 3984</Data></Cell>
+    <Cell><Data ss:Type="String">81910000</Data></Cell>
+    <Cell><Data ss:Type="String">SITIO CERCADO</Data></Cell>
+    <Cell><Data ss:Type="String">CURITIBA</Data></Cell>
+    <Cell><Data ss:Type="String">PR</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75" ss:Span="7063"/>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
    <PageSetup>
@@ -849,11 +1000,12 @@
    </PageSetup>
    <Unsynced/>
    <Selected/>
+   <TopRowVisible>15</TopRowVisible>
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveRow>6</ActiveRow>
-     <ActiveCol>6</ActiveCol>
+     <ActiveRow>29</ActiveRow>
+     <ActiveCol>2</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>

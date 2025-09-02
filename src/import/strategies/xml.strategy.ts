@@ -280,7 +280,6 @@ export class XmlImportStrategy implements ImportStrategy {
         dataTransform,
         tokenPayload,
         logImportId,
-        options,
       );
 
       registrosProcessados = persistenceResult.processedCount;
