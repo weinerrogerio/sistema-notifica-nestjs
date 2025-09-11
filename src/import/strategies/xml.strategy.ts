@@ -250,7 +250,8 @@ export class XmlImportStrategy implements ImportStrategy {
 
       // 3. Se há erros e não permite importação parcial, cancelar tudo
       if (!validationResult.isValid && !options.allowPartialImport) {
-        const errorMessage = `Arquivo contém ${validationResult.linhasComErro} registro(s) com erro(s). Deseja salvar apenas os registros válidos? Se sim, reenvie o arquivo com allowPartialImport=true.`;
+        //const errorMessage = `Arquivo contém ${validationResult.linhasComErro} registro(s) com erro(s). Deseja salvar apenas os registros válidos? Se sim, reenvie o arquivo com allowPartialImport=true.`;
+        const errorMessage = `Arquivo contém registro(s) com erro(s) ou duplicados. Deseja salvar apenas os registros válidos? Se sim, reenvie o arquivo com allowPartialImport=true.`;
 
         await this.logArquivoImportService.updateStatus(logImportId, {
           status: StatusImportacao.FALHA,
