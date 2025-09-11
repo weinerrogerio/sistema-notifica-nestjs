@@ -290,6 +290,33 @@ export class DocProtestoService {
       .getMany();
   }
 
+  async findAllPagination(page: number = 1, limit: number = 100) {
+    const offset = (page - 1) * limit;
+
+    const query = this.docProtestoRepository
+      .createQueryBuilder('doc')
+      // Relacionamentos
+      .leftJoinAndSelect('doc.apresentante', 'apresentante')
+      .leftJoinAndSelect('doc.file', 'file')
+      .leftJoinAndSelect('doc.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      .leftJoinAndSelect('doc.notificacao', 'logNotificacao')
+      .leftJoinAndSelect('logNotificacao.devedor', 'devedor')
+      // Ordenação
+      .orderBy('doc.data_distribuicao', 'DESC')
+      // Paginação
+      .skip(offset)
+      .take(limit);
+
+    const [docs, total] = await query.getManyAndCount();
+    return {
+      data: docs,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
   findOne(id: number) {
     return `This action returns a #${id} docProtesto`;
   }

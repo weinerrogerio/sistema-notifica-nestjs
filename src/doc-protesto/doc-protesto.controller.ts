@@ -74,6 +74,13 @@ export class DocProtestoController {
     return await this.docProtestoService.findByDateRangeDistAllData(start, end);
   }
 
+  //findAllPagination
+  @Get('find-all-pagination')
+  @Roles(Role.USER, Role.ADMIN)
+  findAllPagination(@Query('page') page = 1, @Query('limit') limit = 100) {
+    return this.docProtestoService.findAllPagination(+page, +limit);
+  }
+
   @Get(':id')
   @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {
