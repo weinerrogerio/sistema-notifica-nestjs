@@ -102,10 +102,27 @@ Content-Type: application/json
 },
 
 
-##------------------------- BUSCA EMAIL - DEVEDOR PJ -------------------------------
+##------------------------- BUSCA EMAIL - DEVEDOR PJ - API EXTERNA-------------------------------
 ###
 GET {{baseUrl}}/devedor/emails/
 Authorization: Bearer {{authToken}}
+
+###
+GET {{baseUrl}}/devedor/email-search/start
+Authorization: Bearer {{authToken}}
+
+
+###
+## requisição - resposta em tempo real - TESTAR
+GET {{baseUrl}}/devedor/email-search/:sessionId
+Authorization: Bearer {{authToken}}
+
+
+###
+POST {{baseUrl}}/devedor/email-search/cancel/:sessionId
+Authorization: Bearer {{authToken}}
+
+
 
 ###-------------------------------------------------------
 ## EXIBE TODOS
