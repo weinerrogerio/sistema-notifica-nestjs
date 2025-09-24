@@ -8,6 +8,35 @@ import {
 } from '@app/common/interfaces/email.interface';
 import { EmailResult as EmailLookupResult } from '@app/common/interfaces/email.interface';
 
+// Interface para callback de progresso
+export interface SearchProgress {
+  currentBatch: number;
+  totalBatches: number;
+  currentCnpj: string;
+  processedCount: number;
+  totalCount: number;
+  message: string;
+  timestamp: Date;
+}
+
+// Interface para logs em tempo real
+export interface LogMessage {
+  level: 'log' | 'warn' | 'error';
+  message: string;
+  cnpj?: string;
+  timestamp: Date;
+  fonte?: string;
+  email?: string;
+}
+
+// Exception customizada para cancelamento
+export class SearchCancelledException extends Error {
+  constructor() {
+    super('Busca cancelada pelo usuário');
+    this.name = 'SearchCancelledException';
+  }
+}
+
 @Injectable()
 export class EmailLookupService {
   private readonly logger = new Logger(EmailLookupService.name);
@@ -18,50 +47,231 @@ export class EmailLookupService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async buscarEmailsPorCNPJs(cnpjs: string[]): Promise<EmailLookupResult[]> {
+  // Método auxiliar para enviar logs em tempo real
+  private sendLog(
+    logCallback: (log: LogMessage) => void,
+    level: 'log' | 'warn' | 'error',
+    message: string,
+    cnpj?: string,
+    fonte?: string,
+    email?: string,
+  ) {
+    // Envia via logger normal
+    this.logger[level](message);
+
+    // Envia via callback para SSE
+    if (logCallback) {
+      logCallback({
+        level,
+        message,
+        cnpj,
+        timestamp: new Date(),
+        fonte,
+        email,
+      });
+    }
+  }
+
+  async buscarEmailsPorCNPJs(
+    cnpjs: string[],
+    cancellationToken?: () => boolean,
+    progressCallback?: (progress: SearchProgress) => void,
+    logCallback?: (log: LogMessage) => void, // Novo callback para logs
+  ): Promise<EmailLookupResult[]> {
     const resultados: EmailLookupResult[] = [];
+    const totalBatches = Math.ceil(cnpjs.length / this.BATCH_SIZE);
+
+    this.sendLog(
+      logCallback,
+      'log',
+      `Iniciando busca de emails para ${cnpjs.length} CNPJs em ${totalBatches} lotes`,
+    );
 
     // Processa em lotes de 3 CNPJs
     for (let i = 0; i < cnpjs.length; i += this.BATCH_SIZE) {
-      const lote = cnpjs.slice(i, i + this.BATCH_SIZE);
+      // Verifica se foi cancelado
+      if (cancellationToken && cancellationToken()) {
+        this.sendLog(logCallback, 'log', 'Busca cancelada pelo usuário');
+        throw new SearchCancelledException();
+      }
 
-      this.logger.log(
-        `Processando lote ${Math.floor(i / this.BATCH_SIZE) + 1}: CNPJs ${i + 1} a ${Math.min(i + this.BATCH_SIZE, cnpjs.length)} de ${cnpjs.length}`,
+      const lote = cnpjs.slice(i, i + this.BATCH_SIZE);
+      const currentBatch = Math.floor(i / this.BATCH_SIZE) + 1;
+
+      this.sendLog(
+        logCallback,
+        'log',
+        `Processando lote ${currentBatch}: CNPJs ${i + 1} a ${Math.min(i + this.BATCH_SIZE, cnpjs.length)} de ${cnpjs.length}`,
       );
+
+      // Callback de progresso - início do lote
+      if (progressCallback) {
+        progressCallback({
+          currentBatch,
+          totalBatches,
+          currentCnpj: '',
+          processedCount: i,
+          totalCount: cnpjs.length,
+          message: `Processando lote ${currentBatch} de ${totalBatches}`,
+          timestamp: new Date(),
+        });
+      }
 
       // Processa o lote atual
       for (const cnpj of lote) {
-        this.logger.log(`Buscando email para CNPJ: ${cnpj}`);
+        // Verifica cancelamento novamente
+        if (cancellationToken && cancellationToken()) {
+          this.sendLog(logCallback, 'log', 'Busca cancelada pelo usuário');
+          throw new SearchCancelledException();
+        }
+
+        // Callback de progresso - CNPJ atual
+        if (progressCallback) {
+          progressCallback({
+            currentBatch,
+            totalBatches,
+            currentCnpj: cnpj,
+            processedCount: resultados.length,
+            totalCount: cnpjs.length,
+            message: `Buscando email para CNPJ: ${cnpj}`,
+            timestamp: new Date(),
+          });
+        }
+
+        this.sendLog(
+          logCallback,
+          'log',
+          `Buscando email para CNPJ: ${cnpj}`,
+          cnpj,
+        );
 
         try {
-          const resultado = await this.buscarEmailPorCNPJ(cnpj);
+          const resultado = await this.buscarEmailPorCNPJ(
+            cnpj,
+            cancellationToken,
+            logCallback, // Passa o callback para os métodos internos
+          );
           resultados.push(resultado);
+
+          // Log do resultado
+          if (resultado.email) {
+            this.sendLog(
+              logCallback,
+              'log',
+              `Email encontrado para CNPJ ${cnpj}: ${resultado.email}`,
+              cnpj,
+              resultado.fonte,
+              resultado.email,
+            );
+          } else {
+            this.sendLog(
+              logCallback,
+              'log',
+              `Nenhum email encontrado para CNPJ ${cnpj}`,
+              cnpj,
+            );
+          }
+
+          // Callback de progresso - resultado encontrado
+          if (progressCallback) {
+            const message = resultado.email
+              ? `Email encontrado para ${cnpj}: ${resultado.email} (${resultado.fonte})`
+              : `Nenhum email encontrado para ${cnpj}`;
+
+            progressCallback({
+              currentBatch,
+              totalBatches,
+              currentCnpj: cnpj,
+              processedCount: resultados.length,
+              totalCount: cnpjs.length,
+              message,
+              timestamp: new Date(),
+            });
+          }
         } catch (error) {
-          this.logger.error(`Erro ao buscar email para CNPJ ${cnpj}:`, error);
+          if (error instanceof SearchCancelledException) {
+            throw error; // Re-propaga o erro de cancelamento
+          }
+
+          this.sendLog(
+            logCallback,
+            'error',
+            `Erro ao buscar email para CNPJ ${cnpj}: ${error.message}`,
+            cnpj,
+          );
+
           resultados.push({
             cnpj,
             email: null,
           });
+
+          // Callback de progresso - erro
+          if (progressCallback) {
+            progressCallback({
+              currentBatch,
+              totalBatches,
+              currentCnpj: cnpj,
+              processedCount: resultados.length,
+              totalCount: cnpjs.length,
+              message: `Erro ao buscar email para CNPJ ${cnpj}: ${error.message}`,
+              timestamp: new Date(),
+            });
+          }
         }
       }
 
       // Aguarda apenas se não for o último lote
       if (i + this.BATCH_SIZE < cnpjs.length) {
-        this.logger.log(
+        this.sendLog(
+          logCallback,
+          'log',
           `Aguardando ${this.DELAY_BETWEEN_BATCHES}s antes do próximo lote...`,
         );
-        await this.delay(this.DELAY_BETWEEN_BATCHES * 1000);
+
+        // Callback de progresso - delay
+        if (progressCallback) {
+          progressCallback({
+            currentBatch,
+            totalBatches,
+            currentCnpj: '',
+            processedCount: resultados.length,
+            totalCount: cnpjs.length,
+            message: `Aguardando ${this.DELAY_BETWEEN_BATCHES}s antes do próximo lote...`,
+            timestamp: new Date(),
+          });
+        }
+
+        // Delay com verificação de cancelamento
+        await this.delayWithCancellation(
+          this.DELAY_BETWEEN_BATCHES * 1000,
+          cancellationToken,
+        );
       }
     }
+
+    this.sendLog(
+      logCallback,
+      'log',
+      `Busca finalizada. ${resultados.filter((r) => r.email).length} emails encontrados de ${resultados.length} CNPJs processados`,
+    );
 
     return resultados;
   }
 
-  private async buscarEmailPorCNPJ(cnpj: string): Promise<EmailLookupResult> {
+  private async buscarEmailPorCNPJ(
+    cnpj: string,
+    cancellationToken?: () => boolean,
+    logCallback?: (log: LogMessage) => void,
+  ): Promise<EmailLookupResult> {
     const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
 
+    // Verifica cancelamento antes de cada tentativa
+    if (cancellationToken && cancellationToken()) {
+      throw new SearchCancelledException();
+    }
+
     // Tentar ReceitaWS primeiro
-    const emailReceitaWS = await this.buscaReceitaWS(cnpjLimpo);
+    const emailReceitaWS = await this.buscaReceitaWS(cnpjLimpo, logCallback);
     if (emailReceitaWS) {
       return {
         cnpj,
@@ -70,8 +280,13 @@ export class EmailLookupService {
       };
     }
 
+    // Verifica cancelamento
+    if (cancellationToken && cancellationToken()) {
+      throw new SearchCancelledException();
+    }
+
     // Se não encontrou, tentar BrasilAPI
-    const emailBrasilAPI = await this.buscaBrasilAPI(cnpjLimpo);
+    const emailBrasilAPI = await this.buscaBrasilAPI(cnpjLimpo, logCallback);
     if (emailBrasilAPI) {
       return {
         cnpj,
@@ -80,8 +295,13 @@ export class EmailLookupService {
       };
     }
 
+    // Verifica cancelamento
+    if (cancellationToken && cancellationToken()) {
+      throw new SearchCancelledException();
+    }
+
     // Se não encontrou, tentar CNPJWS
-    const emailCnpjWS = await this.buscaCnpjWs(cnpjLimpo);
+    const emailCnpjWS = await this.buscaCnpjWs(cnpjLimpo, logCallback);
     if (emailCnpjWS) {
       return {
         cnpj,
@@ -96,9 +316,41 @@ export class EmailLookupService {
     };
   }
 
-  private async buscaReceitaWS(cnpj: string): Promise<string | null> {
+  private async delayWithCancellation(
+    ms: number,
+    cancellationToken?: () => boolean,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      const checkInterval = 1000; // Verifica cancelamento a cada 1 segundo
+
+      const intervalId = setInterval(() => {
+        if (cancellationToken && cancellationToken()) {
+          clearInterval(intervalId);
+          reject(new SearchCancelledException());
+          return;
+        }
+
+        if (Date.now() - startTime >= ms) {
+          clearInterval(intervalId);
+          resolve();
+        }
+      }, checkInterval);
+    });
+  }
+
+  private async buscaReceitaWS(
+    cnpj: string,
+    logCallback?: (log: LogMessage) => void,
+  ): Promise<string | null> {
     try {
-      this.logger.log(`Tentando ReceitaWS para CNPJ: ${cnpj}`);
+      this.sendLog(
+        logCallback,
+        'log',
+        `Tentando ReceitaWS para CNPJ: ${cnpj}`,
+        cnpj,
+        'ReceitaWS',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get<ReceitaWSResponse>(
@@ -107,20 +359,49 @@ export class EmailLookupService {
       );
 
       if (response.data.status === 'OK' && response.data.email) {
-        this.logger.log(`Email encontrado na ReceitaWS para CNPJ ${cnpj}`);
+        this.sendLog(
+          logCallback,
+          'log',
+          `Email encontrado na ReceitaWS para CNPJ ${cnpj}: ${response.data.email}`,
+          cnpj,
+          'ReceitaWS',
+          response.data.email,
+        );
         return response.data.email;
       }
 
+      this.sendLog(
+        logCallback,
+        'log',
+        `Nenhum email encontrado na ReceitaWS para CNPJ: ${cnpj}`,
+        cnpj,
+        'ReceitaWS',
+      );
       return null;
     } catch (error) {
-      this.logger.warn(`Erro na ReceitaWS para CNPJ ${cnpj}:`, error.message);
+      this.sendLog(
+        logCallback,
+        'warn',
+        `Erro na ReceitaWS para CNPJ ${cnpj}: ${error.message}`,
+        cnpj,
+        'ReceitaWS',
+      );
       return null;
     }
   }
 
-  private async buscaBrasilAPI(cnpj: string): Promise<string | null> {
+  private async buscaBrasilAPI(
+    cnpj: string,
+    logCallback?: (log: LogMessage) => void,
+  ): Promise<string | null> {
     try {
-      this.logger.log(`Tentando BrasilAPI para CNPJ: ${cnpj}`);
+      this.sendLog(
+        logCallback,
+        'log',
+        `Tentando BrasilAPI para CNPJ: ${cnpj}`,
+        cnpj,
+        'BrasilAPI',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get<BrasilAPIResponse>(
@@ -129,20 +410,49 @@ export class EmailLookupService {
       );
 
       if (response.data.email) {
-        this.logger.log(`Email encontrado na BrasilAPI para CNPJ ${cnpj}`);
+        this.sendLog(
+          logCallback,
+          'log',
+          `Email encontrado na BrasilAPI para CNPJ ${cnpj}: ${response.data.email}`,
+          cnpj,
+          'BrasilAPI',
+          response.data.email,
+        );
         return response.data.email;
       }
 
+      this.sendLog(
+        logCallback,
+        'log',
+        `Nenhum email encontrado na BrasilAPI para CNPJ: ${cnpj}`,
+        cnpj,
+        'BrasilAPI',
+      );
       return null;
     } catch (error) {
-      this.logger.warn(`Erro na BrasilAPI para CNPJ ${cnpj}:`, error.message);
+      this.sendLog(
+        logCallback,
+        'warn',
+        `Erro na BrasilAPI para CNPJ ${cnpj}: ${error.message}`,
+        cnpj,
+        'BrasilAPI',
+      );
       return null;
     }
   }
 
-  private async buscaCnpjWs(cnpj: string): Promise<string | null> {
+  private async buscaCnpjWs(
+    cnpj: string,
+    logCallback?: (log: LogMessage) => void,
+  ): Promise<string | null> {
     try {
-      this.logger.log(`Tentando CNPJWS para CNPJ: ${cnpj}`);
+      this.sendLog(
+        logCallback,
+        'log',
+        `Tentando CNPJWS para CNPJ: ${cnpj}`,
+        cnpj,
+        'CNPJWS',
+      );
 
       const response = await firstValueFrom(
         this.httpService.get<CnpjWsRresponse>(
@@ -151,57 +461,58 @@ export class EmailLookupService {
       );
 
       if (response.data.email) {
-        this.logger.log(`Email encontrado na CNPJWS para CNPJ ${cnpj}`);
+        this.sendLog(
+          logCallback,
+          'log',
+          `Email encontrado na CNPJWS para CNPJ ${cnpj}: ${response.data.email}`,
+          cnpj,
+          'CNPJWS',
+          response.data.email,
+        );
         return response.data.email;
       }
 
+      this.sendLog(
+        logCallback,
+        'log',
+        `Nenhum email encontrado na CNPJWS para CNPJ: ${cnpj}`,
+        cnpj,
+        'CNPJWS',
+      );
       return null;
     } catch (error) {
-      this.logger.warn(`Erro na CNPJWS para CNPJ ${cnpj}:`, error.message);
+      this.sendLog(
+        logCallback,
+        'warn',
+        `Erro na CNPJWS para CNPJ ${cnpj}: ${error.message}`,
+        cnpj,
+        'CNPJWS',
+      );
       return null;
     }
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  // Método para calcular tempo estimado de processamento
-  calcularTempoEstimado(totalCnpjs: number): string {
-    const totalLotes = Math.ceil(totalCnpjs / this.BATCH_SIZE);
-    const tempoTotalSegundos = (totalLotes - 1) * this.DELAY_BETWEEN_BATCHES;
-
-    if (tempoTotalSegundos < 60) {
-      return `${tempoTotalSegundos} segundos`;
-    } else {
-      const minutos = Math.floor(tempoTotalSegundos / 60);
-      const segundos = tempoTotalSegundos % 60;
-      return `${minutos}min ${segundos > 0 ? `${segundos}s` : ''}`;
-    }
-  }
-
+  // Método para gerar estatísticas (você deve ter este método)
   gerarEstatisticas(resultados: EmailLookupResult[]) {
     const total = resultados.length;
-    const encontrados = resultados.filter((r) => r.email !== null).length;
+    const encontrados = resultados.filter((r) => r.email).length;
     const naoEncontrados = total - encontrados;
+    const taxaSucesso =
+      total > 0 ? `${Math.round((encontrados / total) * 100)}%` : '0%';
 
-    const porFonte = resultados.reduce(
-      (acc, r) => {
-        if (r.fonte) {
-          acc[r.fonte] = (acc[r.fonte] || 0) + 1;
-        }
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    const porFonte: { [key: string]: number } = {};
+    resultados.forEach((r) => {
+      if (r.fonte) {
+        porFonte[r.fonte] = (porFonte[r.fonte] || 0) + 1;
+      }
+    });
 
     return {
       total,
       encontrados,
       naoEncontrados,
-      taxaSucesso: `${((encontrados / total) * 100).toFixed(1)}%`,
+      taxaSucesso,
       porFonte,
-      tempoEstimadoProcessamento: this.calcularTempoEstimado(total),
     };
   }
 }

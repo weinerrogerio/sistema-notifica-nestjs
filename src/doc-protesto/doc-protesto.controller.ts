@@ -77,7 +77,7 @@ export class DocProtestoController {
   //findAllPagination
   @Get('find-all-pagination')
   @Roles(Role.USER, Role.ADMIN)
-  findAllPagination(@Query('page') page = 1, @Query('limit') limit = 100) {
+  findAllPagination(@Query('page') page = 1, @Query('limit') limit = 2) {
     return this.docProtestoService.findAllPagination(+page, +limit);
   }
 

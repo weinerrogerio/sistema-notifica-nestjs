@@ -290,7 +290,7 @@ export class DocProtestoService {
       .getMany();
   }
 
-  async findAllPagination(page: number = 1, limit: number = 100) {
+  async findAllPagination(page: number = 1, limit: number = 2) {
     const offset = (page - 1) * limit;
 
     const query = this.docProtestoRepository
