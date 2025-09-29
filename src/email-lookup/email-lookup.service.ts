@@ -146,7 +146,7 @@ export class EmailLookupService {
         );
 
         try {
-          const resultado = await this.buscarEmailPorCNPJ(
+          const resultado = await this.buscarEmailPorCNPJonExternalApi(
             cnpj,
             cancellationToken,
             logCallback, // Passa o callback para os métodos internos
@@ -258,7 +258,7 @@ export class EmailLookupService {
     return resultados;
   }
 
-  private async buscarEmailPorCNPJ(
+  private async buscarEmailPorCNPJonExternalApi(
     cnpj: string,
     cancellationToken?: () => boolean,
     logCallback?: (log: LogMessage) => void,

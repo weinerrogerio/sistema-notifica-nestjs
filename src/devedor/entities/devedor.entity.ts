@@ -25,6 +25,9 @@ export class Devedor {
   @Column()
   devedor_pj: boolean;
 
+  @Column({ default: false })
+  email_searched: boolean;
+
   //muitos para muitos com doc protesto(1:n - log_notificacao)
   //muitos para um --> um devedor pode ter muitas intimações (log_notificacao)
   // Um devedor pode ter muitas notificações
