@@ -41,7 +41,7 @@ export class DevedorController {
   @Roles(Role.USER, Role.ADMIN)
   @Get('pj')
   findAll() {
-    return this.devedorService.findOneAllByPj();
+    return this.devedorService.findAllByPj();
   }
 
   // VERSÃO CORRIGIDA: Apenas cria a sessão, não inicia a busca

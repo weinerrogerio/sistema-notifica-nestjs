@@ -167,7 +167,7 @@ export class DevedorService {
     return devedor;
   }
 
-  async findOneBrEmail(email: string) {
+  async findOneByEmail(email: string) {
     const devedor = await this.devedorRepository.findOne({
       where: { email: email },
     });
@@ -181,13 +181,19 @@ export class DevedorService {
     return devedor;
   }
 
-  async findOneAllByPj() {
+  async findAllByPj() {
     const devedor = await this.devedorRepository.find({
       where: { email: null, devedor_pj: true },
     });
     return devedor;
   }
 
+  async findAllByPjNotSearched() {
+    const devedor = await this.devedorRepository.find({
+      where: { email: null, devedor_pj: true, email_searched: false },
+    });
+    return devedor;
+  }
   async findOne(id: number) {
     const devedor = await this.devedorRepository.findOne({ where: { id: id } });
     if (!devedor || !devedor.id) throw new Error('Usuário não encontrado');
@@ -227,6 +233,21 @@ export class DevedorService {
     }
   }
 
+  async updateEmailSearched(id: number): Promise<void> {
+    try {
+      const updateResult = await this.devedorRepository.update(
+        { id: id },
+        { email_searched: true },
+      );
+      if (updateResult.affected === 0) {
+        console.warn(`Aviso: Nenhuma linha atualizada para o ID: ${id}`);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar email_searched:', error);
+      throw error;
+    }
+  }
+
   async updateEmail(
     resultadosEmails: EmailResult[],
   ): Promise<EmailUpdateResult[]> {
@@ -242,7 +263,7 @@ export class DevedorService {
           if (devedor) {
             await this.devedorRepository.update(
               { id: devedor.id },
-              { email: resultado.email },
+              { email: resultado.email, email_searched: true },
             );
 
             updates.push({
@@ -268,7 +289,7 @@ export class DevedorService {
     return updates;
   }
 
-  // Versão principal com suporte a cancelamento e progresso
+  // Versão principal com suporte a cancelamento e progresso -----------------------------------------------
   async buscarEmailsDevedores(
     sessionId?: string,
     progressCallback?: (progress: SearchProgress) => void,
@@ -282,7 +303,8 @@ export class DevedorService {
       );
 
       // Buscar devedores PJ no banco
-      const devedores = await this.findOneAllByPj();
+      //const devedores = await this.findAllByPj();
+      const devedores = await this.findAllByPjNotSearched();
 
       if (!devedores || devedores.length === 0) {
         this.cleanupSession(searchSessionId);
