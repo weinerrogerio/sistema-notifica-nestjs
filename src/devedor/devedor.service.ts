@@ -12,7 +12,6 @@ import { IsNull, Not, Repository } from 'typeorm';
 import {
   EmailLookupService,
   SearchProgress,
-  SearchCancelledException,
   LogMessage,
 } from '@app/email-lookup/email-lookup.service';
 import {
@@ -256,8 +255,9 @@ export class DevedorService {
     for (const resultado of resultadosEmails) {
       if (resultado.email) {
         try {
+          const cnpjLimpo = resultado.cnpj.replace(/[^\d]/g, '');
           const devedor = await this.devedorRepository.findOne({
-            where: { doc_devedor: resultado.cnpj },
+            where: { doc_devedor: cnpjLimpo },
           });
 
           if (devedor) {
@@ -294,7 +294,6 @@ export class DevedorService {
     sessionId?: string,
     progressCallback?: (progress: SearchProgress) => void,
   ) {
-    // Se não foi fornecido um sessionId, cria um novo
     const searchSessionId = sessionId || this.createSearchSession();
 
     try {
@@ -302,8 +301,6 @@ export class DevedorService {
         `Iniciando busca de emails para devedores (sessão: ${searchSessionId})`,
       );
 
-      // Buscar devedores PJ no banco
-      //const devedores = await this.findAllByPj();
       const devedores = await this.findAllByPjNotSearched();
 
       if (!devedores || devedores.length === 0) {
@@ -321,13 +318,11 @@ export class DevedorService {
         };
       }
 
-      // Extrair CNPJs
-      const cnpjs = devedores.map((d) => d.doc_devedor);
+      this.logger.log(`${devedores.length} devedores pendentes de busca`);
 
-      // Função para verificar cancelamento
+      const cnpjs = [...new Set(devedores.map((d) => d.doc_devedor))];
       const cancellationToken = () => this.isSessionCancelled(searchSessionId);
 
-      // Callback de progresso que também atualiza a sessão
       const wrappedProgressCallback = (progress: SearchProgress) => {
         this.updateSessionProgress(searchSessionId, progress);
         if (progressCallback) {
@@ -335,51 +330,67 @@ export class DevedorService {
         }
       };
 
-      // Callback para logs em tempo real
       const logCallback = this.getSessionLogCallback(searchSessionId);
 
-      let resultadosEmails: EmailResult[];
-      let cancelled = false;
-
-      try {
-        // Buscar emails nas APIs externas com suporte a cancelamento e logs em tempo real
-        resultadosEmails = await this.emailLookupService.buscarEmailsPorCNPJs(
+      // ✅ REMOVE O TRY-CATCH que descartava resultados
+      const resultadosEmails =
+        await this.emailLookupService.buscarEmailsPorCNPJs(
           cnpjs,
           cancellationToken,
           wrappedProgressCallback,
-          logCallback, // Passa o callback de logs
+          logCallback,
         );
-      } catch (error) {
-        if (error instanceof SearchCancelledException) {
-          cancelled = true;
-          this.logger.log(`Busca cancelada (sessão: ${searchSessionId})`);
-          resultadosEmails = []; // ou resultados parciais se você quiser implementar
-        } else {
-          throw error;
+
+      // ✅ Verifica se foi cancelado baseado na quantidade de resultados
+      const cancelled = resultadosEmails.length < cnpjs.length;
+
+      this.logger.log(
+        `Busca ${cancelled ? 'CANCELADA' : 'CONCLUÍDA'} - Processados: ${resultadosEmails.length}/${cnpjs.length}`,
+      );
+
+      let emailsAtualizados: EmailUpdateResult[] = [];
+
+      // ✅ SALVA TUDO QUE FOI ENCONTRADO, mesmo que cancelado
+      if (resultadosEmails?.length > 0) {
+        const resultadosComEmail = resultadosEmails.filter((r) => r.email);
+
+        this.logger.log(
+          `Salvando ${resultadosComEmail.length} emails encontrados`,
+        );
+
+        if (resultadosComEmail.length > 0) {
+          emailsAtualizados = await this.updateEmail(resultadosComEmail);
+        }
+
+        // Marca como pesquisado apenas os CNPJs que foram processados
+        const cnpjsProcessados = new Set(
+          resultadosEmails.map((r) => r.cnpj.replace(/[^\d]/g, '')),
+        );
+        const devedoresProcessados = devedores.filter((d) =>
+          cnpjsProcessados.has(d.doc_devedor.replace(/[^\d]/g, '')),
+        );
+
+        this.logger.log(
+          `Marcando ${devedoresProcessados.length} devedores como pesquisados`,
+        );
+
+        for (const devedor of devedoresProcessados) {
+          await this.updateEmailSearched(devedor.id);
         }
       }
 
-      // Salvar emails no banco apenas se não foi cancelado
-      let emailsAtualizados: EmailUpdateResult[] = [];
-      if (!cancelled && resultadosEmails?.length > 0) {
-        emailsAtualizados = await this.updateEmail(resultadosEmails);
-      }
+      const devedoresComEmail = this.combinarDevedoresComEmails(
+        devedores,
+        resultadosEmails || [],
+      );
 
-      // Combinar dados
-      const devedoresComEmail = cancelled
-        ? []
-        : this.combinarDevedoresComEmails(devedores, resultadosEmails || []);
+      const estatisticas = this.emailLookupService.gerarEstatisticas(
+        resultadosEmails || [],
+      );
 
-      // Estatísticas
-      const estatisticas = cancelled
-        ? {
-            total: 0,
-            encontrados: 0,
-            naoEncontrados: 0,
-            taxaSucesso: '0%',
-            porFonte: {},
-          }
-        : this.emailLookupService.gerarEstatisticas(resultadosEmails || []);
+      this.logger.log(
+        `RESUMO - Total: ${estatisticas.total}, Encontrados: ${estatisticas.encontrados}, Salvos: ${emailsAtualizados.length}, Cancelado: ${cancelled}`,
+      );
 
       return {
         sessionId: searchSessionId,
@@ -395,7 +406,6 @@ export class DevedorService {
       );
       throw error;
     } finally {
-      // Limpa a sessão ao final
       this.cleanupSession(searchSessionId);
     }
   }
