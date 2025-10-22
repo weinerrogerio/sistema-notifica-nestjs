@@ -52,11 +52,12 @@ export class LogEventAdminUserService {
         `Não é possível salvar uma ação de um usuário desativado ou excluido`,
       );
     }
+    //const descricao: string = 'Criação de usuário';
     const logEntryDto = {
       fk_id_user: createLogEventAdminUserDto.fk_id_user,
       fk_id_target: createLogEventAdminUserDto.fk_id_target,
       event: createLogEventAdminUserDto.event,
-      descricao: createLogEventAdminUserDto.descricao,
+      descricao: createLogEventAdminUserDto?.descricao,
       session_id: createLogEventAdminUserDto.sessionId, // Novo campo
     };
 

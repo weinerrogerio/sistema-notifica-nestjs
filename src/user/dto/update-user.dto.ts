@@ -14,20 +14,20 @@ import { Role } from '@app/common/enums/role.enum';
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
   @IsNotEmpty()
-  nome: string;
+  nome?: string;
 
   @IsString()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsString()
-  contato: string;
+  contato?: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(4)
   @MaxLength(20)
-  password: string;
+  password?: string;
 
   @IsOptional()
   @IsEnum(Role)

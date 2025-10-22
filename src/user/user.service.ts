@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -31,27 +32,46 @@ export class UserService {
     });
   }
   async create(createUserDto: CreateUserDto, tokenPayload?: TokenPayloadDto) {
+    console.log('🔍 UserService.create - tokenPayload:', tokenPayload);
+    console.log('🔍 tokenPayload?.sub:', tokenPayload?.sub);
     const passwordHash = await this.hashingService.hash(createUserDto.password);
     try {
       const newUserDto = {
-        nome: createUserDto?.nome,
+        nome: createUserDto.nome,
         email: createUserDto?.email,
         contato: createUserDto?.contato,
         password_hash: passwordHash,
         role: createUserDto.role || Role.USER,
       };
+
       const newUser = this.userRepository.create(newUserDto);
       await this.userRepository.save(newUser);
+
       // Registro de evento de criação
       if (tokenPayload?.sub && tokenPayload.sub !== newUser.id) {
-        await this.logEventUserService.createLogEntry({
+        console.log('📝 Tentando criar log:', {
           fk_id_user: tokenPayload.sub,
           fk_id_target: newUser.id,
           sessionId: tokenPayload.sessionId,
-          event: 'CREATE',
-          descricao: 'Criação de usuário',
         });
+
+        try {
+          await this.logEventUserService.createLogEntry({
+            fk_id_user: tokenPayload.sub,
+            fk_id_target: newUser.id,
+            sessionId: tokenPayload.sessionId,
+            event: 'CREATE',
+            descricao: 'Criação de usuário',
+          });
+          console.log('✅ Log criado com sucesso');
+        } catch (logError) {
+          console.error('❌ Erro ao criar log:', logError);
+          // Não propaga o erro do log
+        }
+      } else {
+        console.log('⚠️ Log não criado - tokenPayload inválido:', tokenPayload);
       }
+
       return newUser;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
@@ -66,6 +86,12 @@ export class UserService {
   async findAll() {
     return await this.userRepository.find({
       where: { is_active: true },
+      order: { id: 'desc' },
+    });
+  }
+
+  async findAllUsers() {
+    return await this.userRepository.find({
       order: { id: 'desc' },
     });
   }
@@ -102,7 +128,18 @@ export class UserService {
     updateUserDto: UpdateUserDto,
     tokenPayload: TokenPayloadDto,
   ) {
+    // ✅ VALIDAÇÃO: Verifica se tokenPayload está presente
+    if (!tokenPayload || !tokenPayload.sub) {
+      throw new UnauthorizedException('Token de autenticação inválido');
+    }
+
     const userId = tokenPayload.sub;
+
+    // ✅ DEBUG: Log para verificar
+    console.log('👤 Update iniciado por userId:', userId);
+    console.log('🎯 Target userId:', id);
+    console.log('📦 TokenPayload:', tokenPayload);
+
     const existingUser = await this.userRepository.findOneBy({ id });
     if (!existingUser) {
       throw new NotFoundException(`Usuário não encontrado`);
@@ -112,28 +149,43 @@ export class UserService {
         `Não é possível atualizar um usuário desativado`,
       );
     }
-    const dataUser = {
-      nome: updateUserDto?.nome,
+
+    // ✅ Construir objeto de atualização de forma limpa
+    const updateData: Partial<User> = {
+      ...updateUserDto,
     };
-    if (updateUserDto?.password) {
-      const passwordHash = await this.hashingService.hash(
+
+    // ✅ Hash da senha se fornecida
+    if (updateUserDto.password) {
+      updateData.password_hash = await this.hashingService.hash(
         updateUserDto.password,
       );
-      dataUser['password_hash'] = passwordHash;
     }
+
+    // ✅ Preload e salvar
     const user = await this.userRepository.preload({
       id,
-      ...dataUser,
+      ...updateData,
     });
-    if (!user) throw new Error('Usuário não encontrado');
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
     await this.userRepository.save(user);
-    // Registrar a ação de atualização no log de eventos
-    await this.logEventUserService.createLogEntry({
-      fk_id_user: userId, // ID do admin executando a ação
-      fk_id_target: id,
-      event: 'UPDATE',
-      descricao: 'Dados do usuário atualizados',
-    });
+
+    // ✅ Registrar log com try-catch para não quebrar a atualização
+    try {
+      await this.logEventUserService.createLogEntry({
+        fk_id_user: userId,
+        fk_id_target: id,
+        sessionId: tokenPayload.sessionId,
+        event: 'UPDATE',
+        descricao: 'Dados do usuário atualizados',
+      });
+      console.log('✅ Log registrado com sucesso');
+    } catch (logError) {
+      console.error('❌ Erro ao registrar log:', logError);
+    }
+
     return user;
   }
 
@@ -147,6 +199,7 @@ export class UserService {
     await this.logEventUserService.createLogEntry({
       fk_id_user: userId, // ID do admin executando a ação
       fk_id_target: id,
+      sessionId: tokenPayload.sessionId,
       event: 'UPDATE',
       descricao: 'Usuário reativado',
     });
@@ -163,6 +216,7 @@ export class UserService {
     await this.logEventUserService.createLogEntry({
       fk_id_user: userId, // ID do admin executando a ação
       fk_id_target: id,
+      sessionId: tokenPayload.sessionId,
       event: 'DELETE',
       descricao: 'Usuário desativado',
     });
