@@ -27,9 +27,6 @@ export class CreateUserDto {
   @MaxLength(20)
   password: string;
 
-  /*  @IsBoolean()
-  admin: boolean; */
-
   @IsOptional()
   @IsEnum(Role)
   role?: Role;

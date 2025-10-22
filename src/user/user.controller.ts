@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -29,13 +30,24 @@ export class UserController {
     @Body() createUserDto: CreateUserDto,
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
   ) {
+    console.log('🔍 TokenPayload recebido:', tokenPayload);
+    console.log('🔍 TokenPayload.sub (ID do admin):', tokenPayload?.sub);
+    console.log('🔍 TokenPayload.sessionId:', tokenPayload?.sessionId);
     return this.userService.create(createUserDto, tokenPayload);
   }
 
+  //lista todos os usuários que estao ativos
   @Get()
   @Roles(Role.ADMIN) // Apenas administradores podem listar todos os usuários
   findAll() {
     return this.userService.findAll();
+  }
+
+  //lista todos os usuários (ativos e inativos)
+  @Get('all')
+  @Roles(Role.ADMIN) // Apenas administradores podem listar todos os usuários
+  findAllUsers() {
+    return this.userService.findAllUsers();
   }
 
   @Get(':id')
@@ -55,6 +67,10 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
   ) {
+    console.log('📍 Controller - TokenPayload recebido:', tokenPayload);
+    if (!tokenPayload || !tokenPayload.sub) {
+      throw new UnauthorizedException('Token inválido');
+    }
     return this.userService.update(+id, updateUserDto, tokenPayload);
   }
 
