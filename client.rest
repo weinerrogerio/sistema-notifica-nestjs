@@ -151,12 +151,12 @@ Content-Type: application/json
 
 ###
 ## UPDATE USER
-PATCH  {{baseUrl}}/user/6/
+PATCH  {{baseUrl}}/user/7/
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "password": "123456"
+   "email": "teste@gmail.com"
 }
 
 ###   

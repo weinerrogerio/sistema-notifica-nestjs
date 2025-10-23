@@ -63,7 +63,7 @@ export class UserService {
             event: 'CREATE',
             descricao: 'Criação de usuário',
           });
-          console.log('✅ Log criado com sucesso');
+          console.log(' Log criado com sucesso');
         } catch (logError) {
           console.error('❌ Erro ao criar log:', logError);
           // Não propaga o erro do log
@@ -128,14 +128,14 @@ export class UserService {
     updateUserDto: UpdateUserDto,
     tokenPayload: TokenPayloadDto,
   ) {
-    // ✅ VALIDAÇÃO: Verifica se tokenPayload está presente
+    // VALIDAÇÃO: Verifica se tokenPayload está presente
     if (!tokenPayload || !tokenPayload.sub) {
       throw new UnauthorizedException('Token de autenticação inválido');
     }
 
     const userId = tokenPayload.sub;
 
-    // ✅ DEBUG: Log para verificar
+    //  DEBUG: Log para verificar - RETIRAR DEPOIS
     console.log('👤 Update iniciado por userId:', userId);
     console.log('🎯 Target userId:', id);
     console.log('📦 TokenPayload:', tokenPayload);
@@ -150,19 +150,39 @@ export class UserService {
       );
     }
 
-    // ✅ Construir objeto de atualização de forma limpa
+    // VALIDAÇÃO: Verificar se email já existe (se estiver sendo alterado)
+    if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
+      const emailExists = await this.userRepository.findOne({
+        where: { email: updateUserDto.email },
+      });
+      if (emailExists) {
+        throw new ConflictException('Email já cadastrado');
+      }
+    }
+
+    // VALIDAÇÃO: Verificar se nome já existe (se estiver sendo alterado)
+    if (updateUserDto.nome && updateUserDto.nome !== existingUser.nome) {
+      const nomeExists = await this.userRepository.findOne({
+        where: { nome: updateUserDto.nome },
+      });
+      if (nomeExists) {
+        throw new ConflictException('Nome já cadastrado');
+      }
+    }
+
+    // Construir objeto de atualização de forma limpa
     const updateData: Partial<User> = {
       ...updateUserDto,
     };
 
-    // ✅ Hash da senha se fornecida
+    // Hash da senha se fornecida
     if (updateUserDto.password) {
       updateData.password_hash = await this.hashingService.hash(
         updateUserDto.password,
       );
     }
 
-    // ✅ Preload e salvar
+    //  Preload e salvar
     const user = await this.userRepository.preload({
       id,
       ...updateData,
@@ -172,7 +192,7 @@ export class UserService {
 
     await this.userRepository.save(user);
 
-    // ✅ Registrar log com try-catch para não quebrar a atualização
+    //  Registrar log com try-catch para não quebrar a atualização
     try {
       await this.logEventUserService.createLogEntry({
         fk_id_user: userId,
@@ -181,7 +201,7 @@ export class UserService {
         event: 'UPDATE',
         descricao: 'Dados do usuário atualizados',
       });
-      console.log('✅ Log registrado com sucesso');
+      console.log(' Log registrado com sucesso');
     } catch (logError) {
       console.error('❌ Erro ao registrar log:', logError);
     }
