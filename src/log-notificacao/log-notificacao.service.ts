@@ -146,8 +146,14 @@ export class LogNotificacaoService {
     );
   }
 
-  async marcarComoEnviada(logNotificacaoId: number): Promise<void> {
-    return this.logNotificationQueryService.marcarComoEnviada(logNotificacaoId);
+  async marcarComoEnviada(
+    logNotificacaoId: number,
+    templateId: number,
+  ): Promise<void> {
+    return this.logNotificationQueryService.marcarComoEnviada(
+      logNotificacaoId,
+      templateId,
+    );
   }
 
   async marcarMultiplasComoEnviadas(

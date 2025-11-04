@@ -1,5 +1,6 @@
 import { Devedor } from '@app/devedor/entities/devedor.entity';
 import { DocProtesto } from '@app/doc-protesto/entities/doc-protesto.entity';
+import { Template } from '@app/template/entities/template.entity';
 import {
   Column,
   CreateDateColumn,
@@ -38,6 +39,9 @@ export class LogNotificacao {
   @Column({ name: 'fk_protesto' })
   fk_protesto: number;
 
+  @Column({ name: 'fk_template', nullable: true }) // Nullable caso o log seja criado antes do envio
+  fk_template: number;
+
   // Relacionamento Many-to-One com Devedor
   @ManyToOne(() => Devedor, (devedor) => devedor.notificacao, {
     onDelete: 'CASCADE',
@@ -55,6 +59,14 @@ export class LogNotificacao {
   })
   @JoinColumn({ name: 'fk_protesto' })
   protesto: DocProtesto;
+
+  @ManyToOne(() => Template, (template) => template.notificacoes, {
+    onDelete: 'SET NULL', // Se o template for deletado, não apague o log, apenas a relação
+    onUpdate: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'fk_template' })
+  template: Template; // Propriedade para acessar o objeto Template
 
   //data de criação (data_registro)
   @CreateDateColumn()

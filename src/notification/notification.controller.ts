@@ -34,18 +34,12 @@ export class NotificationController {
   @Roles(Role.USER, Role.ADMIN)
   async sendOneNotificationTeste(@Body() dados: SendNotification) {
     console.log('TESTES DADOS: ', dados);
-
-    // dados deve incluir logNotificacaoId
-    /* const intimacaoData = dados;
-    console.log(); */
-
     if (!dados.logNotificacaoId) {
       return {
         success: false,
         message: 'logNotificacaoId é obrigatório',
       };
     }
-
     const result =
       await this.notificationService.sendOneNotificationWithTracking(dados);
 
