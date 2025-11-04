@@ -1,3 +1,4 @@
+import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
 
 @Entity('template')
@@ -95,4 +97,7 @@ export class Template {
     comment: 'Usuário que fez a última modificação',
   })
   modificadoPor: string;
+
+  @OneToMany(() => LogNotificacao, (log) => log.template)
+  notificacoes: LogNotificacao[];
 }

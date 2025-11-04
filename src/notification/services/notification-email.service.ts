@@ -86,7 +86,7 @@ export class EmailService {
     dados: IntimacaoDataCompleto,
     trackingPixelUrl: string,
     contatoTabelionato?: ContatoTabelionato,
-  ): Promise<boolean> {
+  ): Promise<{ success: boolean; templateId: number | null }> {
     try {
       this.logger.log(
         `Iniciando envio de email com tracking para: ${dados.devedor.email}`,
@@ -96,18 +96,18 @@ export class EmailService {
       // 1. Validações básicas
       if (!dados.devedor?.email) {
         this.logger.error('Email do devedor não fornecido');
-        return false;
+        return { success: false, templateId: null };
       }
 
       if (!trackingPixelUrl) {
         this.logger.error('URL do tracking pixel não fornecida');
-        return false;
+        return { success: false, templateId: null };
       }
 
       // 2. Validar dados do cartório
       if (!contatoTabelionato) {
         this.logger.error('Dados do cartório não fornecidos');
-        return false;
+        return { success: false, templateId: null };
       }
 
       // 3. Carrega o template do DB
@@ -117,7 +117,7 @@ export class EmailService {
         this.logger.error(
           'Template padrão não encontrado ou sem conteúdo HTML',
         );
-        return false;
+        return { success: false, templateId: null };
       }
 
       // 4. Log detalhado dos dados (corrigido)
@@ -139,7 +139,7 @@ export class EmailService {
 
       if (!html) {
         this.logger.error('Falha na renderização do template HTML');
-        return false;
+        return { success: false, templateId: null };
       }
 
       // ---- SALVAR O HTML EM UM ARQUIVO TEMPORÁRIO PARA VISUALIZAÇÃO -- RETIRAR DEPOIS--------------------
@@ -172,16 +172,17 @@ export class EmailService {
       );
 
       // 8. Envia o email
-      /* const result = await this.sendEmail({
+      const result = await this.sendEmail({
         to: dados.devedor.email,
         subject: subject,
         html: html,
         from: contatoTabelionato?.nomeTabelionato || 'Sistema de Notificações',
-      }); */
-      const result = false;
+      });
+      //const result = false;
       console.log(subject);
 
-      return result;
+      //return result;
+      return { success: result, templateId: result ? templateDB.id : null };
     } catch (error) {
       this.logger.error(
         `Erro ao enviar notificação com tracking para ${dados.devedor?.email}: ${
@@ -189,7 +190,7 @@ export class EmailService {
         }`,
         error instanceof Error ? error.stack : undefined,
       );
-      return false;
+      return { success: false, templateId: null };
     }
   }
 }

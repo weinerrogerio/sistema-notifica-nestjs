@@ -75,7 +75,6 @@ export class NotificationOrchestratorService {
     return resultados;
   }
 
-  //sendOneNotificationTeste
   async sendOneNotificationWithTracking(
     dadosRequisicao: SendNotification,
   ): Promise<NotificationResult> {
@@ -126,17 +125,20 @@ export class NotificationOrchestratorService {
       this.logger.log(`Tracking URL: ${trackingPixelUrl}`);
 
       // 8. Enviar email com tracking
-      const success = await this.emailService.sendNotificationWithTracking(
+      const emailResult = await this.emailService.sendNotificationWithTracking(
         dados,
         trackingPixelUrl,
         dadosCartorio,
       );
 
       // 9. Atualizar status se enviado com sucesso
-      if (success) {
-        await this.logNotificationQueryService.marcarComoEnviada(dados.id);
+      if (emailResult.success) {
+        await this.logNotificationQueryService.marcarComoEnviada(
+          dados.id,
+          emailResult.templateId, // Passa o ID do template
+        );
         this.logger.log(
-          `Notificação enviada e marcada como enviada para ID: ${dados.id}`,
+          `Notificação enviada e marcada como enviada para ID: ${dados.id} com Template ID: ${emailResult.templateId}`, // Log atualizado
         );
         this.logger.log(
           `✅ Email enviado com sucesso para ${dados.devedor.email}`,

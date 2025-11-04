@@ -214,9 +214,13 @@ export class LogNotificationQueryService {
   }
 
   // Função para marcar notificações como enviadas
-  async marcarComoEnviada(logNotificacaoId: number): Promise<void> {
+  async marcarComoEnviada(
+    logNotificacaoId: number,
+    templateId: number,
+  ): Promise<void> {
     await this.logNotificacaoRepository.update(logNotificacaoId, {
       email_enviado: true,
+      fk_template: templateId,
       data_envio: new Date(),
     });
   }

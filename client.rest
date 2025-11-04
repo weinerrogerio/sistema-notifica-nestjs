@@ -321,8 +321,8 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-   "nomeTabelionato": "3° Oficio de Protesto de Títulos de Curitiba",
-   "codTabelionato": "03",
+   "nomeTabelionato": "6° Oficio de Protesto de Títulos de Curitiba",
+   "codTabelionato": "06",
    "cnpj": "75.590.133/0001-64",
    "titular": "Nome Titular",
    "telefone": "(41) 3053-4360",
