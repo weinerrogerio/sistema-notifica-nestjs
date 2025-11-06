@@ -101,7 +101,7 @@ export class LogUsersService {
    * @param refreshToken Refresh token a ser validado.
    * @returns A entidade LogUser se encontrada e ativa, senão null.
    */
-  async findActiveSessionByRefreshToken(
+  /* async findActiveSessionByRefreshToken(
     refreshToken: string,
   ): Promise<(LogUser & { user?: User }) | null> {
     // Adicionado user?: any para o ManyToOne relation
@@ -125,6 +125,40 @@ export class LogUsersService {
         }
       }
     }
+    return null;
+  } */
+  async findActiveSessionByIdAndToken(
+    sessionId: number,
+    userId: number,
+    refreshToken: string,
+  ): Promise<(LogUser & { user?: User }) | null> {
+    // 1. Busca UMA sessão específica no banco
+    const session = await this.logUserRepository.findOne({
+      where: {
+        id: sessionId,
+        fk_user: userId,
+        session_active: true,
+        refresh_token_expires_at: MoreThan(new Date()),
+      },
+      relations: ['user'], // Carrega a relação com o usuário
+    });
+
+    // 2. Se a sessão não existir ou não tiver hash, é inválida.
+    if (!session || !session.refresh_token_hash) {
+      return null;
+    }
+
+    // 3. Faz UMA ÚNICA comparação de hash.
+    const isValid = await this.hashingService.compare(
+      refreshToken,
+      session.refresh_token_hash,
+    );
+
+    if (isValid) {
+      return session; // Encontrada e válida!
+    }
+
+    // O token não bateu (pode ser um token antigo, ataque, etc.)
     return null;
   }
 

@@ -72,8 +72,25 @@ export class AuthService {
     refreshToken: string,
     ipAddress: string,
   ): Promise<RefreshTokenResponse> {
-    const session =
+    let payload: JwtPayload;
+    try {
+      // Decodificamos sem verificar a assinatura ainda, só para ler os dados
+      payload = this.jwtService.decode(refreshToken) as JwtPayload;
+      if (!payload || !payload.sessionId || !payload.sub) {
+        throw new Error('Payload do refresh token inválido.');
+      }
+    } catch (e) {
+      throw new UnauthorizedException('Refresh token malformado. ' + e.message);
+    }
+
+    /*     const session =
       await this.logUsersService.findActiveSessionByRefreshToken(refreshToken);
+ */
+    const session = await this.logUsersService.findActiveSessionByIdAndToken(
+      payload.sessionId,
+      payload.sub, // sub é o userId
+      refreshToken, // Passamos o token para comparação de hash
+    );
 
     if (!session) {
       throw new UnauthorizedException('Refresh token inválido ou expirado.');
