@@ -5,10 +5,9 @@ import { Transporter } from 'nodemailer';
 import {
   ContatoTabelionatoInterface,
   EmailOptions,
-  IntimacaoDataCompleto,
+  NotificationData,
 } from '@app/common/interfaces/notification-data.interface';
 import { TemplateService } from '@app/template/template.service';
-import { ContatoTabelionato } from '@app/contato-tabelionato/entities/contato-tabelionato.entity';
 
 import * as fs from 'fs'; // Importe o módulo 'fs' do Node.js
 import * as path from 'path'; // Importe o módulo 'path'
@@ -83,34 +82,32 @@ export class EmailService {
     }
   }
   async sendNotificationWithTracking(
-    dados: IntimacaoDataCompleto,
-    trackingPixelUrl: string,
-    contatoTabelionato?: ContatoTabelionato,
+    data: NotificationData,
   ): Promise<{ success: boolean; templateId: number | null }> {
     try {
       this.logger.log(
-        `Iniciando envio de email com tracking para: ${dados.devedor.email}`,
+        `Iniciando envio de email com tracking para: ${data.devedor.email}`,
       );
-      this.logger.log(`🔗 Tracking URL: ${trackingPixelUrl}`);
+      this.logger.log(`🔗 Tracking URL: ${data.urls.trackingPixel}`);
 
       // 1. Validações básicas
-      if (!dados.devedor?.email) {
+      if (!data.devedor?.email) {
         this.logger.error('Email do devedor não fornecido');
         return { success: false, templateId: null };
       }
 
-      if (!trackingPixelUrl) {
+      if (!data.urls.trackingPixel) {
         this.logger.error('URL do tracking pixel não fornecida');
         return { success: false, templateId: null };
       }
 
       // 2. Validar dados do cartório
-      if (!contatoTabelionato) {
+      if (!data.cartorio) {
         this.logger.error('Dados do cartório não fornecidos');
         return { success: false, templateId: null };
       }
 
-      // 3. Carrega o template do DB
+      // 3. Carrega o template PADRÃO do DB
       const templateDB = await this.templateService.getDefaultTemplate();
 
       if (!templateDB?.conteudoHtml) {
@@ -120,21 +117,19 @@ export class EmailService {
         return { success: false, templateId: null };
       }
 
-      // 4. Log detalhado dos dados (corrigido)
+      // 4. Log detalhado dos dados
       console.log('📧 DADOS PARA ENVIO:');
-      console.log('🔍 Dados completos:', JSON.stringify(dados, null, 2));
+      console.log('🔍 Dados completos:', JSON.stringify(data, null, 2));
       console.log(
         '🏢 Contato Tabelionato:',
-        JSON.stringify(contatoTabelionato, null, 2),
+        JSON.stringify(data.cartorio, null, 2),
       );
-      console.log('🔗 Tracking Pixel URL:', trackingPixelUrl);
+      console.log('🔗 Tracking Pixel URL:', data.urls.trackingPixel);
 
       // 5. Renderiza o template com os dados E o tracking pixel
       const html = await this.templateService.renderTemplate(
         templateDB.conteudoHtml,
-        dados,
-        trackingPixelUrl,
-        contatoTabelionato,
+        data,
       );
 
       if (!html) {
@@ -146,7 +141,7 @@ export class EmailService {
       const filePath = path.join(
         process.cwd(),
         'temp',
-        `email_preview_${dados.id}.html`,
+        `email_preview_${data.distribuicao.numero}.html`,
       ); // Ou dados.logNotificacaoId
       try {
         // Garante que o diretório 'temp' exista
@@ -163,20 +158,19 @@ export class EmailService {
       //-----------------------------------------------------------------------------------------------------
 
       // 6. Prepara o assunto do email
-      const subject = `Intimação de Protesto - ${dados.devedor.nome || 'Devedor'} - Título: ${dados.protesto.num_titulo || 'N/A'}`;
+      const subject = `Intimação de Protesto - ${data.devedor.nome || 'Devedor'} - Título: ${data.titulo.numero || 'N/A'}`;
 
       // 7. Determinar o remetente (verificar qual propriedade existe)
-
       console.log(
-        `Dados para sendEmail - Para: ${dados.devedor.email}, De: ${contatoTabelionato.nomeTabelionato}`,
+        `Dados para sendEmail - Para: ${data.devedor.email}, De: ${data.cartorio.nome}`,
       );
 
       // 8. Envia o email
       const result = await this.sendEmail({
-        to: dados.devedor.email,
+        to: data.devedor.email,
         subject: subject,
         html: html,
-        from: contatoTabelionato?.nomeTabelionato || 'Sistema de Notificações',
+        from: data?.cartorio?.nome || 'Sistema de Notificações',
       });
       //const result = false;
       console.log(subject);
@@ -185,7 +179,7 @@ export class EmailService {
       return { success: result, templateId: result ? templateDB.id : null };
     } catch (error) {
       this.logger.error(
-        `Erro ao enviar notificação com tracking para ${dados.devedor?.email}: ${
+        `Erro ao enviar notificação com tracking para ${data.devedor?.email}: ${
           error instanceof Error ? error.message : 'Erro desconhecido'
         }`,
         error instanceof Error ? error.stack : undefined,

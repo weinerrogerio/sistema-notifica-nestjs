@@ -4,8 +4,7 @@ import { Repository } from 'typeorm';
 import { Template } from './entities/template.entity';
 import * as Handlebars from 'handlebars';
 import * as crypto from 'crypto';
-import { IntimacaoDataCompleto } from '@app/common/interfaces/notification-data.interface';
-import { ContatoTabelionato } from '@app/contato-tabelionato/entities/contato-tabelionato.entity';
+import { NotificationData } from '@app/common/interfaces/notification-data.interface';
 
 export interface CriarTemplateDto {
   originalname: string;
@@ -107,63 +106,48 @@ export class TemplateService {
 
   async renderTemplate(
     templateHtml: string,
-    dados: IntimacaoDataCompleto,
-    trackingPixelUrl: string,
-    contatoTabelionato?: ContatoTabelionato,
+    viewModel: NotificationData,
   ): Promise<string> {
+    // DADOS DEVEM CHEGAR AQUI JA FORMATADOS!
     // Compile o template Handlebars
     const template = Handlebars.compile(templateHtml);
-
-    console.log('TrackingPixelUrl: ', trackingPixelUrl);
-
-    // Função auxiliar para formatar valor em centavos para reais
-    const formatarValor = (valorCentavos: number): string => {
-      const valorReais = valorCentavos / 100;
-      return valorReais.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    };
-
-    // Função auxiliar para formatar data
-    const formatarData = (data: Date | string): string => {
-      if (data instanceof Date) {
-        return data.toLocaleDateString('pt-BR');
-      }
-      // Se for string no formato YYYY-MM-DD HH:mm:ss
-      if (typeof data === 'string' && data.includes('-')) {
-        const dateObj = new Date(data);
-        return dateObj.toLocaleDateString('pt-BR');
-      }
-
-      return data as string;
-    };
-
+    console.log('TrackingPixelUrl: ', viewModel.urls.trackingPixel);
     // Prepare os dados para o template. É importante que os nomes aqui correspondam
     // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
     const context = {
+      // O template espera {{dados. ...}}
       dados: {
-        ...dados,
-        // Formate o valorTotal aqui, se necessário, para evitar lógica no template
-        valorTotal: formatarValor(dados.protesto.saldo),
-        // Se dataDistribuicao é um Date, formate-o para string
-        /* dataDistribuicao:
-          dados.protesto.data_distribuicao instanceof Date
-            ? dados.protesto.data_distribuicao.toLocaleDateString('pt-BR')
-            : dados.protesto.data_distribuicao, */
-        data_distribuicao: formatarData(dados.protesto.data_distribuicao),
+        devedor: viewModel.devedor, // Para {{dados.devedor.nome}}
+
+        // O template espera {{dados.protesto. ...}}
+        protesto: {
+          // Mapeia os dados do 'titulo' do ViewModel
+          saldo: viewModel.titulo.saldo,
+          valor: viewModel.titulo.valor,
+          vencimento: viewModel.titulo.vencimento,
+
+          // Mapeia os dados da 'distribuicao' do ViewModel
+          num_distribuicao: viewModel.distribuicao.numero,
+          data_distribuicao: viewModel.distribuicao.data,
+
+          // Mapeia o 'portador' do ViewModel
+          apresentante: viewModel.portador, // Para {{dados.protesto.apresentante.nome}}
+
+          // Mapeia o 'credor' do ViewModel
+          // O template antigo esperava {{dados.protesto.credor.sacador}}
+          credor: {
+            sacador: viewModel.credor.nome,
+          },
+        },
       },
-      contato: contatoTabelionato, // Passa o objeto de contato
-      // Para o pixel de tracking, o template pode ter um placeholder como {{trackingPixel}}
-      trackingPixelUrl: trackingPixelUrl,
-      /* trackingPixelUrl: trackingPixelUrl
-        ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="Teste" />`
-        : '', */
+
+      // O template espera {{contato. ...}}
+      contato: viewModel.cartorio, // Para {{contato.nomeTabelionato}}
+
+      // O template pode esperar o pixel na raiz
+      trackingPixelUrl: viewModel.urls.trackingPixel,
     };
-
-    console.log('Contexto:::::::::::::::::::::::::: ', context);
-
-    // Renderize o template com o contexto
+    // 3. Renderiza com o contexto traduzido
     return template(context);
   }
 
