@@ -6,6 +6,7 @@ import { LogNotificationQueryService } from '@app/log-notificacao/services/log-n
 import { ContatoTabelionatoService } from '@app/contato-tabelionato/contato-tabelionato.service';
 import { SendNotification } from '../dto/send-notification.dto';
 import {
+  NotificationData,
   NotificationResult,
   NotificationResultAll,
 } from '@app/common/interfaces/notification-data.interface';
@@ -114,10 +115,88 @@ export class NotificationOrchestratorService {
 
       // 5. Gerar e armazenar o token
       const token = await this.trackingService.generateAndStoreToken(dados.id);
-
       // 6. Criar URLs
       const baseUrl = this.configService.get<string>('BASE_URL');
       const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
+
+      // -------- model view ---------
+      const primeiroCredor = dados.protesto?.credores?.[0]?.credor;
+      const nomeCredor =
+        primeiroCredor?.sacador || primeiroCredor?.cedente || 'Não informado';
+      const docCredor = primeiroCredor?.doc_credor || 'Não informado';
+
+      // Funções auxiliares para formatação
+      const formatarData = (data: Date | string): string => {
+        if (!data) return 'N/A';
+        // Se for string "a vista" ou algo que não seja data, retorna ela mesma
+        if (
+          typeof data === 'string' &&
+          !data.includes('-') &&
+          !data.includes('/')
+        ) {
+          return data;
+        }
+        const dateObj = new Date(data);
+        if (isNaN(dateObj.getTime())) return data.toString();
+        // Usar UTC para garantir que a data não mude por fuso horário
+        return dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+      };
+
+      const formatarValor = (valor?: number): string => {
+        if (valor === null || valor === undefined) return 'R$ 0,00';
+        // O seu .toFixed(2).replace('.', ',') está correto
+        return `R$ ${valor.toFixed(2).replace('.', ',')}`;
+      };
+
+      // Monta o viewModel aninhado, CONFORME A INTERFACE NotificationData
+      const viewModel: NotificationData = {
+        devedor: {
+          nome: dados.devedor?.nome || 'Não informado',
+          documento: dados.devedor?.doc_devedor || 'Não informado',
+          email: dados.devedor.email, // Validação de email já foi feita acima
+          tipo: dados.devedor?.devedor_pj ? 'PJ' : 'PF',
+        },
+        titulo: {
+          numero: dados.protesto?.num_titulo || 'Não informado',
+          valor: formatarValor(dados.protesto?.valor),
+          saldo: formatarValor(dados.protesto?.saldo),
+          vencimento: formatarData(dados.protesto?.vencimento),
+        },
+        distribuicao: {
+          numero: dados.protesto?.num_distribuicao || 'Não informado',
+          data: formatarData(dados.protesto?.data_distribuicao),
+          // Se tiver a data de apresentação, adicione aqui:
+          dataApresentacao: formatarData(dados.protesto?.data_apresentacao),
+        },
+        cartorio: {
+          nome: dadosCartorio?.nomeTabelionato || 'Não informado',
+          codigo: dadosCartorio?.codTabelionato || 'Não informado',
+          telefone: dadosCartorio?.telefone || 'Não informado',
+          email: dadosCartorio?.email || 'Não informado',
+          endereco: dadosCartorio?.endereco || 'Não informado',
+          cidade: dadosCartorio?.cidade || 'Não informado',
+          uf: dadosCartorio?.uf || 'Não informado',
+          cep: dadosCartorio?.cep || 'Não informado',
+        },
+        credor: {
+          nome: nomeCredor,
+          documento: docCredor,
+          tipo: primeiroCredor?.cedente ? 'cedente' : 'sacador',
+        },
+        portador: {
+          nome: dados.protesto?.apresentante?.nome || 'Não informado',
+          codigo:
+            dados.protesto?.apresentante?.cod_apresentante || 'Não informado',
+        },
+        urls: {
+          trackingPixel: trackingPixelUrl,
+          // aceiteIntimacao: `${baseUrl}/aceite/${token}` // Descomente se precisar
+        },
+        metadata: {
+          notificacaoId: dados.id,
+          dataEnvio: new Date().toISOString(),
+        },
+      };
 
       // 7. Log detalhado para debug
       this.logger.log(`Preparando envio para: ${dados.devedor.email}`);
@@ -125,11 +204,8 @@ export class NotificationOrchestratorService {
       this.logger.log(`Tracking URL: ${trackingPixelUrl}`);
 
       // 8. Enviar email com tracking
-      const emailResult = await this.emailService.sendNotificationWithTracking(
-        dados,
-        trackingPixelUrl,
-        dadosCartorio,
-      );
+      const emailResult =
+        await this.emailService.sendNotificationWithTracking(viewModel);
 
       // 9. Atualizar status se enviado com sucesso
       if (emailResult.success) {
