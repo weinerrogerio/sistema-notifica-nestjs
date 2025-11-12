@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cobrança - Fatura {{titulo.numero}}</title>
-    
+    <title>Cobrança - Fatura ${dados.numeroFatura}</title>
+    ${this.getHeader()}
     <title>Document</title>
   </head>
   <body>
@@ -112,7 +112,7 @@
         <p><strong>Nome:</strong> {{cartorio.nome}}/p>
         <p><strong>Telefone:</strong> {{cartorio.telefone}}</p>
         <p><strong>Email:</strong> {{cartorio.email}}</p>
-        <p><strong>Endereço:</strong> {{cartorio.endereco}}</p>
+        <p><strong>Endereço:</strong> ${data.cartorio.endereco}</p>
       </div>
 
       <p>
@@ -122,7 +122,7 @@
       <p>Após o pagamento ao tabelionato, o processamento pode levar até 48 horas úteis.</p>
     </div>
 
-    
+    ${this.getFooter(contato)}
 
     <div class="footer">
       <h3>3º Distribuidor de Protesto de Curitiba</h3>
