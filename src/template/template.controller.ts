@@ -10,11 +10,14 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { TemplateService } from './template.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from '@app/auth/decorators/roles.decorator';
 import { Role } from '@app/common/enums/role.enum';
+import { AuthTokenGuard } from '@app/auth/guards/auth-token.guard';
+import { RolesGuard } from '@app/auth/guards/roles.guard';
 
 export interface UploadTemplateRequest {
   nome: string;
@@ -29,12 +32,12 @@ export interface PreviewRequest {
   dadosTeste: any;
 }
 
-//@UseGuards(AuthTokenGuard, RolesGuard)
+@UseGuards(AuthTokenGuard, RolesGuard)
 @Controller('template')
 export class TemplateController {
   constructor(private templateService: TemplateService) {}
 
-  //@Roles(Role.USER, Role.ADMIN)
+  @Roles(Role.USER, Role.ADMIN)
   @Get()
   async listarTemplates() {
     try {
@@ -48,7 +51,7 @@ export class TemplateController {
     }
   }
 
-  //@Roles(Role.USER, Role.ADMIN)
+  @Roles(Role.USER, Role.ADMIN)
   @Get('estatisticas')
   async obterEstatisticas() {
     try {
@@ -62,7 +65,7 @@ export class TemplateController {
     }
   }
 
-  //@Roles(Role.USER, Role.ADMIN)
+  @Roles(Role.USER, Role.ADMIN)
   @Get('padrao')
   async obterTemplatePadrao() {
     try {
@@ -76,51 +79,27 @@ export class TemplateController {
     }
   }
 
-  //@Roles(Role.USER, Role.ADMIN)
-  @Get(':id')
-  async buscarTemplate(@Param('id', ParseIntPipe) id: number) {
+  @Roles(Role.USER, Role.ADMIN)
+  @Get('ajuda/placeholders')
+  async listarPlaceholders() {
     try {
-      return await this.templateService.buscarPorId(id);
+      // Retorna a lista de todas as chaves válidas que o usuário pode usar
+      const placeholders = this.templateService.getValidPlaceholders();
+      return {
+        mensagem:
+          'Use estes placeholders no seu template HTML, dentro de chaves duplas (ex: {{devedor.nome}})',
+        placeholders: placeholders,
+      };
     } catch (error) {
-      if (error instanceof HttpException) throw error;
+      console.log(`ERRO AO BUSCAR PLACEHOLDERS: ${error}`);
       throw new HttpException(
-        'Erro ao buscar template',
+        'Erro ao buscar lista de placeholders',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  //@Roles(Role.USER, Role.ADMIN)
-  @Get(':id/conteudo')
-  async obterConteudoTemplate(@Param('id', ParseIntPipe) id: number) {
-    try {
-      const conteudo = await this.templateService.obterConteudoTemplate(id);
-      return { conteudoHtml: conteudo };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new HttpException(
-        'Erro ao obter conteúdo do template',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  //@Roles(Role.USER, Role.ADMIN)
-  @Get(':id/verificar-integridade')
-  async verificarIntegridade(@Param('id', ParseIntPipe) id: number) {
-    try {
-      const integro = await this.templateService.verificarIntegridade(id);
-      return { integro };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new HttpException(
-        'Erro ao verificar integridade',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  //@Roles(Role.USER, Role.ADMIN)
+  @Roles(Role.USER, Role.ADMIN)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file')) // 'templateFile' deve ser o nome do campo no Postman
   async uploadTemplate(
@@ -179,7 +158,51 @@ export class TemplateController {
     }
   }
 
-  //@Roles(Role.USER, Role.ADMIN)
+  @Roles(Role.USER, Role.ADMIN)
+  @Get(':id')
+  async buscarTemplate(@Param('id', ParseIntPipe) id: number) {
+    try {
+      return await this.templateService.buscarPorId(id);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        'Erro ao buscar template',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Roles(Role.USER, Role.ADMIN)
+  @Get(':id/conteudo')
+  async obterConteudoTemplate(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const conteudo = await this.templateService.obterConteudoTemplate(id);
+      return { conteudoHtml: conteudo };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        'Erro ao obter conteúdo do template',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Roles(Role.USER, Role.ADMIN)
+  @Get(':id/verificar-integridade')
+  async verificarIntegridade(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const integro = await this.templateService.verificarIntegridade(id);
+      return { integro };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        'Erro ao verificar integridade',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Roles(Role.USER, Role.ADMIN)
   @Post(':id/set-padrao')
   async definirTemplatePadrao(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -194,30 +217,6 @@ export class TemplateController {
   }
 
   @Roles(Role.USER, Role.ADMIN)
-  // ARRUMAR ESSE ENDPOINT - FRONT-END NAO ESTA ATUALIZANDO - BOLAR UMA SOLUÇÃO
-  @Post('preview')
-  /* async gerarPreview(@Body() dados: PreviewRequest) {
-    try {
-      if (!dados.conteudoHtml) {
-        throw new HttpException(
-          'Conteúdo HTML é obrigatório para preview',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      return await this.templateService.gerarPreview(
-        dados.conteudoHtml,
-        dados.dadosTeste || {},
-      );
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new HttpException(
-        'Erro ao gerar preview',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  } */
-  //@Roles(Role.USER, Role.ADMIN)
   @Delete(':id')
   async deletarTemplate(
     @Param('id', ParseIntPipe) id: number,

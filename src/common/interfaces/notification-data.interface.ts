@@ -4,6 +4,7 @@ import { Devedor } from '@app/devedor/entities/devedor.entity';
 import { DocProtesto } from '@app/doc-protesto/entities/doc-protesto.entity';
 import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
 
+//ATENÇÃO: TODA VEZ QUE ATUALIZAR ESSA INTERFACE, ATUALIZAR TAMBÉM: o schema de getValidPlaceholders em template.service
 export interface NotificationData {
   // Dados do Devedor
   devedor: {
@@ -12,7 +13,6 @@ export interface NotificationData {
     email: string;
     tipo: 'PF' | 'PJ';
   };
-
   // Dados do Título/Protesto
   titulo: {
     numero: string;
@@ -20,14 +20,12 @@ export interface NotificationData {
     saldo: string; // Já formatado: "R$ 950,25"
     vencimento: string; // Já formatado: "01/12/2025"
   };
-
   // Dados da Distribuição
   distribuicao: {
     numero: string;
     data: string; // Já formatado: "07/11/2024"
     dataApresentacao: string; // Já formatado
   };
-
   // Dados do Cartório
   cartorio: {
     nome: string;
@@ -39,20 +37,17 @@ export interface NotificationData {
     uf: string;
     cep: string;
   };
-
   // Dados do Credor/Sacador
   credor: {
     nome: string;
     documento: string;
     tipo: 'sacador' | 'cedente';
   };
-
   // Dados do Portador/Apresentante
   portador: {
     nome: string;
     codigo: string;
   };
-
   // URLs e Tracking
   urls: {
     trackingPixel: string;
@@ -60,7 +55,6 @@ export interface NotificationData {
     consultaProtesto?: string;
     pagamento?: string;
   };
-
   // Metadados (opcional)
   metadata?: {
     notificacaoId: number;

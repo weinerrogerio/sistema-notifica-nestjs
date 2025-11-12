@@ -74,38 +74,6 @@ export class TemplateService {
   // Renderiza o template com os dados fornecidos
   /* async renderTemplate(
     templateHtml: string,
-    dados: IntimacaoData,
-    trackingPixelUrl?: string, // Pode ser opcional
-    contatoTabelionato?: ContatoTabelionato,
-  ): Promise<string> {
-    // Compile o template Handlebars
-    const template = Handlebars.compile(templateHtml);
-    // Prepare os dados para o template. É importante que os nomes aqui correspondam
-    // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
-    const context = {
-      dados: {
-        ...dados,
-        // Formate o valorTotal aqui, se necessário, para evitar lógica no template
-        valorTotal: dados.valorTotal.toFixed(2).replace('.', ','),
-        // Se dataDistribuicao é um Date, formate-o para string
-        dataDistribuicao:
-          dados.dataDistribuicao instanceof Date
-            ? dados.dataDistribuicao.toLocaleDateString('pt-BR')
-            : dados.dataDistribuicao,
-      },
-      contato: contatoTabelionato, // Passa o objeto de contato
-      // Para o pixel de tracking, o template pode ter um placeholder como {{trackingPixel}}
-      trackingPixel: trackingPixelUrl
-        ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" />`
-        : '',
-    };
-
-    // Renderize o template com o contexto
-    return template(context);
-  } */
-
-  async renderTemplate(
-    templateHtml: string,
     viewModel: NotificationData,
   ): Promise<string> {
     // DADOS DEVEM CHEGAR AQUI JA FORMATADOS!
@@ -115,18 +83,12 @@ export class TemplateService {
     // Prepare os dados para o template. É importante que os nomes aqui correspondam
     // aos placeholders que o usuário vai escrever no DB (ex: {{dados.nomeDevedor}})
     const context = {
-      // O template espera {{dados. ...}}
       dados: {
         devedor: viewModel.devedor, // Para {{dados.devedor.nome}}
-
-        // O template espera {{dados.protesto. ...}}
         protesto: {
-          // Mapeia os dados do 'titulo' do ViewModel
           saldo: viewModel.titulo.saldo,
           valor: viewModel.titulo.valor,
           vencimento: viewModel.titulo.vencimento,
-
-          // Mapeia os dados da 'distribuicao' do ViewModel
           num_distribuicao: viewModel.distribuicao.numero,
           data_distribuicao: viewModel.distribuicao.data,
 
@@ -149,6 +111,169 @@ export class TemplateService {
     };
     // 3. Renderiza com o contexto traduzido
     return template(context);
+  } */
+  async renderTemplate(
+    templateHtml: string,
+    viewModel: NotificationData, // Recebe o ViewModel
+  ): Promise<string> {
+    try {
+      const template = Handlebars.compile(templateHtml);
+      return template(viewModel);
+    } catch (error) {
+      console.error('Erro ao renderizar template Handlebars:', error);
+      throw new HttpException(
+        `Erro ao processar template: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private extrairTodasChavesHandlebars(html: string): string[] {
+    const regex = /\{\{([^}]+)\}\}/g;
+    const encontrados: string[] = [];
+    let match;
+
+    while ((match = regex.exec(html)) !== null) {
+      const conteudo = match[1].trim(); // O que está entre {{ e }}
+      encontrados.push(conteudo);
+    }
+
+    return encontrados;
+  }
+
+  private extrairSintaxeDolar(html: string): string[] {
+    const regex = /\$\{([^}]+)\}/g;
+    const encontrados: string[] = [];
+    let match;
+
+    while ((match = regex.exec(html)) !== null) {
+      encontrados.push(match[1].trim());
+    }
+
+    return encontrados;
+  }
+
+  private isHandlebarsHelper(placeholder: string): boolean {
+    return (
+      placeholder.startsWith('#') ||
+      placeholder.startsWith('/') ||
+      placeholder === 'else' ||
+      placeholder === 'this'
+    );
+  }
+
+  public getValidPlaceholders(): string[] {
+    // Criamos um "molde" que imita a interface NotificationData --> alterar aqui toda vez que atualizar a interface
+    //  apenas a ESTRUTURA importa --> {{schema.devedor.nome}}
+    const data = {
+      devedor: {
+        nome: 'string',
+        documento: 'string',
+        email: 'string',
+        tipo: 'string',
+      },
+      titulo: {
+        numero: 'string',
+        valor: 'string',
+        saldo: 'string',
+        vencimento: 'string',
+      },
+      distribuicao: {
+        numero: 'string',
+        data: 'string',
+        dataApresentacao: 'string',
+      },
+      cartorio: {
+        nome: 'string',
+        codigo: 'string',
+        telefone: 'string',
+        email: 'string',
+        endereco: 'string',
+        cidade: 'string',
+        uf: 'string',
+        cep: 'string',
+      },
+      credor: { nome: 'string', documento: 'string', tipo: 'string' },
+      portador: { nome: 'string', codigo: 'string' },
+      urls: {
+        trackingPixel: 'string',
+        aceiteIntimacao: 'string',
+        consultaProtesto: 'string',
+        pagamento: 'string',
+      },
+      metadata: {
+        notificacaoId: 'number',
+        dataEnvio: 'string',
+        templateId: 'number',
+      },
+    };
+
+    // Função interna para "achatar" o objeto e gerar os caminhos
+    const getPaths = (obj: object, prefix = ''): string[] => {
+      let paths: string[] = [];
+      for (const key of Object.keys(obj)) {
+        const newPrefix = prefix ? `${prefix}.${key}` : key;
+        const val = obj[key];
+        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+          paths = paths.concat(getPaths(val, newPrefix));
+        } else {
+          paths.push(newPrefix);
+        }
+      }
+      return paths;
+    };
+
+    return getPaths(data);
+  }
+
+  /*** Valida o conteúdo HTML contra a lista de placeholders válidos.*/
+  public validarTemplate(html: string): {
+    valido: boolean;
+    sintaxeDolar: string[]; // ${...} encontrados (sintaxe errada)
+    placeholdersInvalidos: string[]; // {{...}} que não estão na legenda
+    helpersInvalidos: string[]; // {{this.method()}}, {{algo()}} etc
+  } {
+    const placeholdersValidos = new Set(this.getValidPlaceholders());
+
+    // 1. Busca sintaxe ERRADA: ${...}
+    const sintaxeDolar = this.extrairSintaxeDolar(html);
+
+    // 2. Busca TUDO dentro de {{...}}
+    const todasChaves = this.extrairTodasChavesHandlebars(html);
+
+    const placeholdersInvalidos: string[] = [];
+    const helpersInvalidos: string[] = [];
+
+    for (const placeholder of todasChaves) {
+      // Ignora helpers válidos do Handlebars (#each, #if, /each, /if, else)
+      if (this.isHandlebarsHelper(placeholder)) {
+        continue;
+      }
+
+      // Se contém parênteses, não é um placeholder válido
+      if (placeholder.includes('(') || placeholder.includes(')')) {
+        helpersInvalidos.push(placeholder);
+        continue;
+      }
+
+      // Verifica se está na legenda
+      if (!placeholdersValidos.has(placeholder)) {
+        placeholdersInvalidos.push(placeholder);
+      }
+    }
+
+    // Template é válido APENAS se não tiver nenhum erro
+    const ehValido =
+      sintaxeDolar.length === 0 &&
+      placeholdersInvalidos.length === 0 &&
+      helpersInvalidos.length === 0;
+
+    return {
+      valido: ehValido,
+      sintaxeDolar,
+      placeholdersInvalidos,
+      helpersInvalidos,
+    };
   }
 
   //  async criar(dadosTemplate: CriarTemplateDto): Promise<Template> {
@@ -173,17 +298,49 @@ export class TemplateService {
 
     // Calcular tamanho em bytes
     const tamanhoArquivo = Buffer.byteLength(file.buffer, 'utf8');
+    const conteudoHtml = file.buffer.toString('utf8');
+
+    // VALIDAÇÃO COM NOVA LÓGICA
+    const validacao = this.validarTemplate(conteudoHtml);
+
+    if (!validacao.valido) {
+      const errorResponse = {
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'O template contém erros e não pode ser salvo.',
+        erros: {},
+        placeholdersValidos: this.getValidPlaceholders(),
+      };
+
+      // Erro 1: Sintaxe ${...} ao invés de {{...}}
+      if (validacao.sintaxeDolar.length > 0) {
+        errorResponse.erros['sintaxeInvalida'] =
+          `Sintaxe inválida encontrada. Use chaves duplas {{...}} ao invés de \${...} para estas variáveis: ${validacao.sintaxeDolar.join(', ')}`;
+      }
+
+      // Erro 2: Helpers/funções não permitidos
+      if (validacao.helpersInvalidos.length > 0) {
+        errorResponse.erros['helpersInvalidos'] =
+          `Remova ou modifique: ${validacao.helpersInvalidos.map((h) => `{{${h}}}`).join(', ')}`;
+      }
+
+      // Erro 3: Variáveis que não existem na legenda
+      if (validacao.placeholdersInvalidos.length > 0) {
+        errorResponse.erros['placeholdersInvalidos'] =
+          `Variáveis não reconhecidas (não existem na legenda): ${validacao.placeholdersInvalidos.map((p) => `{{${p}}}`).join(', ')}`;
+      }
+
+      console.log(errorResponse);
+      throw new HttpException(errorResponse, HttpStatus.BAD_REQUEST);
+    }
 
     // Validar tamanho máximo (ex: 20MB)
-    const tamanhoMaximo = 20 * 1024 * 1024; // 20MB
+    const tamanhoMaximo = 20 * 1024 * 1024;
     if (tamanhoArquivo > tamanhoMaximo) {
       throw new HttpException(
         'Template muito grande. Tamanho máximo permitido: 20MB',
         HttpStatus.BAD_REQUEST,
       );
     }
-
-    console.log('FILES SERVICE: ', file);
 
     const template = this.templateRepository.create({
       descricao: file.originalname || '',
