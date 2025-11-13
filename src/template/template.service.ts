@@ -162,6 +162,41 @@ export class TemplateService {
     );
   }
 
+  public getPlaceholderDescriptions(): Record<string, string> {
+    return {
+      'devedor.nome': 'Nome do devedor',
+      'devedor.documento': 'Documento do devedor (CPF/CNPJ)',
+      'devedor.email': 'Email do devedor',
+      'devedor.tipo': 'Tipo do devedor (PF/PJ)',
+      'titulo.numero': 'Número do título',
+      'titulo.valor': 'Valor do título',
+      'titulo.saldo': 'Saldo do título',
+      'titulo.vencimento': 'Data de vencimento',
+      'distribuicao.numero': 'Número da distribuição',
+      'distribuicao.data': 'Data da distribuição',
+      'distribuicao.dataApresentacao': 'Data de apresentação',
+      'cartorio.nome': 'Nome do cartório',
+      'cartorio.codigo': 'Código do cartório',
+      'cartorio.telefone': 'Telefone do cartório',
+      'cartorio.email': 'Email do cartório',
+      'cartorio.endereco': 'Endereço do cartório',
+      'cartorio.cidade': 'Cidade do cartório',
+      'cartorio.uf': 'UF do cartório',
+      'cartorio.cep': 'CEP do cartório',
+      'credor.nome': 'Nome do credor',
+      'credor.documento': 'Documento do credor',
+      'credor.tipo': 'Tipo do credor',
+      'portador.nome': 'Nome do portador',
+      'portador.codigo': 'Código do portador',
+      'urls.trackingPixel': 'URL do pixel de rastreamento',
+      'urls.aceiteIntimacao': 'URL de aceite de intimação',
+      'urls.consultaProtesto': 'URL de consulta de protesto',
+      'urls.pagamento': 'URL de pagamento',
+      'metadata.notificacaoId': 'ID da notificação',
+      'metadata.dataEnvio': 'Data de envio',
+      'metadata.templateId': 'ID do template',
+    };
+  }
   public getValidPlaceholders(): string[] {
     // Criamos um "molde" que imita a interface NotificationData --> alterar aqui toda vez que atualizar a interface
     //  apenas a ESTRUTURA importa --> {{schema.devedor.nome}}
@@ -309,6 +344,7 @@ export class TemplateService {
         message: 'O template contém erros e não pode ser salvo.',
         erros: {},
         placeholdersValidos: this.getValidPlaceholders(),
+        placeholderDescriptions: this.getPlaceholderDescriptions(),
       };
 
       // Erro 1: Sintaxe ${...} ao invés de {{...}}
