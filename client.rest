@@ -379,6 +379,12 @@ GET {{baseUrl}}/template/
 Authorization: Bearer {{authToken}}
 
 
+###
+GET {{baseUrl}}/template/placeholders
+Authorization: Bearer {{authToken}}
+
+
+
 ### ---------------------------- LOG IMPORT - LOG DE IMPORTAÇÃO DE ARQUIVO
 ##
 POST {{baseUrl}}/log-arquivo-import
