@@ -149,7 +149,6 @@ export class TemplateService {
     while ((match = regex.exec(html)) !== null) {
       encontrados.push(match[1].trim());
     }
-
     return encontrados;
   }
 
@@ -311,7 +310,6 @@ export class TemplateService {
     };
   }
 
-  //  async criar(dadosTemplate: CriarTemplateDto): Promise<Template> {
   async criar(file: Express.Multer.File): Promise<Template> {
     // Verificar se já existe template com o mesmo nome
     const templateExistente = await this.templateRepository.findOne({
@@ -395,6 +393,73 @@ export class TemplateService {
     return this.templateRepository.save(template);
   }
 
+  async atualizar(id: number, file: Express.Multer.File): Promise<Template> {
+    // 1. Buscar template existente
+    const template = await this.buscarPorId(id);
+
+    // 2. Validar novo conteúdo HTML
+    const conteudoHtml = file.buffer.toString('utf8');
+    const validacao = this.validarTemplate(conteudoHtml);
+
+    if (!validacao.valido) {
+      const errorResponse = {
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'O template contém erros e não pode ser salvo.',
+        erros: {},
+        placeholdersValidos: this.getValidPlaceholders(),
+        placeholderDescriptions: this.getPlaceholderDescriptions(),
+      };
+
+      // Erro 1: Sintaxe ${...} ao invés de {{...}}
+      if (validacao.sintaxeDolar.length > 0) {
+        errorResponse.erros['sintaxeInvalida'] =
+          `Sintaxe inválida encontrada. Use chaves duplas {{...}} ao invés de \${...} para estas variáveis: ${validacao.sintaxeDolar.join(', ')}`;
+      }
+
+      // Erro 2: Helpers/funções não permitidos
+      if (validacao.helpersInvalidos.length > 0) {
+        errorResponse.erros['helpersInvalidos'] =
+          `Remova ou modifique: ${validacao.helpersInvalidos.map((h) => `{{${h}}}`).join(', ')}`;
+      }
+
+      // Erro 3: Variáveis que não existem na legenda
+      if (validacao.placeholdersInvalidos.length > 0) {
+        errorResponse.erros['placeholdersInvalidos'] =
+          `Variáveis não reconhecidas (não existem na legenda): ${validacao.placeholdersInvalidos.map((p) => `{{${p}}}`).join(', ')}`;
+      }
+
+      console.log(errorResponse);
+      throw new HttpException(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 3. Validar tamanho máximo (20MB)
+    const tamanhoArquivo = Buffer.byteLength(file.buffer, 'utf8');
+    const tamanhoMaximo = 20 * 1024 * 1024;
+
+    if (tamanhoArquivo > tamanhoMaximo) {
+      throw new HttpException(
+        'Template muito grande. Tamanho máximo permitido: 20MB',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 4. Calcular novo hash
+    const hashConteudo = crypto
+      .createHash('sha256')
+      .update(file.buffer)
+      .digest('hex');
+
+    // 5. Atualizar template
+    template.conteudoHtml = conteudoHtml;
+    template.nomeArquivo = file.originalname;
+    template.tamanhoArquivo = tamanhoArquivo;
+    template.hashConteudo = hashConteudo;
+    template.atualizadoEm = new Date();
+
+    // 6. Salvar no banco
+    return await this.templateRepository.save(template);
+  }
+
   async definirComoPadrao(id: number): Promise<Template> {
     const template = await this.buscarPorId(id);
 
@@ -411,26 +476,23 @@ export class TemplateService {
     return this.templateRepository.save(template);
   }
 
-  async deletar(id: number): Promise<void> {
+  async desativar(id: number): Promise<void> {
     const template = await this.buscarPorId(id);
-
     if (template.ehPadrao) {
       throw new HttpException(
-        'Não é possível excluir o template padrão',
+        'Não é possível desativar o template padrão',
         HttpStatus.BAD_REQUEST,
       );
     }
-
     // Soft delete - marca como inativo ao invés de deletar fisicamente
     template.ativo = false;
     template.atualizadoEm = new Date();
-
     await this.templateRepository.save(template);
   }
 
   async deletarFisicamente(id: number): Promise<void> {
     const template = await this.buscarPorId(id);
-
+    if (!template) return;
     if (template.ehPadrao) {
       throw new HttpException(
         'Não é possível excluir o template padrão',

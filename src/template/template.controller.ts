@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { TemplateService } from './template.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -46,6 +47,21 @@ export class TemplateController {
       console.log(`ERRO AO BUSCAR TEMPLATES: ${error}`);
       throw new HttpException(
         'Erro ao buscar templates',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // Usar para retornar para legenda
+  //@Roles(Role.USER, Role.ADMIN)
+  @Get('placeholders')
+  async ListPladeholdersDescriptions() {
+    try {
+      return await this.templateService.getPlaceholderDescriptions();
+    } catch (error) {
+      console.log(`ERRO AO BUSCAR PLACEHOLDER DE TEMPLATES: ${error}`);
+      throw new HttpException(
+        'Erro ao buscar placeholder de templates',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -99,6 +115,7 @@ export class TemplateController {
     }
   }
 
+  // Upload de template
   @Roles(Role.USER, Role.ADMIN)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file')) // 'templateFile' deve ser o nome do campo no Postman
@@ -158,6 +175,48 @@ export class TemplateController {
     }
   }
 
+  // Atualizar template
+  @Roles(Role.USER, Role.ADMIN)
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('file'))
+  async atualizarTemplate(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    try {
+      // Validações básicas
+      if (!file) {
+        throw new HttpException(
+          'Nenhum arquivo de template foi enviado',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const conteudoHtml = file.buffer.toString('utf8');
+      if (!conteudoHtml.trim()) {
+        throw new HttpException(
+          'Conteúdo HTML é obrigatório',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Validar se é HTML válido
+      if (!this.isValidHtml(conteudoHtml)) {
+        throw new HttpException(
+          'Conteúdo HTML inválido ou malformado',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      // Atualizar template via service
+      return await this.templateService.atualizar(id, file);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        `Erro ao atualizar template: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Roles(Role.USER, Role.ADMIN)
   @Get(':id')
   async buscarTemplate(@Param('id', ParseIntPipe) id: number) {
@@ -172,6 +231,7 @@ export class TemplateController {
     }
   }
 
+  // REVISAR ISSO !!!
   @Roles(Role.USER, Role.ADMIN)
   @Get(':id/conteudo')
   async obterConteudoTemplate(@Param('id', ParseIntPipe) id: number) {
@@ -220,14 +280,14 @@ export class TemplateController {
   @Delete(':id')
   async deletarTemplate(
     @Param('id', ParseIntPipe) id: number,
-    @Query('fisico') deletarFisico?: string,
+    @Query('delete') deletarFisico?: string,
   ) {
     try {
       if (deletarFisico === 'true') {
         await this.templateService.deletarFisicamente(id);
         return { message: 'Template deletado fisicamente com sucesso' };
       } else {
-        await this.templateService.deletar(id);
+        await this.templateService.desativar(id);
         return { message: 'Template marcado como inativo com sucesso' };
       }
     } catch (error) {
