@@ -81,6 +81,35 @@ export class DocProtestoController {
     return this.docProtestoService.findAllPagination(+page, +limit);
   }
 
+  // Busca geral com filtros
+  @Get('distribuicoes/buscar')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarDistribuicoes(
+    @Query('devedorNome') devedorNome?: string,
+    @Query('docDevedor') docDevedor?: string,
+    @Query('dataInicio') dataInicio?: string,
+    @Query('dataFim') dataFim?: string,
+    @Query('status') status?: string,
+    @Query('numDistribuicao') numDistribuicao?: string,
+    @Query('numTitulo') numTitulo?: string,
+    @Query('docCredor') docCredor?: string,
+  ) {
+    const filtros = {
+      devedorNome,
+      docDevedor,
+      numDistribuicao,
+      numTitulo,
+      docCredor,
+      dataInicio: dataInicio ? new Date(dataInicio) : undefined,
+      dataFim: dataFim ? new Date(dataFim) : undefined,
+      status,
+    };
+
+    return await this.docProtestoSearchService.buscarDistribuicoesComFiltros(
+      filtros,
+    );
+  }
+
   @Get(':id')
   @Roles(Role.USER, Role.ADMIN)
   findOne(@Param('id') id: string) {
@@ -108,29 +137,6 @@ export class DocProtestoController {
   async buscarDistribuicoesPorDevedor(@Param('devedorId') devedorId: number) {
     return await this.docProtestoSearchService.buscarDistribuicoesPorDevedor(
       devedorId,
-    );
-  }
-
-  // Busca geral com filtros
-  @Get('distribuicoes/buscar')
-  @Roles(Role.USER, Role.ADMIN)
-  async buscarDistribuicoes(
-    @Query('devedorNome') devedorNome?: string,
-    @Query('docDevedor') docDevedor?: string,
-    @Query('dataInicio') dataInicio?: string,
-    @Query('dataFim') dataFim?: string,
-    @Query('status') status?: string,
-  ) {
-    const filtros = {
-      devedorNome,
-      docDevedor,
-      dataInicio: dataInicio ? new Date(dataInicio) : undefined,
-      dataFim: dataFim ? new Date(dataFim) : undefined,
-      status,
-    };
-
-    return await this.docProtestoSearchService.buscarDistribuicoesComFiltros(
-      filtros,
     );
   }
 }

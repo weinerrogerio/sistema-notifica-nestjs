@@ -290,9 +290,9 @@ export class DocProtestoService {
       .getMany();
   }
 
+  //doc-protesto/find-all-pagination
   async findAllPagination(page: number = 1, limit: number = 2) {
     const offset = (page - 1) * limit;
-
     const query = this.docProtestoRepository
       .createQueryBuilder('doc')
       // Relacionamentos

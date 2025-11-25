@@ -85,6 +85,9 @@ export interface FiltrosDistribuicao {
   dataFim?: Date;
   status?: string;
   email?: string;
+  numDistribuicao?: string;
+  numTitulo?: string;
+  docCredor?: string;
 }
 
 /* export interface DuplicateRecord {

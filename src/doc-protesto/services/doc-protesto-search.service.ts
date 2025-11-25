@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DocProtesto } from '../entities/doc-protesto.entity';
@@ -37,9 +37,7 @@ export class DocProtestoSearchService {
     return this.mapearParaDistribuicaoResult(distribuicoes);
   }
 
-  async buscarDistribuicoesComFiltros(
-    filtros: FiltrosDistribuicao,
-  ): Promise<DistribuicaoSearchResult[]> {
+  async buscarDistribuicoesComFiltros(filtros: FiltrosDistribuicao) {
     const queryBuilder = this.docProtestoRepository
       .createQueryBuilder('protesto')
       .leftJoinAndSelect('protesto.apresentante', 'apresentante')
@@ -47,7 +45,16 @@ export class DocProtestoSearchService {
       .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
       .leftJoinAndSelect('protesto.notificacao', 'logNotificacao')
       .leftJoinAndSelect('logNotificacao.devedor', 'devedor');
-    queryBuilder.andWhere('devedor.email IS NOT NULL');
+    //queryBuilder.andWhere('devedor.email IS NOT NULL');
+
+    //validaçaõ se chegou algum filtro
+    const temFiltro = Object.values(filtros).some(
+      (valor) => valor !== undefined && valor !== null,
+    );
+    if (!temFiltro) {
+      throw new BadRequestException('Ao menos um filtro deve ser fornecido');
+    }
+
     // Aplicar filtros dinamicamente
     if (filtros.devedorNome) {
       queryBuilder.andWhere('devedor.nome LIKE :devedorNome', {
@@ -67,6 +74,26 @@ export class DocProtestoSearchService {
       });
     }
 
+    // Filtro por Número de Distribuição
+    if (filtros.numDistribuicao) {
+      queryBuilder.andWhere('protesto.num_distribuicao = :numDist', {
+        numDist: filtros.numDistribuicao,
+      });
+    }
+
+    // Filtro por Número do Título
+    if (filtros.numTitulo) {
+      queryBuilder.andWhere('protesto.num_titulo = :numTitulo', {
+        numTitulo: filtros.numTitulo,
+      });
+    }
+
+    if (filtros.docCredor) {
+      queryBuilder.andWhere('credor.doc_credor = :docCredor', {
+        docCredor: filtros.docCredor,
+      });
+    }
+
     if (filtros.dataInicio && filtros.dataFim) {
       queryBuilder.andWhere(
         'protesto.data_distribuicao BETWEEN :dataInicio AND :dataFim',
@@ -77,11 +104,15 @@ export class DocProtestoSearchService {
       );
     }
 
+    // Limite de segurança para não travar o banco se vier sem filtro nenhum
+    queryBuilder.take(100);
+
     const distribuicoes = await queryBuilder
       .orderBy('protesto.data_distribuicao', 'DESC')
       .getMany();
 
-    return this.mapearParaDistribuicaoResult(distribuicoes);
+    //return this.mapearParaDistribuicaoResult(distribuicoes);
+    return distribuicoes;
   }
 
   // Busca específica para relatórios ou dashboards
