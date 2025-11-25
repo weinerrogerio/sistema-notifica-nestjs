@@ -81,6 +81,10 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/doc-protesto/date-range-query-dist?startDate=2022-03-01&endDate=2022-03-10
 Authorization: Bearer {{authToken}}
 
+###
+GET {{baseUrl}}/doc-protesto/distribuicoes/buscar?docDevedor=38333973000115
+Authorization: Bearer {{authToken}}
+
 
 
 ### TESDE DE GRAVAÇÃO DE DISTRIBUIÇÃO:
