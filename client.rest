@@ -86,6 +86,11 @@ GET {{baseUrl}}/doc-protesto/distribuicoes/buscar?docDevedor=38333973000115
 Authorization: Bearer {{authToken}}
 
 
+###
+GET {{baseUrl}}/doc-protesto/distribuicoes/buscar?email=true
+Authorization: Bearer {{authToken}}
+
+
 
 ### TESDE DE GRAVAÇÃO DE DISTRIBUIÇÃO:
 

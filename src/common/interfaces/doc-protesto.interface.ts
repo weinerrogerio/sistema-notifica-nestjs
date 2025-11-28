@@ -88,6 +88,7 @@ export interface FiltrosDistribuicao {
   numDistribuicao?: string;
   numTitulo?: string;
   docCredor?: string;
+  limit?: number;
 }
 
 /* export interface DuplicateRecord {

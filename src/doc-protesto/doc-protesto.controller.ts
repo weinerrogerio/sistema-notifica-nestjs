@@ -38,7 +38,7 @@ export class DocProtestoController {
     return this.docProtestoService.findAll();
   }
 
-  // busca simples por data de criação de registro
+  // busca simples por data de criação de registro - retorna quanidade de registros no intervalo
   @Get('date-range')
   async getByDateRange(
     @Query('startDate') startDate?: string,
@@ -48,6 +48,13 @@ export class DocProtestoController {
     const end = endDate ? new Date(endDate) : undefined;
 
     return await this.docProtestoService.findByDateRange(start, end);
+  }
+
+  // busca simples - retorna os últimos 15 dias com dados independente do intervalo
+  @Get('last-days-with-data')
+  @Roles(Role.USER, Role.ADMIN)
+  async getLastDaysWithData(@Query('days') days: number = 15) {
+    return await this.docProtestoService.findLastDaysWithData(days);
   }
 
   // busca todas as distribuições por data de craição de registro
@@ -93,6 +100,8 @@ export class DocProtestoController {
     @Query('numDistribuicao') numDistribuicao?: string,
     @Query('numTitulo') numTitulo?: string,
     @Query('docCredor') docCredor?: string,
+    @Query('limit') limit?: number,
+    @Query('email') email?: string,
   ) {
     const filtros = {
       devedorNome,
@@ -103,6 +112,8 @@ export class DocProtestoController {
       dataInicio: dataInicio ? new Date(dataInicio) : undefined,
       dataFim: dataFim ? new Date(dataFim) : undefined,
       status,
+      limit,
+      email,
     };
 
     return await this.docProtestoSearchService.buscarDistribuicoesComFiltros(
