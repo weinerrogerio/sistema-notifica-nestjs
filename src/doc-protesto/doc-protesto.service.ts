@@ -162,6 +162,24 @@ export class DocProtestoService {
     });
   }
 
+  async findLastDaysWithData(days: number = 15) {
+    // Busca os últimos registros agrupados por data de criação
+    const result = await this.docProtestoRepository
+      .createQueryBuilder('doc')
+      .select('DATE(doc.createdAt)', 'data')
+      .addSelect('COUNT(doc.id)', 'quantidade')
+      .groupBy('DATE(doc.createdAt)')
+      .orderBy('DATE(doc.createdAt)', 'DESC')
+      .limit(days)
+      .getRawMany();
+
+    // Retorna em ordem crescente para o gráfico
+    return result.reverse().map((item) => ({
+      data: item.data,
+      quantidade: parseInt(item.quantidade, 10),
+    }));
+  }
+
   async findByDateRange(startDate?: Date, endDate?: Date) {
     console.log('Service - parâmetros recebidos:', { startDate, endDate });
 

@@ -69,9 +69,22 @@ export class DocProtestoSearchService {
     }
 
     if (filtros.email) {
-      queryBuilder.andWhere('devedor.email LIKE :email', {
-        email: `%${filtros.email}%`,
-      });
+      // Normaliza para lowercase para aceitar "True", "true", "TRUE"
+      const emailFilter = filtros.email.toLowerCase();
+
+      if (emailFilter === 'true') {
+        // Lógica: Trazer apenas quem TEM email preenchido
+        queryBuilder.andWhere('devedor.email IS NOT NULL');
+        queryBuilder.andWhere("devedor.email != ''");
+      } else if (emailFilter === 'false') {
+        // Lógica: Trazer apenas quem NÃO tem email (opcional, mas bom ter)
+        queryBuilder.andWhere("(devedor.email IS NULL OR devedor.email = '')");
+      } else {
+        // Lógica original: Busca por parte do texto do email (ex: "gmail.com")
+        queryBuilder.andWhere('devedor.email LIKE :email', {
+          email: `%${filtros.email}%`,
+        });
+      }
     }
 
     // Filtro por Número de Distribuição
@@ -105,7 +118,9 @@ export class DocProtestoSearchService {
     }
 
     // Limite de segurança para não travar o banco se vier sem filtro nenhum
-    queryBuilder.take(100);
+    if (filtros.limit) {
+      queryBuilder.take(filtros.limit);
+    }
 
     const distribuicoes = await queryBuilder
       .orderBy('protesto.data_distribuicao', 'DESC')
