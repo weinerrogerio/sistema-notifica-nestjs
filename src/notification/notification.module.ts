@@ -11,6 +11,7 @@ import { NotificationController } from './notification.controller';
 import { LogNotificacaoModule } from '@app/log-notificacao/log-notificacao.module';
 import { TemplateModule } from '@app/template/template.module';
 import { ContatoTabelionatoModule } from '@app/contato-tabelionato/contato-tabelionato.module';
+import { BrevoWebhookController } from './brevo-webhook.controller';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { ContatoTabelionatoModule } from '@app/contato-tabelionato/contato-tabel
     TemplateModule,
     ContatoTabelionatoModule,
   ],
-  controllers: [NotificationController],
+  controllers: [NotificationController, BrevoWebhookController],
   providers: [
     EmailService,
     NotificationOrchestratorService,

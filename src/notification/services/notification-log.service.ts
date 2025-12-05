@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TrackingService } from '@app/tracking/tracking.service';
 import { EmailService } from './notification-email.service';
 import { LogNotificationQueryService } from '@app/log-notificacao/services/log-notification-search.service';
 import { ContatoTabelionatoService } from '@app/contato-tabelionato/contato-tabelionato.service';
@@ -10,20 +9,22 @@ import {
   NotificationResult,
   NotificationResultAll,
 } from '@app/common/interfaces/notification-data.interface';
+import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.service';
 
 @Injectable()
 export class NotificationOrchestratorService {
   private readonly logger = new Logger(NotificationOrchestratorService.name);
 
   constructor(
-    private trackingService: TrackingService,
     private configService: ConfigService,
     private logNotificationQueryService: LogNotificationQueryService,
+    private logNotificationService: LogNotificacaoService,
+
     private emailService: EmailService,
     private contatoTabelionatoService: ContatoTabelionatoService,
   ) {}
 
-  async sendNotificationsWithTracking(): Promise<NotificationResultAll> {
+  async sendNotifications(): Promise<NotificationResultAll> {
     // Uma única consulta que já traz todos os dados necessários para o envio
     const intimacoesPendentes =
       await this.logNotificationQueryService.buscarNotificacoesPendentesNaoEnviadas();
@@ -41,7 +42,7 @@ export class NotificationOrchestratorService {
         if (intimacao.devedorEmail !== '') {
         }
 
-        const sucesso = await this.sendOneNotificationWithTracking(intimacao);
+        const sucesso = await this.sendOneNotification(intimacao);
 
         if (sucesso) {
           resultados.enviados++;
@@ -76,7 +77,7 @@ export class NotificationOrchestratorService {
     return resultados;
   }
 
-  async sendOneNotificationWithTracking(
+  async sendOneNotification(
     dadosRequisicao: SendNotification,
   ): Promise<NotificationResult> {
     try {
@@ -112,13 +113,6 @@ export class NotificationOrchestratorService {
       const dadosCartorio = await this.contatoTabelionatoService.findOneByName(
         dados.protesto.cart_protesto,
       );
-
-      // 5. Gerar e armazenar o token
-      const token = await this.trackingService.generateAndStoreToken(dados.id);
-      // 6. Criar URLs
-      const baseUrl = this.configService.get<string>('BASE_URL');
-      const trackingPixelUrl = `${baseUrl}/tracking/pixel/${token}`;
-
       // -------- model view ---------
       const primeiroCredor = dados.protesto?.credores?.[0]?.credor;
       const nomeCredor =
@@ -189,7 +183,7 @@ export class NotificationOrchestratorService {
             dados.protesto?.apresentante?.cod_apresentante || 'Não informado',
         },
         urls: {
-          trackingPixel: trackingPixelUrl,
+          //trackingPixel: trackingPixelUrl,
           // aceiteIntimacao: `${baseUrl}/aceite/${token}` // Descomente se precisar
         },
         metadata: {
@@ -197,54 +191,23 @@ export class NotificationOrchestratorService {
           dataEnvio: new Date().toISOString(),
         },
       };
-
-      // 7. Log detalhado para debug
+      // 5. Log detalhado para debug
       this.logger.log(`Preparando envio para: ${dados.devedor.email}`);
-      this.logger.log(`Token gerado: ${token}`);
-      this.logger.log(`Tracking URL: ${trackingPixelUrl}`);
 
-      // 8. Enviar email com tracking
-      const emailResult =
-        await this.emailService.sendNotificationWithTracking(viewModel);
+      // 6. Enviar email com tracking
+      const emailResult = await this.emailService.sendNotification(viewModel);
 
-      // 9. Atualizar status se enviado com sucesso
+      // 7. Atualizar status se enviado com sucesso
       if (emailResult.success) {
-        await this.logNotificationQueryService.marcarComoEnviada(
-          dados.id,
-          emailResult.templateId, // Passa o ID do template
-        );
-        this.logger.log(
-          `Notificação enviada e marcada como enviada para ID: ${dados.id} com Template ID: ${emailResult.templateId}`, // Log atualizado
-        );
-        this.logger.log(
-          `✅ Email enviado com sucesso para ${dados.devedor.email}`,
-        );
-        // INFORMAR O USUARIO QUE A NOTIFICACAO NAO FOI ENVIADA NO FRONT END---> front end tem acesso aos dados de quem esta enviando a notificacao
-        return {
-          success: true,
-          message: `Notificação enviada com sucesso`,
-        };
-      } else {
-        this.logger.error(
-          `❌ Falha no envio do email para ${dados.devedor.email}`,
-        );
-
-        // INFORMAR O USUARIO QUE A NOTIFICACAO NAO FOI ENVIADA NO FRONT END---> front end tem acesso aos dados de quem esta enviando a notificacao
-        const errorMessage = `Falha no envio da notificação `;
-        this.logger.error(errorMessage);
-        return { success: false, message: errorMessage };
+        // Atualiza status para ENVIADO
+        await this.logNotificationService.marcarComoEnviada(dados.id, 1); // 1 = ID ficticio do template se não tiver
+        return { success: true, message: 'Enviado com sucesso' };
       }
+
+      return { success: false, message: 'Erro no envio Brevo' };
     } catch (error) {
-      const errorMessage = `Erro ao enviar notificação: ${
-        error instanceof Error ? error.message : 'Erro desconhecido'
-      }`;
-
-      this.logger.error(
-        `Erro ao enviar notificação com tracking para ID ${dadosRequisicao.logNotificacaoId}: ${errorMessage}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-
-      return { success: false, message: errorMessage };
+      this.logger.error(`Erro orchestrator: ${error.message}`);
+      return { success: false, message: error.message };
     }
   }
 }

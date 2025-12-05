@@ -49,8 +49,8 @@ export interface NotificationData {
     codigo: string;
   };
   // URLs e Tracking
-  urls: {
-    trackingPixel: string;
+  urls?: {
+    trackingPixel?: string;
     aceiteIntimacao?: string;
     consultaProtesto?: string;
     pagamento?: string;

@@ -20,13 +20,13 @@ export class NotificationService {
 
   // envia varias intimações com tracking
   async sendNotificationsWithTracking(): Promise<NotificationResultAll> {
-    return this.orchestratorService.sendNotificationsWithTracking();
+    return this.orchestratorService.sendNotifications();
   }
 
   // envia UMA intimação com tracking
   async sendOneNotificationWithTracking(
     dados: SendNotification,
   ): Promise<NotificationResult> {
-    return this.orchestratorService.sendOneNotificationWithTracking(dados);
+    return this.orchestratorService.sendOneNotification(dados);
   }
 }

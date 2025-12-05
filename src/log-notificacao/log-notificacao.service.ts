@@ -150,17 +150,29 @@ export class LogNotificacaoService {
     logNotificacaoId: number,
     templateId: number,
   ): Promise<void> {
-    return this.logNotificationQueryService.marcarComoEnviada(
-      logNotificacaoId,
-      templateId,
-    );
+    await this.logNotificacaoRepository.update(logNotificacaoId, {
+      email_enviado: true,
+      fk_template: templateId,
+      data_envio: new Date(),
+    });
   }
 
   async marcarMultiplasComoEnviadas(
     logNotificacaoIds: number[],
   ): Promise<void> {
-    return this.logNotificationQueryService.marcarMultiplasComoEnviadas(
-      logNotificacaoIds,
-    );
+    await this.logNotificacaoRepository.update(logNotificacaoIds, {
+      email_enviado: true,
+      data_envio: new Date(),
+    });
+  }
+
+  async marcarComoLida(
+    logNotificacaoId: number,
+    dataLeitura: Date = new Date(),
+  ): Promise<void> {
+    await this.logNotificacaoRepository.update(logNotificacaoId, {
+      lido: true,
+      data_leitura: dataLeitura,
+    });
   }
 }

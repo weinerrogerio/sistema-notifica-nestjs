@@ -213,28 +213,6 @@ export class LogNotificationQueryService {
     };
   }
 
-  // Função para marcar notificações como enviadas
-  async marcarComoEnviada(
-    logNotificacaoId: number,
-    templateId: number,
-  ): Promise<void> {
-    await this.logNotificacaoRepository.update(logNotificacaoId, {
-      email_enviado: true,
-      fk_template: templateId,
-      data_envio: new Date(),
-    });
-  }
-
-  // Função para marcar múltiplas notificações como enviadas
-  async marcarMultiplasComoEnviadas(
-    logNotificacaoIds: number[],
-  ): Promise<void> {
-    await this.logNotificacaoRepository.update(logNotificacaoIds, {
-      email_enviado: true,
-      data_envio: new Date(),
-    });
-  }
-
   // Função auxiliar para mapear os dados
   private mapearParaIntimacaoData(
     logNotificacoes: LogNotificacao[],

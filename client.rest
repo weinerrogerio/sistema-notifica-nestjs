@@ -214,6 +214,13 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/devedor/teste-update-email
 Authorization: Bearer {{authToken}}
 
+### 
+GET {{baseUrl}}/webhooks/test
+
+### 
+POST {{baseUrl}}/webhooks/test-mark-read/33796
+
+
 
 ### ------------------> INTIMAÇÃO -------
 #GET ...pixel/:token
