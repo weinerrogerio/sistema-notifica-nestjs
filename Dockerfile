@@ -16,8 +16,27 @@ COPY . .
 # 6. Buildar a aplicação (NestJS -> JS na pasta dist)
 RUN npm run build
 
-# 7. Expor a porta que a aplicação usa (o Render injeta a porta na variável PORT)
+# --- INÍCIO DAS ALTERAÇÕES PARA O ENTRYPOINT ---
+
+# 7. Copiar o script de entrada para o container
+COPY docker-entrypoint.sh /usr/src/app/
+
+# 8. Dar permissão de execução ao script
+# Isso é essencial para que o Docker possa rodá-lo
+RUN chmod +x /usr/src/app/docker-entrypoint.sh
+
+# 9. Definir o PONTO DE ENTRADA principal do container
+# Este é o primeiro script que será executado. Ele se encarregará de
+# rodar o seed e depois chamar o servidor NestJS.
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+
+# --- FIM DAS ALTERAÇÕES PARA O ENTRYPOINT ---
+
+
+# 10. Expor a porta que a aplicação usa
 EXPOSE 3000
 
-# 8. Comando para iniciar a aplicação em produção
-CMD ["npm", "run", "start:prod"]
+# 11. O CMD agora está vazio ou define apenas o que seria o comando padrão.
+# Como o ENTRYPOINT já chama "npm run start:prod", o CMD é opcional aqui
+# para garantir que apenas o ENTRYPOINT seja o foco.
+CMD []
