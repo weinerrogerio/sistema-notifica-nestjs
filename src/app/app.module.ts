@@ -11,7 +11,7 @@ import { LogNotificacaoModule } from 'src/log-notificacao/log-notificacao.module
 import { DocProtestoCredorModule } from '@app/doc-protesto-credor/doc-protesto-credor.module';
 import { CredorModule } from '@app/credor/credor.module';
 import { AuthModule } from '@app/auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LogEventAdminUserModule } from '@app/log_event_admin_user/log_event_admin_user.module';
 import { LogArquivoImportModule } from '@app/log-arquivo-import/log-arquivo-import.module';
 import { NotificationModule } from '@app/notification/notification.module';
@@ -27,17 +27,26 @@ import { TemplateModule } from '@app/template/template.module';
 @Module({
   imports: [
     ImportModule,
-    //ATENÇÃO INSERIR DADOS DE ACESSO DO BANCO - CUIDADO
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      database: 'sistema_notifica',
-      password: '499178',
-      autoLoadEntities: true, // carrega entidades sem precisar importar em cada modulo (especifica-las)
-      //NÃO USAR EM PRODUÇÃO - RETIRAR (FALSE) SINCRONIZAÇÃO NO DEPLOY
-      synchronize: true, //sincroniza as entidades com o banco de dados
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_DATABASE'),
+        autoLoadEntities: true, // carrega entidades sem precisar importar em cada modulo (especifica-las)
+        //NÃO USAR EM PRODUÇÃO - RETIRAR (FALSE) SINCRONIZAÇÃO NO DEPLOY
+        synchronize: true, //sincroniza as entidades com o banco de dados
+        ssl: true,
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
+      }),
     }),
     ConfigModule.forRoot({
       isGlobal: true,
