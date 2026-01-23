@@ -83,9 +83,14 @@ export class DocProtestoController {
 
   //findAllPagination
   @Get('find-all-pagination')
-  @Roles(Role.USER, Role.ADMIN)
-  findAllPagination(@Query('page') page = 1, @Query('limit') limit = 2) {
-    return this.docProtestoService.findAllPagination(+page, +limit);
+  @Roles(Role.USER, Role.ADMIN) // Ajuste as roles conforme necessário
+  async findAllPagination(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
+  ) {
+    // O Query Param vem como string na URL, garanta a conversão se necessário,
+    // mas o NestJS geralmente trata se tipado, ou use parseInt/Number no service.
+    return this.docProtestoService.findAllPagination(page, limit);
   }
 
   // Busca geral com filtros

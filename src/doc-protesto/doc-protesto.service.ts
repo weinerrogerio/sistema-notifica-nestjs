@@ -309,7 +309,7 @@ export class DocProtestoService {
   }
 
   //doc-protesto/find-all-pagination
-  async findAllPagination(page: number = 1, limit: number = 2) {
+  /* async findAllPagination(page: number = 1, limit: number = 2) {
     const offset = (page - 1) * limit;
     const query = this.docProtestoRepository
       .createQueryBuilder('doc')
@@ -331,6 +331,85 @@ export class DocProtestoService {
       data: docs,
       total,
       page,
+      lastPage: Math.ceil(total / limit),
+    };
+  } */
+
+  async findAllPagination(page: number = 1, limit: number = 50) {
+    const offset = (page - 1) * limit;
+
+    // Buscar todos os protestos com seus relacionamentos
+    const query = this.docProtestoRepository
+      .createQueryBuilder('doc')
+      .leftJoinAndSelect('doc.apresentante', 'apresentante')
+      .leftJoinAndSelect('doc.file', 'file')
+      .leftJoinAndSelect('doc.credores', 'docProtestoCredor')
+      .leftJoinAndSelect('docProtestoCredor.credor', 'credor')
+      .leftJoinAndSelect('doc.notificacao', 'logNotificacao')
+      .leftJoinAndSelect('logNotificacao.devedor', 'devedor')
+      .orderBy('doc.data_distribuicao', 'DESC');
+
+    const [docs, totalProtestos] = await query.getManyAndCount();
+
+    // Transformar dados: criar uma linha para cada devedor
+    const flatData = [];
+    docs.forEach((doc) => {
+      if (doc.notificacao && doc.notificacao.length > 0) {
+        doc.notificacao.forEach((notif) => {
+          flatData.push({
+            // Dados do protesto
+            //id: doc.id,
+            id: `${doc.id}_${notif.devedor?.id || notif.id}`,
+            data_apresentacao: doc.data_apresentacao,
+            num_distribuicao: doc.num_distribuicao,
+            data_distribuicao: doc.data_distribuicao,
+            cart_protesto: doc.cart_protesto,
+            num_titulo: doc.num_titulo,
+            valor: doc.valor,
+            saldo: doc.saldo,
+            vencimento: doc.vencimento,
+
+            // Dados do apresentante
+            apresentante: doc.apresentante,
+
+            // Dados do credor
+            credores: doc.credores,
+
+            // Dados do arquivo
+            file: doc.file,
+
+            // Dados do devedor (único por linha)
+            devedor: notif.devedor,
+
+            // Dados da notificação
+            notificacao: {
+              id: notif.id,
+              email_enviado: notif.email_enviado,
+              data_envio: notif.data_envio,
+              lido: notif.lido,
+              data_leitura: notif.data_leitura,
+            },
+          });
+        });
+      } else {
+        // Protesto sem devedores
+        flatData.push({
+          ...doc,
+          devedor: null,
+          notificacao: null,
+        });
+      }
+    });
+
+    // Aplicar paginação nos dados achatados
+    const paginatedData = flatData.slice(offset, offset + limit);
+    const total = flatData.length;
+
+    return {
+      data: paginatedData,
+      total: total,
+      totalProtestos: totalProtestos,
+      page: page,
       lastPage: Math.ceil(total / limit),
     };
   }
