@@ -32,6 +32,8 @@ export class BrevoWebhookController {
   @Post('brevo')
   @HttpCode(200)
   async handleBrevoWebhook(@Body() body: any) {
+    console.log('DAAOS RECEBIDOS EM ENPOINT BREVO:::::::::::::::', body);
+
     try {
       // O payload pode vir direto ou dentro de uma propriedade "payload"
       const payload: BrevoWebhookPayload = body.payload || body;
@@ -41,8 +43,13 @@ export class BrevoWebhookController {
       );
 
       // 1. Verificar se é um evento de abertura
-      // O Brevo pode enviar diferentes tipos de evento: "unique_proxy_open", "opened", "clicks", etc.
-      const eventosDeAbertura = ['unique_proxy_open', 'opened', 'proxy_open'];
+      // TESTAR EVENTOS "unique_proxy_open", "opened", "clicks", etc. APOS TESTES USAR APENAS unique_opened (abertura unica)
+      const eventosDeAbertura = [
+        'unique_proxy_open',
+        'opened',
+        'proxy_open',
+        'unique_opened',
+      ];
 
       if (!eventosDeAbertura.includes(payload.event)) {
         this.logger.log(

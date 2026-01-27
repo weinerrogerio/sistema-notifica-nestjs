@@ -74,6 +74,7 @@ export class EmailService {
       // Formato: "log-12345"
       const logIdTag = `log-${data.metadata?.notificacaoId}`;
       sendSmtpEmail.tags = [logIdTag, 'intimacao-protesto'];
+      console.log('logIdTag:::::::', logIdTag);
 
       // 4. Enviar
       const response =

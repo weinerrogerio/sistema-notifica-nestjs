@@ -44,6 +44,13 @@ export class LogNotificacaoController {
     return intimacoes;
   }
 
+  @Get('busca-all-simples')
+  @Roles(Role.USER, Role.ADMIN)
+  async buscarNotificacoesSimples() {
+    const result = await this.logNotificacaoService.buscarNotificacoesSimples();
+    return result;
+  }
+
   //BUSCA POR NOTIFICAÇÕES PENDENTES NÃO ENVIADAS
   @Get('busca-nao-enviadas')
   @Roles(Role.USER, Role.ADMIN)

@@ -94,6 +94,15 @@ export class LogNotificacaoService {
     return this.logNotificationQueryService.buscarNotificacoesPendentesAll();
   }
 
+  async buscarNotificacoesSimples() {
+    return await this.logNotificacaoRepository
+      .createQueryBuilder('log_notificacao')
+      .leftJoinAndSelect('log_notificacao.devedor', 'devedor')
+      .where('devedor.email IS NOT NULL')
+      .andWhere('devedor.email != :emptyEmail', { emptyEmail: '' })
+      .getMany();
+  }
+
   async buscarNotificacoesPendentesNaoEnviadas(): Promise<IntimacaoData[]> {
     return this.logNotificationQueryService.buscarNotificacoesPendentesNaoEnviadas();
   }
