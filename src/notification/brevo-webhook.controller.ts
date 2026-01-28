@@ -32,6 +32,8 @@ export class BrevoWebhookController {
   @Post('brevo')
   @HttpCode(200)
   async handleBrevoWebhook(@Body() body: any) {
+    this.logger.log(`DEBUG PAYLOAD BRUTO: ${JSON.stringify(body)}`);
+    console.log(`DEBUG PAYLOAD BRUTO: ${JSON.stringify(body)}`);
     console.log('DAAOS RECEBIDOS EM ENPOINT BREVO:::::::::::::::', body);
 
     try {
