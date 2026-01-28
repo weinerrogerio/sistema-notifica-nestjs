@@ -56,6 +56,9 @@ export class EmailService {
 
       sendSmtpEmail.subject = `Intimação de Protesto - ${data.devedor.nome} - Título: ${data.titulo.numero}`;
       sendSmtpEmail.htmlContent = htmlRenderizado;
+      sendSmtpEmail.headers = {
+        'X-Sib-Default-Track-Opens': '1',
+      };
 
       sendSmtpEmail.sender = {
         name: data.cartorio.nome,
