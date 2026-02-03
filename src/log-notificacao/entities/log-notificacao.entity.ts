@@ -11,6 +11,15 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum NotificacaoStatus {
+  PENDENTE = 'PENDENTE',
+  ENVIADO = 'ENVIADO', // Saiu da sua aplicação
+  ENTREGUE = 'ENTREGUE', // Chegou no servidor de destino (webhook)
+  FALHA = 'FALHA', // Erro no envio
+  BOUNCE = 'BOUNCE', // Email inválido / Caixa cheia
+  LIDO = 'LIDO',
+}
+
 @Entity()
 export class LogNotificacao {
   @PrimaryGeneratedColumn()
@@ -19,15 +28,25 @@ export class LogNotificacao {
   @Column()
   email_enviado: boolean;
 
+  @Column({
+    type: 'enum',
+    enum: NotificacaoStatus,
+    default: NotificacaoStatus.PENDENTE,
+  })
+  status: NotificacaoStatus;
+
   @Column({ nullable: true })
   data_envio: Date;
 
-  @Column()
-  lido: boolean;
+  @Column({ nullable: true })
+  data_entrega: Date;
 
-  // Nova coluna para armazenar quando foi lido
   @Column({ nullable: true })
   data_leitura: Date;
+
+  // Se houver erro ou bounce, guarde o motivo
+  @Column({ type: 'text', nullable: true })
+  mensagem_erro: string;
 
   // Nova coluna para o token de tracking
   @Column({ nullable: true, unique: true })

@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Transporter } from 'nodemailer';
 import {
   TransactionalEmailsApi,
   TransactionalEmailsApiApiKeys,
@@ -8,10 +7,10 @@ import {
 } from '@getbrevo/brevo';
 import { NotificationData } from '@app/common/interfaces/notification-data.interface';
 import { TemplateService } from '@app/template/template.service';
+import { NotificacaoStatus } from '@app/log-notificacao/entities/log-notificacao.entity';
 
 @Injectable()
 export class EmailService {
-  private transporter: Transporter;
   private readonly logger = new Logger(EmailService.name);
   private brevoApiInstance: TransactionalEmailsApi;
 
@@ -19,7 +18,7 @@ export class EmailService {
     private configService: ConfigService,
     private readonly templateService: TemplateService,
   ) {
-    // Configuração Inicial do Brevo
+    // Configuração do Brevo
     this.brevoApiInstance = new TransactionalEmailsApi();
     const apiKey = this.configService.get<string>('BREVO_API_KEY');
 
@@ -28,70 +27,209 @@ export class EmailService {
         TransactionalEmailsApiApiKeys.apiKey,
         apiKey,
       );
+      this.logger.log('✅ Brevo API configurada com sucesso');
     } else {
-      this.logger.error('BREVO_API_KEY não configurada!');
+      this.logger.error('❌ BREVO_API_KEY não configurada!');
+      throw new Error('BREVO_API_KEY não configurada');
     }
   }
 
-  async sendNotification(
-    data: NotificationData,
-  ): Promise<{ success: boolean; messageId?: string }> {
+  /**
+   * Envia notificação por email via Brevo
+   */
+  async sendNotification(data: NotificationData): Promise<{
+    success: boolean;
+    messageId?: string;
+    status?: NotificacaoStatus;
+    error?: string;
+  }> {
     try {
-      this.logger.log(`Iniciando envio via Brevo para: ${data.devedor.email}`);
-
-      // 1. Validar e Renderizar HTML (Renderização Local)
-      const templateDB = await this.templateService.getDefaultTemplate();
-      if (!templateDB?.conteudoHtml) {
-        throw new Error('Template padrão não encontrado');
-      }
-
-      // AQUI acontece a mágica: {{devedor.nome}} vira "João" ANTES de ir pro Brevo
-      const htmlRenderizado = await this.templateService.renderTemplate(
-        templateDB.conteudoHtml,
-        data,
+      this.logger.log(
+        `📧 Iniciando envio via Brevo para: ${data.devedor.email} (Log ID: ${data.metadata?.notificacaoId})`,
       );
 
-      // 2. Configurar o Objeto de Envio do Brevo
-      const sendSmtpEmail = new SendSmtpEmail();
+      // 1. Validar e renderizar template HTML
+      const htmlRenderizado = await this.renderizarTemplate(data);
 
-      sendSmtpEmail.subject = `Intimação de Protesto - ${data.devedor.nome} - Título: ${data.titulo.numero}`;
-      sendSmtpEmail.htmlContent = htmlRenderizado;
-      sendSmtpEmail.headers = {
-        'X-Sib-Default-Track-Opens': '1',
-      };
+      // 2. Configurar email
+      const sendSmtpEmail = this.configurarEmail(data, htmlRenderizado);
 
-      sendSmtpEmail.sender = {
-        name: data.cartorio.nome,
-        email: this.configService.get<string>('BREVO_SENDER_EMAIL'), // Email validado no Brevo
-      };
-
-      sendSmtpEmail.to = [
-        {
-          email: data.devedor.email,
-          name: data.devedor.nome,
-        },
-      ];
-
-      // 3. RASTREAMENTO (O Pulo do Gato)
-      // Adicionamos uma TAG com o ID. O Webhook vai nos devolver essa tag quando abrir.
-      // Formato: "log-12345"
-      const logIdTag = `log-${data.metadata?.notificacaoId}`;
-      sendSmtpEmail.tags = [logIdTag, 'intimacao-protesto'];
-      console.log('logIdTag:::::::', logIdTag);
-
-      // 4. Enviar
+      // 3. Enviar via Brevo
       const response =
         await this.brevoApiInstance.sendTransacEmail(sendSmtpEmail);
 
-      this.logger.log(`Email enviado Brevo! ID: ${response.body.messageId}`);
+      const messageId = response.body.messageId;
 
-      return { success: true, messageId: response.body.messageId };
+      this.logger.log(
+        `✅ Email enviado com sucesso! Message ID: ${messageId} | Log ID: ${data.metadata?.notificacaoId}`,
+      );
+
+      return {
+        success: true,
+        messageId,
+        status: NotificacaoStatus.ENVIADO,
+      };
     } catch (error) {
       this.logger.error(
-        `Erro Brevo envio: ${error.body ? JSON.stringify(error.body) : error.message}`,
+        `❌ Erro ao enviar email (Log ID: ${data.metadata?.notificacaoId})`,
         error.stack,
       );
-      return { success: false };
+
+      // Extrair mensagem de erro detalhada
+      const errorMessage = this.extrairMensagemErro(error);
+
+      return {
+        success: false,
+        error: errorMessage,
+        status: NotificacaoStatus.FALHA,
+      };
     }
+  }
+
+  /**
+   * Renderiza o template HTML com os dados
+   */
+  private async renderizarTemplate(data: NotificationData): Promise<string> {
+    // Buscar template padrão do banco
+    const templateDB = await this.templateService.getDefaultTemplate();
+
+    if (!templateDB?.conteudoHtml) {
+      throw new Error('Template padrão não encontrado no banco de dados');
+    }
+
+    // Renderizar template substituindo variáveis
+    // Ex: {{devedor.nome}} vira "João Silva"
+    const htmlRenderizado = await this.templateService.renderTemplate(
+      templateDB.conteudoHtml,
+      data,
+    );
+
+    return htmlRenderizado;
+  }
+
+  /**
+   * Configura o objeto de email para envio
+   */
+  private configurarEmail(
+    data: NotificationData,
+    htmlContent: string,
+  ): SendSmtpEmail {
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    // Assunto
+    sendSmtpEmail.subject = this.gerarAssunto(data);
+
+    // Conteúdo HTML
+    sendSmtpEmail.htmlContent = htmlContent;
+
+    // Headers para tracking
+    sendSmtpEmail.headers = {
+      'X-Sib-Default-Track-Opens': '1', // Rastreamento de abertura
+      'X-Sib-Default-Track-Clicks': '1', // Rastreamento de cliques
+    };
+
+    // Remetente
+    sendSmtpEmail.sender = {
+      name: data.cartorio.nome,
+      email: this.configService.get<string>('BREVO_SENDER_EMAIL'),
+    };
+
+    // Destinatário
+    sendSmtpEmail.to = [
+      {
+        email: data.devedor.email,
+        name: data.devedor.nome,
+      },
+    ];
+
+    // Tags para rastreamento (CRÍTICO para o webhook funcionar)
+    const logIdTag = `log-${data.metadata?.notificacaoId}`;
+    sendSmtpEmail.tags = [logIdTag, 'intimacao-protesto'];
+
+    this.logger.debug(
+      `📌 Tags configuradas: ${JSON.stringify(sendSmtpEmail.tags)}`,
+    );
+
+    return sendSmtpEmail;
+  }
+
+  /**
+   * Gera assunto personalizado do email
+   */
+  private gerarAssunto(data: NotificationData): string {
+    return `Intimação de Protesto - ${data.devedor.nome} - Título: ${data.titulo.numero}`;
+  }
+
+  /**
+   * Extrai mensagem de erro amigável
+   */
+  private extrairMensagemErro(error: any): string {
+    // Erro do Brevo
+    if (error.body) {
+      try {
+        const errorBody = JSON.parse(error.body);
+        return (
+          errorBody.message || errorBody.code || 'Erro desconhecido do Brevo'
+        );
+      } catch (e) {
+        console.log(e);
+        return error.body.toString();
+      }
+    }
+
+    // Erro HTTP
+    if (error.response) {
+      return `HTTP ${error.response.status}: ${error.response.statusText}`;
+    }
+
+    // Erro genérico
+    return error.message || 'Erro desconhecido ao enviar email';
+  }
+
+  /**
+   * Valida se o email é válido (formato básico)
+   */
+  private validarEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
+   * Envia email com validação prévia
+   */
+  async sendNotificationComValidacao(data: NotificationData): Promise<{
+    success: boolean;
+    messageId?: string;
+    status?: NotificacaoStatus;
+    error?: string;
+  }> {
+    // Validar email antes de enviar
+    if (!data.devedor.email || !this.validarEmail(data.devedor.email)) {
+      this.logger.warn(
+        `⚠️ Email inválido: ${data.devedor.email} (Log ID: ${data.metadata?.notificacaoId})`,
+      );
+
+      return {
+        success: false,
+        error: 'Email inválido ou não informado',
+        status: NotificacaoStatus.BOUNCE,
+      };
+    }
+
+    // Validar dados essenciais
+    if (!data.devedor.nome || !data.titulo.numero) {
+      this.logger.warn(
+        `⚠️ Dados incompletos (Log ID: ${data.metadata?.notificacaoId})`,
+      );
+
+      return {
+        success: false,
+        error: 'Dados essenciais não informados',
+        status: NotificacaoStatus.FALHA,
+      };
+    }
+
+    // Enviar email
+    return this.sendNotification(data);
   }
 }

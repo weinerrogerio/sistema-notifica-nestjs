@@ -5,7 +5,10 @@ import {
   IntimacaoData,
   IntimacaoDataCompleto,
 } from '@app/common/interfaces/notification-data.interface';
-import { LogNotificacao } from '../entities/log-notificacao.entity';
+import {
+  LogNotificacao,
+  NotificacaoStatus,
+} from '../entities/log-notificacao.entity';
 
 @Injectable()
 export class LogNotificationQueryService {
@@ -246,7 +249,7 @@ export class LogNotificationQueryService {
         // propriedades para status
         dataEnvio: logNotificacao.data_envio || null,
         emailEnviado: logNotificacao.email_enviado,
-        lido: logNotificacao.lido,
+        lido: logNotificacao.status === NotificacaoStatus.LIDO,
         createdAt: logNotificacao.createdAt,
       };
     });

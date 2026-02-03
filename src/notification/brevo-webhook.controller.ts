@@ -1,5 +1,22 @@
 import { Controller, Post, Body, Logger, HttpCode, Get } from '@nestjs/common';
 import { LogNotificacaoService } from '@app/log-notificacao/log-notificacao.service';
+import { BREVO_EVENT_TO_STATUS } from '@app/log-notificacao/enums/email-status.enum';
+import { log } from 'console';
+
+/**
+ * Interface do payload do webhook do Brevo
+ */
+/* interface BrevoWebhookPayload {
+  event: string;
+  email?: string;
+  tag?: string;
+  tags?: string[];
+  date?: string;
+  ts?: number;
+  ts_event?: number;
+  reason?: string; // Motivo de erro
+  error?: string; // Erro
+} */
 
 interface BrevoWebhookPayload {
   contact_id?: number;
@@ -21,6 +38,8 @@ interface BrevoWebhookPayload {
   ts_epoch?: number;
   ts_event?: number;
   user_agent?: string;
+  reason?: string; // Motivo de erro
+  error?: string; // Erro
 }
 
 @Controller('webhooks')
@@ -29,151 +48,90 @@ export class BrevoWebhookController {
 
   constructor(private logNotificationService: LogNotificacaoService) {}
 
+  /**
+   * Endpoint principal do webhook do Brevo
+   */
   @Post('brevo')
   @HttpCode(200)
   async handleBrevoWebhook(@Body() body: any) {
-    this.logger.log(`DEBUG PAYLOAD BRUTO: ${JSON.stringify(body)}`);
-    console.log(`DEBUG PAYLOAD BRUTO: ${JSON.stringify(body)}`);
-    console.log('DAAOS RECEBIDOS EM ENPOINT BREVO:::::::::::::::', body);
-
     try {
-      // O payload pode vir direto ou dentro de uma propriedade "payload"
+      // Payload pode vir direto ou dentro de "payload"
       const payload: BrevoWebhookPayload = body.payload || body;
 
-      this.logger.log(
-        `📧 Webhook recebido do Brevo: ${JSON.stringify(payload)}`,
-      );
+      // Ignorar eventos que não precisamos monitorar (ex: click, se não quiser)
+      if (!payload.event) return { status: 'ignored' };
 
-      // 1. Verificar se é um evento de abertura
-      // TESTAR EVENTOS "unique_proxy_open", "opened", "clicks", etc. APOS TESTES USAR APENAS unique_opened (abertura unica)
-      const eventosDeAbertura = [
-        'unique_proxy_open',
-        'opened',
-        'proxy_open',
-        'unique_opened',
-      ];
-
-      if (!eventosDeAbertura.includes(payload.event)) {
-        this.logger.log(
-          `⏭️  Evento "${payload.event}" ignorado (não é abertura de e-mail)`,
-        );
-        return { status: 'ignored', reason: 'not_an_open_event' };
-      }
-
-      // 2. Extrair as tags (pode vir como string JSON ou array)
-      let tags: string[] = [];
-
-      if (payload.tags && Array.isArray(payload.tags)) {
-        tags = payload.tags;
-      } else if (payload.tag && typeof payload.tag === 'string') {
-        try {
-          tags = JSON.parse(payload.tag);
-        } catch (e) {
-          this.logger.warn(
-            `⚠️  Não foi possível fazer parse das tags: ${payload.tag} - ${e.message}  `,
-          );
-        }
-      }
-
-      this.logger.log(`🏷️  Tags encontradas: ${JSON.stringify(tags)}`);
-
-      // 3. Procurar a tag que contém o ID da notificação (formato: "log-123")
-      const logTag = tags.find((t: string) => t && t.startsWith('log-'));
-
-      if (!logTag) {
+      const logId = this.extrairLogIdDasTags(payload);
+      if (!logId) {
         this.logger.warn(
-          '⚠️  Tag "log-X" não encontrada no webhook. Tags recebidas:',
-          tags,
+          `⚠️ Tag "log-X" não encontrada. Evento: ${payload.event}`,
         );
-        return { status: 'error', reason: 'log_tag_not_found' };
+        return { status: 'ignored', reason: 'no_tag' };
       }
 
-      // 4. Extrair o ID da notificação
-      const idString = logTag.split('-')[1];
-      const logId = parseInt(idString, 10);
+      const novoStatus = BREVO_EVENT_TO_STATUS[payload.event];
 
-      if (isNaN(logId)) {
-        this.logger.error(`❌ ID inválido extraído da tag: ${logTag}`);
-        return { status: 'error', reason: 'invalid_log_id' };
+      if (!novoStatus) {
+        // Evento desconhecido ou irrelevante
+        return { status: 'ignored', event: payload.event };
       }
 
-      // 5. Obter a data do evento
-      // Prioridade: ts_event > ts > date
-      let dataLeitura: Date;
+      // Extrair Data
+      let dataEvento = new Date();
+      if (payload.ts_event) dataEvento = new Date(payload.ts_event * 1000);
+      else if (payload.date) dataEvento = new Date(payload.date);
 
-      if (payload.ts_event) {
-        dataLeitura = new Date(payload.ts_event * 1000);
-      } else if (payload.ts) {
-        dataLeitura = new Date(payload.ts * 1000);
-      } else if (payload.date) {
-        dataLeitura = new Date(payload.date);
-      } else {
-        dataLeitura = new Date(); // Fallback para data atual
-      }
+      // Chamar o serviço com dados limpos
+      await this.logNotificationService.atualizarStatusPorEvento(logId, {
+        status: novoStatus,
+        eventoOriginal: payload.event,
+        dataEvento: dataEvento,
+        motivo: payload.reason || payload.error, // Captura motivo de falha/bounce
+      });
 
-      this.logger.log(
-        `📖 Notificação ${logId} foi ABERTA! 
-        - Evento: ${payload.event}
-        - Data: ${dataLeitura.toISOString()}
-        - Dispositivo: ${payload.device_used || 'Desconhecido'}
-        - User Agent: ${payload.user_agent || 'Desconhecido'}
-        Atualizando banco de dados...`,
-      );
-
-      // 6. Atualizar no banco de dados
-      await this.logNotificationService.marcarComoLida(logId, dataLeitura);
-
-      this.logger.log(`✅ Notificação ${logId} marcada como lida com sucesso!`);
-
-      return {
-        status: 'success',
-        logId,
-        event: payload.event,
-        dataLeitura: dataLeitura.toISOString(),
-      };
+      return { status: 'success' };
     } catch (error) {
-      this.logger.error('❌ Erro ao processar webhook do Brevo:', error);
-
-      // Retornar 200 mesmo com erro para não gerar retry infinito no Brevo
-      return {
-        status: 'error',
-        message: error.message,
-      };
+      this.logger.error(`❌ Erro webhook: ${error.message}`, error.stack);
+      // Retornar 200 para evitar retry infinito do Brevo em caso de erro de lógica nossa
+      return { status: 'error', message: error.message };
     }
   }
 
+  /**
+   * Extrai o ID do log das tags
+   */
+  private extrairLogIdDasTags(payload: BrevoWebhookPayload): number | null {
+    let tags: string[] = [];
+    if (payload.tags && Array.isArray(payload.tags)) {
+      tags = payload.tags;
+    } else if (payload.tag && typeof payload.tag === 'string') {
+      try {
+        tags = JSON.parse(payload.tag);
+      } catch (e) {
+        log(e);
+      }
+    }
+
+    const logTag = tags.find((t) => t && t.startsWith('log-'));
+    if (!logTag) return null;
+
+    const logId = parseInt(logTag.split('-')[1], 10);
+    return isNaN(logId) ? null : logId;
+  }
+
+  /**
+   * Endpoint de teste
+   */
   @Get('test')
   @HttpCode(200)
   async test() {
-    this.logger.log('🧪 Teste de endpoint de webhook recebido');
+    this.logger.log('🧪 Teste de endpoint de webhook');
+
     return {
       status: 'ok',
-      message: 'Endpoint para webhooks do Brevo funcionando',
+      message: 'Endpoint de webhooks do Brevo está funcionando',
       timestamp: new Date().toISOString(),
+      eventosSuportados: Object.keys(BREVO_EVENT_TO_STATUS),
     };
-  }
-
-  // Endpoint adicional para testar a marcação de leitura
-  @Post('test-mark-read/:id')
-  @HttpCode(200)
-  async testMarkRead(@Body() body: { id: number }) {
-    try {
-      const logId = body.id;
-      await this.logNotificationService.marcarComoLida(logId);
-
-      this.logger.log(`✅ Teste: Notificação ${logId} marcada como lida`);
-
-      return {
-        status: 'success',
-        message: `Notificação ${logId} marcada como lida`,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      this.logger.error('❌ Erro no teste:', error);
-      return {
-        status: 'error',
-        message: error.message,
-      };
-    }
   }
 }

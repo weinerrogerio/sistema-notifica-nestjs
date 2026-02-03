@@ -19,15 +19,23 @@ export class NotificationOrchestratorService {
     private configService: ConfigService,
     private logNotificationQueryService: LogNotificationQueryService,
     private logNotificationService: LogNotificacaoService,
-
     private emailService: EmailService,
     private contatoTabelionatoService: ContatoTabelionatoService,
   ) {}
 
+  /**
+   * Envia múltiplas notificações pendentes
+   */
   async sendNotifications(): Promise<NotificationResultAll> {
-    // Uma única consulta que já traz todos os dados necessários para o envio
+    this.logger.log('🚀 Iniciando envio em lote de notificações');
+
+    // Buscar notificações pendentes (não enviadas)
     const intimacoesPendentes =
       await this.logNotificationQueryService.buscarNotificacoesPendentesNaoEnviadas();
+
+    this.logger.log(
+      `📊 Total de notificações pendentes: ${intimacoesPendentes.length}`,
+    );
 
     const resultados: NotificationResultAll = {
       enviados: 0,
@@ -35,16 +43,29 @@ export class NotificationOrchestratorService {
       detalhes: [],
     };
 
+    // Processar cada notificação
     for (const intimacao of intimacoesPendentes) {
       try {
-        // PARA TESTES O EMAIL DO DEVEDOR PJ TEM QUE ESER ALGUM EMAIL PARTIULAR
-        // VERIFICAÇÃO SE O EMAIL É DE UM PJ VALIDO--> SE FOR NAO ENVIA --> ALERTA
-        if (intimacao.devedorEmail !== '') {
+        // Validação básica
+        if (!intimacao.devedorEmail || intimacao.devedorEmail.trim() === '') {
+          this.logger.warn(
+            `⚠️ Email vazio para notificação ${intimacao.logNotificacaoId}`,
+          );
+
+          resultados.erros++;
+          resultados.detalhes.push({
+            id: intimacao.logNotificacaoId,
+            email: intimacao.devedorEmail,
+            sucesso: false,
+            erro: 'Email não informado',
+          });
+          continue;
         }
 
-        const sucesso = await this.sendOneNotification(intimacao);
+        // Enviar notificação
+        const resultado = await this.sendOneNotification(intimacao);
 
-        if (sucesso) {
+        if (resultado.success) {
           resultados.enviados++;
           resultados.detalhes.push({
             id: intimacao.logNotificacaoId,
@@ -57,10 +78,14 @@ export class NotificationOrchestratorService {
             id: intimacao.logNotificacaoId,
             email: intimacao.devedorEmail,
             sucesso: false,
-            erro: 'Falha no envio do email',
+            erro: resultado.message || 'Falha no envio',
           });
         }
       } catch (error) {
+        this.logger.error(
+          `❌ Erro ao processar notificação ${intimacao.logNotificacaoId}: ${error.message}`,
+        );
+
         resultados.erros++;
         resultados.detalhes.push({
           id: intimacao.logNotificacaoId,
@@ -72,142 +97,212 @@ export class NotificationOrchestratorService {
     }
 
     this.logger.log(
-      `Envio concluído: ${resultados.enviados} enviados, ${resultados.erros} erros`,
+      `✅ Envio concluído: ${resultados.enviados} enviados, ${resultados.erros} erros`,
     );
+
     return resultados;
   }
 
+  /**
+   * Envia uma única notificação
+   */
   async sendOneNotification(
     dadosRequisicao: SendNotification,
   ): Promise<NotificationResult> {
     try {
-      // 1. Buscar dados completos
+      this.logger.log(
+        `📧 Processando notificação ${dadosRequisicao.logNotificacaoId}`,
+      );
+
+      // 1. Buscar dados completos da notificação
       const dadosCompletos =
         await this.logNotificationQueryService.buscarNotificacaoPendenteAllDataById(
           dadosRequisicao.logNotificacaoId,
         );
 
-      // 2. Validar se encontrou dados
+      // 2. Validar dados
       if (!dadosCompletos || dadosCompletos.length === 0) {
-        const errorMessage = `Notificação não encontrada para ID: ${dadosRequisicao.logNotificacaoId}`;
+        const errorMessage = `Notificação não encontrada: ID ${dadosRequisicao.logNotificacaoId}`;
         this.logger.error(errorMessage);
         return { success: false, message: errorMessage };
       }
 
       const dados = dadosCompletos[0];
 
-      // 3. Validar dados essenciais
-      if (!dados.devedor?.email) {
-        const errorMessage = 'Email do devedor não encontrado';
-        this.logger.error(errorMessage);
-        return { success: false, message: errorMessage };
-      }
-
-      if (!dados.protesto?.cart_protesto) {
-        const errorMessage = 'Cartório de protesto não encontrado';
-        this.logger.error(errorMessage);
-        return { success: false, message: errorMessage };
+      // 3. Validações essenciais
+      const validacao = this.validarDadosNotificacao(dados);
+      if (!validacao.valido) {
+        this.logger.error(validacao.mensagem);
+        return { success: false, message: validacao.mensagem };
       }
 
       // 4. Buscar dados do cartório
       const dadosCartorio = await this.contatoTabelionatoService.findOneByName(
         dados.protesto.cart_protesto,
       );
-      // -------- model view ---------
-      const primeiroCredor = dados.protesto?.credores?.[0]?.credor;
-      const nomeCredor =
-        primeiroCredor?.sacador || primeiroCredor?.cedente || 'Não informado';
-      const docCredor = primeiroCredor?.doc_credor || 'Não informado';
 
-      // Funções auxiliares para formatação
-      const formatarData = (data: Date | string): string => {
-        if (!data) return 'N/A';
-        // Se for string "a vista" ou algo que não seja data, retorna ela mesma
-        if (
-          typeof data === 'string' &&
-          !data.includes('-') &&
-          !data.includes('/')
-        ) {
-          return data;
-        }
-        const dateObj = new Date(data);
-        if (isNaN(dateObj.getTime())) return data.toString();
-        // Usar UTC para garantir que a data não mude por fuso horário
-        return dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-      };
+      // 5. Montar ViewModel
+      const viewModel = this.montarViewModel(dados, dadosCartorio);
 
-      const formatarValor = (valor?: number): string => {
-        if (valor === null || valor === undefined) return 'R$ 0,00';
-        // O seu .toFixed(2).replace('.', ',') está correto
-        return `R$ ${valor.toFixed(2).replace('.', ',')}`;
-      };
+      // 6. Enviar email
+      this.logger.log(
+        `📤 Enviando email para: ${dados.devedor.email} (ID: ${dados.id})`,
+      );
 
-      // Monta o viewModel aninhado, CONFORME A INTERFACE NotificationData
-      const viewModel: NotificationData = {
-        devedor: {
-          nome: dados.devedor?.nome || 'Não informado',
-          documento: dados.devedor?.doc_devedor || 'Não informado',
-          email: dados.devedor.email, // Validação de email já foi feita acima
-          tipo: dados.devedor?.devedor_pj ? 'PJ' : 'PF',
-        },
-        titulo: {
-          numero: dados.protesto?.num_titulo || 'Não informado',
-          valor: formatarValor(dados.protesto?.valor),
-          saldo: formatarValor(dados.protesto?.saldo),
-          vencimento: formatarData(dados.protesto?.vencimento),
-        },
-        distribuicao: {
-          numero: dados.protesto?.num_distribuicao || 'Não informado',
-          data: formatarData(dados.protesto?.data_distribuicao),
-          // Se tiver a data de apresentação, adicione aqui:
-          dataApresentacao: formatarData(dados.protesto?.data_apresentacao),
-        },
-        cartorio: {
-          nome: dadosCartorio?.nomeTabelionato || 'Não informado',
-          codigo: dadosCartorio?.codTabelionato || 'Não informado',
-          telefone: dadosCartorio?.telefone || 'Não informado',
-          email: dadosCartorio?.email || 'Não informado',
-          endereco: dadosCartorio?.endereco || 'Não informado',
-          cidade: dadosCartorio?.cidade || 'Não informado',
-          uf: dadosCartorio?.uf || 'Não informado',
-          cep: dadosCartorio?.cep || 'Não informado',
-        },
-        credor: {
-          nome: nomeCredor,
-          documento: docCredor,
-          tipo: primeiroCredor?.cedente ? 'cedente' : 'sacador',
-        },
-        portador: {
-          nome: dados.protesto?.apresentante?.nome || 'Não informado',
-          codigo:
-            dados.protesto?.apresentante?.cod_apresentante || 'Não informado',
-        },
-        urls: {
-          //trackingPixel: trackingPixelUrl,
-          // aceiteIntimacao: `${baseUrl}/aceite/${token}` // Descomente se precisar
-        },
-        metadata: {
-          notificacaoId: dados.id,
-          dataEnvio: new Date().toISOString(),
-        },
-      };
-      // 5. Log detalhado para debug
-      this.logger.log(`Preparando envio para: ${dados.devedor.email}`);
-
-      // 6. Enviar email com tracking
       const emailResult = await this.emailService.sendNotification(viewModel);
 
-      // 7. Atualizar status se enviado com sucesso
+      // 7. Atualizar status no banco
       if (emailResult.success) {
-        // Atualiza status para ENVIADO
-        await this.logNotificationService.marcarComoEnviada(dados.id, 1); // 1 = ID ficticio do template se não tiver
-        return { success: true, message: 'Enviado com sucesso' };
+        await this.logNotificationService.marcarComoEnviada(
+          dados.id,
+          //1, // Template ID (ajustar se necessário)
+          //emailResult.messageId,
+        );
+
+        this.logger.log(
+          `✅ Notificação ${dados.id} enviada com sucesso! Message ID: ${emailResult.messageId}`,
+        );
+
+        return {
+          success: true,
+          message: 'Email enviado com sucesso',
+          //messageId: emailResult.messageId,
+        };
+      } else {
+        this.logger.error(
+          `❌ Falha ao enviar notificação ${dados.id}: ${emailResult.error}`,
+        );
+
+        return {
+          success: false,
+          message: emailResult.error || 'Erro no envio pelo Brevo',
+        };
+      }
+    } catch (error) {
+      this.logger.error(
+        `❌ Erro no orchestrator para notificação ${dadosRequisicao.logNotificacaoId}: ${error.message}`,
+        error.stack,
+      );
+
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  /**
+   * Valida dados essenciais da notificação
+   */
+  private validarDadosNotificacao(dados: any): {
+    valido: boolean;
+    mensagem?: string;
+  } {
+    if (!dados.devedor?.email) {
+      return {
+        valido: false,
+        mensagem: 'Email do devedor não encontrado',
+      };
+    }
+
+    if (!dados.protesto?.cart_protesto) {
+      return {
+        valido: false,
+        mensagem: 'Cartório de protesto não encontrado',
+      };
+    }
+
+    if (!dados.protesto?.num_titulo) {
+      return {
+        valido: false,
+        mensagem: 'Número do título não encontrado',
+      };
+    }
+
+    return { valido: true };
+  }
+
+  /**
+   * Monta o ViewModel para renderização do template
+   */
+  private montarViewModel(dados: any, dadosCartorio: any): NotificationData {
+    // Extrair credor
+    const primeiroCredor = dados.protesto?.credores?.[0]?.credor;
+    const nomeCredor =
+      primeiroCredor?.sacador || primeiroCredor?.cedente || 'Não informado';
+    const docCredor = primeiroCredor?.doc_credor || 'Não informado';
+
+    // Funções auxiliares
+    const formatarData = (data: Date | string): string => {
+      if (!data) return 'N/A';
+
+      if (
+        typeof data === 'string' &&
+        !data.includes('-') &&
+        !data.includes('/')
+      ) {
+        return data; // "a vista" ou similar
       }
 
-      return { success: false, message: 'Erro no envio Brevo' };
-    } catch (error) {
-      this.logger.error(`Erro orchestrator: ${error.message}`);
-      return { success: false, message: error.message };
-    }
+      const dateObj = new Date(data);
+      if (isNaN(dateObj.getTime())) return data.toString();
+
+      return dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    };
+
+    const formatarValor = (valor?: number): string => {
+      if (valor === null || valor === undefined) return 'R$ 0,00';
+      return `R$ ${valor.toFixed(2).replace('.', ',')}`;
+    };
+
+    // Montar ViewModel
+    const viewModel: NotificationData = {
+      devedor: {
+        nome: dados.devedor?.nome || 'Não informado',
+        documento: dados.devedor?.doc_devedor || 'Não informado',
+        email: dados.devedor.email,
+        tipo: dados.devedor?.devedor_pj ? 'PJ' : 'PF',
+      },
+      titulo: {
+        numero: dados.protesto?.num_titulo || 'Não informado',
+        valor: formatarValor(dados.protesto?.valor),
+        saldo: formatarValor(dados.protesto?.saldo),
+        vencimento: formatarData(dados.protesto?.vencimento),
+      },
+      distribuicao: {
+        numero: dados.protesto?.num_distribuicao || 'Não informado',
+        data: formatarData(dados.protesto?.data_distribuicao),
+        dataApresentacao: formatarData(dados.protesto?.data_apresentacao),
+      },
+      cartorio: {
+        nome: dadosCartorio?.nomeTabelionato || 'Não informado',
+        codigo: dadosCartorio?.codTabelionato || 'Não informado',
+        telefone: dadosCartorio?.telefone || 'Não informado',
+        email: dadosCartorio?.email || 'Não informado',
+        endereco: dadosCartorio?.endereco || 'Não informado',
+        cidade: dadosCartorio?.cidade || 'Não informado',
+        uf: dadosCartorio?.uf || 'Não informado',
+        cep: dadosCartorio?.cep || 'Não informado',
+      },
+      credor: {
+        nome: nomeCredor,
+        documento: docCredor,
+        tipo: primeiroCredor?.cedente ? 'cedente' : 'sacador',
+      },
+      portador: {
+        nome: dados.protesto?.apresentante?.nome || 'Não informado',
+        codigo:
+          dados.protesto?.apresentante?.cod_apresentante || 'Não informado',
+      },
+      urls: {
+        // Adicionar URLs se necessário
+      },
+      metadata: {
+        notificacaoId: dados.id,
+        dataEnvio: new Date().toISOString(),
+      },
+    };
+
+    return viewModel;
   }
 }

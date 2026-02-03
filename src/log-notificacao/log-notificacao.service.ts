@@ -1,82 +1,140 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateLogNotificacaoDto } from './dto/create-log-notificacao.dto';
 import { UpdateLogNotificacaoDto } from './dto/update-log-notificacao.dto';
-import { LogNotificacao } from './entities/log-notificacao.entity';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import {
+  LogNotificacao,
+  NotificacaoStatus,
+} from './entities/log-notificacao.entity';
 import { LogNotificationQueryService } from './services/log-notification-search.service';
 import {
   IntimacaoData,
   IntimacaoDataCompleto,
 } from '@app/common/interfaces/notification-data.interface';
-//NOTA: ALTERARA ENTIDADE--> LOG_NOTIFICACAO -> ADICIONAR COLUNA DE EMAIL ENCONTRADO, COLUNAR DE ENVIADO, E DATA DE ENVIO != DATA GRAVAÇÃO
+
+export interface AtualizacaoWebhook {
+  status: NotificacaoStatus;
+  eventoOriginal: string; // O nome do evento do Brevo (ex: 'hard_bounce')
+  dataEvento: Date;
+  motivo?: string; // Para erros
+}
+
 @Injectable()
 export class LogNotificacaoService {
+  private readonly logger = new Logger(LogNotificacaoService.name);
+
   constructor(
     @InjectRepository(LogNotificacao)
     private readonly logNotificacaoRepository: Repository<LogNotificacao>,
     private readonly logNotificationQueryService: LogNotificationQueryService,
   ) {}
+
   async create(createLogNotificacaoDto: CreateLogNotificacaoDto) {
-    console.log('createLogNotificacaoDto recebido:', createLogNotificacaoDto);
+    this.logger.log('Criando novo log de notificação');
+
     const newLogDto = {
       email_enviado: false,
       lido: false,
+      status: NotificacaoStatus.PENDENTE,
       fk_devedor: createLogNotificacaoDto?.fk_devedor,
       fk_protesto: createLogNotificacaoDto?.fk_protesto,
     };
-    console.log('newLogDto antes de criar:', newLogDto);
+
     const newLog = this.logNotificacaoRepository.create(newLogDto);
-    console.log('newLog após create:', newLog);
     await this.logNotificacaoRepository.save(newLog);
+
+    this.logger.log(`Log de notificação criado com ID: ${newLog.id}`);
     return newLog;
   }
 
   findAll() {
-    return `This action returns all logNotificacao`;
+    return this.logNotificacaoRepository.find({
+      relations: ['devedor', 'protesto'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} logNotificacao`;
+  async findOne(id: number) {
+    return this.logNotificacaoRepository.findOne({
+      where: { id },
+      relations: ['devedor', 'protesto'],
+    });
   }
 
-  // update  data de envio, email enviado
-  async updateEnvioEmail(
-    id: number,
-    updateLogNotificacaoDto: UpdateLogNotificacaoDto,
-  ) {
-    const newLogDto = {
-      email_enviado: updateLogNotificacaoDto?.email_enviado,
-      data_envio: updateLogNotificacaoDto?.data_envio,
-      ...updateLogNotificacaoDto,
-    };
-    const newLog = this.logNotificacaoRepository.create(newLogDto);
-    await this.logNotificacaoRepository.save(newLog);
-    return newLog;
-  }
-
-  // update lido
-  async updateReceived(
-    id: number,
-    updateLogNotificacaoDto: UpdateLogNotificacaoDto,
-  ) {
-    const newLogDto = {
-      lido: updateLogNotificacaoDto?.lido,
-      ...updateLogNotificacaoDto,
-    };
-    const newLog = this.logNotificacaoRepository.create(newLogDto);
-    await this.logNotificacaoRepository.save(newLog);
-    return newLog;
-  }
   async update(id: number, updateLogNotificacaoDto: UpdateLogNotificacaoDto) {
-    return `This action updates a #${id} logNotificacao ${updateLogNotificacaoDto}`;
+    await this.logNotificacaoRepository.update(id, updateLogNotificacaoDto);
+    return this.findOne(id);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} logNotificacao`;
+  async remove(id: number) {
+    await this.logNotificacaoRepository.delete(id);
+    return { deleted: true, id };
   }
 
-  // ------------------------------------- Métodos de busca ------------------------------------- //
+  // ===================================================================================================
+  // MÉTODOS DE ATUALIZAÇÃO DE STATUS COM ENUM
+  // ===================================================================================================
+
+  /**
+   * Marca notificação como enviada
+   */
+  async marcarComoEnviada(
+    logNotificacaoId: number,
+    templateId?: number,
+    // messageId removido da assinatura pois não salvamos no banco, ou usamos apenas para log
+  ): Promise<void> {
+    this.logger.log(`Marcando notificação ${logNotificacaoId} como enviada`);
+
+    await this.logNotificacaoRepository.update(logNotificacaoId, {
+      email_enviado: true,
+      status: NotificacaoStatus.ENVIADO,
+      fk_template: templateId | 1,
+      data_envio: new Date(),
+    });
+  }
+
+  /**
+   * Atualiza status baseado no Webhook
+   * Lógica simplificada: Atualiza status e datas pertinentes.
+   */
+  async atualizarStatusPorEvento(
+    logNotificacaoId: number,
+    dados: AtualizacaoWebhook,
+  ): Promise<void> {
+    this.logger.log(
+      `Atualizando notificação ${logNotificacaoId}: Evento ${dados.eventoOriginal} -> Status ${dados.status}`,
+    );
+
+    const updateData: Partial<LogNotificacao> = {
+      status: dados.status,
+    };
+
+    // Atualiza colunas específicas baseado no status final
+    switch (dados.status) {
+      case NotificacaoStatus.ENTREGUE:
+        updateData.data_entrega = dados.dataEvento;
+        break;
+
+      case NotificacaoStatus.LIDO:
+        // Se já foi lido uma vez, mantemos a primeira data ou atualizamos a última?
+        // Geralmente 'data_leitura' é a primeira leitura.
+        updateData.data_leitura = dados.dataEvento;
+        break;
+
+      case NotificacaoStatus.BOUNCE:
+      case NotificacaoStatus.FALHA:
+        // Salva o motivo técnico no campo mensagem_erro
+        updateData.mensagem_erro =
+          dados.motivo || `Erro evento: ${dados.eventoOriginal}`;
+        break;
+    }
+    await this.logNotificacaoRepository.update(logNotificacaoId, updateData);
+  }
+
+  // ===================================================================================================
+  // MÉTODOS DE BUSCA (delegados para LogNotificationQueryService)
+  // ===================================================================================================
 
   async buscarNotificacoesPendentesAllData(): Promise<IntimacaoDataCompleto[]> {
     return this.logNotificationQueryService.buscarNotificacoesPendentesAllData();
@@ -155,33 +213,34 @@ export class LogNotificacaoService {
     );
   }
 
-  async marcarComoEnviada(
-    logNotificacaoId: number,
-    templateId: number,
-  ): Promise<void> {
-    await this.logNotificacaoRepository.update(logNotificacaoId, {
-      email_enviado: true,
-      fk_template: templateId,
-      data_envio: new Date(),
-    });
-  }
+  // ===================================================================================================
+  // MÉTODOS DE ESTATÍSTICAS
+  // ===================================================================================================
 
-  async marcarMultiplasComoEnviadas(
-    logNotificacaoIds: number[],
-  ): Promise<void> {
-    await this.logNotificacaoRepository.update(logNotificacaoIds, {
-      email_enviado: true,
-      data_envio: new Date(),
+  /**
+   * Busca taxa de abertura geral
+   */
+  async buscarTaxaDeAbertura(): Promise<{
+    total: number;
+    enviados: number;
+    abertosELidos: number;
+    taxaAbertura: number;
+  }> {
+    const total = await this.logNotificacaoRepository.count();
+    const enviados = await this.logNotificacaoRepository.count({
+      where: { email_enviado: true },
     });
-  }
+    const abertosELidos = await this.logNotificacaoRepository.count({
+      where: { status: NotificacaoStatus.LIDO, email_enviado: true },
+    });
 
-  async marcarComoLida(
-    logNotificacaoId: number,
-    dataLeitura: Date = new Date(),
-  ): Promise<void> {
-    await this.logNotificacaoRepository.update(logNotificacaoId, {
-      lido: true,
-      data_leitura: dataLeitura,
-    });
+    const taxaAbertura = enviados > 0 ? (abertosELidos / enviados) * 100 : 0;
+
+    return {
+      total,
+      enviados,
+      abertosELidos,
+      taxaAbertura: parseFloat(taxaAbertura.toFixed(2)),
+    };
   }
 }

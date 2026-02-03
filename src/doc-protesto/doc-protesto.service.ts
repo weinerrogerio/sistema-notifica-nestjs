@@ -4,6 +4,7 @@ import { UpdateDocProtestoDto } from './dto/update-doc-protesto.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DocProtesto } from './entities/doc-protesto.entity';
 import { Between, Repository } from 'typeorm';
+import { NotificacaoStatus } from '@app/log-notificacao/entities/log-notificacao.entity';
 
 @Injectable()
 export class DocProtestoService {
@@ -386,7 +387,8 @@ export class DocProtestoService {
               id: notif.id,
               email_enviado: notif.email_enviado,
               data_envio: notif.data_envio,
-              lido: notif.lido,
+              //lido: notif.lido,
+              lido: notif.status === NotificacaoStatus.LIDO,
               data_leitura: notif.data_leitura,
             },
           });

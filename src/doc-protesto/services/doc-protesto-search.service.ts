@@ -2,7 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DocProtesto } from '../entities/doc-protesto.entity';
-import { LogNotificacao } from '../../log-notificacao/entities/log-notificacao.entity';
+import {
+  LogNotificacao,
+  NotificacaoStatus,
+} from '../../log-notificacao/entities/log-notificacao.entity';
 import { Devedor } from '../../devedor/entities/devedor.entity';
 import {
   DistribuicaoSearchResult,
@@ -210,7 +213,8 @@ export class DocProtestoSearchService {
           ? {
               emailEnviado: primeiraNotificacao.email_enviado,
               dataEnvio: primeiraNotificacao.data_envio,
-              lido: primeiraNotificacao.lido,
+              //lido: primeiraNotificacao.lido,
+              lido: primeiraNotificacao.status === NotificacaoStatus.LIDO,
               dataLeitura: primeiraNotificacao.data_leitura,
               trackingToken: primeiraNotificacao.tracking_token,
             }

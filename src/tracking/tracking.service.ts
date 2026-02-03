@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LogNotificacao } from '@app/log-notificacao/entities/log-notificacao.entity';
+import {
+  LogNotificacao,
+  NotificacaoStatus,
+} from '@app/log-notificacao/entities/log-notificacao.entity';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -95,7 +98,7 @@ export class TrackingService {
       }
 
       // Se já foi marcado como lido, não atualizar novamente
-      if (logNotificacao.lido) {
+      if (logNotificacao.status === NotificacaoStatus.LIDO) {
         this.logger.log(
           `Email já foi marcado como lido anteriormente. Log ID: ${logNotificacao.id}`,
         );
@@ -104,7 +107,8 @@ export class TrackingService {
 
       // Marcar como lido e registrar data de leitura
       await this.logNotificacaoRepository.update(logNotificacao.id, {
-        lido: true,
+        //lido: true,
+        status: NotificacaoStatus.LIDO,
         data_leitura: new Date(),
       });
 
@@ -136,7 +140,8 @@ export class TrackingService {
       const totalLidos = await this.logNotificacaoRepository.count({
         where: {
           email_enviado: true,
-          lido: true,
+          //lido: true,
+          status: NotificacaoStatus.LIDO,
         },
       });
 
