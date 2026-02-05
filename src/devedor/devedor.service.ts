@@ -36,6 +36,11 @@ export class DevedorService {
   // Map para gerenciar sessões de busca ativas
   private readonly activeSessions = new Map<string, SearchSession>();
 
+  // ⚙️ CONFIGURAÇÕES DE OTIMIZAÇÃO DE MEMÓRIA
+  private readonly BATCH_SIZE = 5; // Processa 10 CNPJs por vez (ajustável: 5-20)
+  private readonly BATCH_DELAY_MS = 300; // Delay entre lotes (ajustável: 0-500ms)
+  private readonly DB_BATCH_SIZE = 20; // Salva no banco em lotes de 50 (ajustável: 20-100)
+
   constructor(
     @InjectRepository(Devedor)
     private readonly devedorRepository: Repository<Devedor>,
@@ -247,6 +252,96 @@ export class DevedorService {
     }
   }
 
+  // 🔄 FUNÇÃO AUXILIAR: Atualiza emails em LOTES no banco de dados
+  // Nome anterior: N/A (nova função para otimização)
+  private async updateEmailInBatches(
+    resultadosEmails: EmailResult[],
+  ): Promise<EmailUpdateResult[]> {
+    const updates: EmailUpdateResult[] = [];
+    const resultadosComEmail = resultadosEmails.filter((r) => r.email);
+
+    // Processa em lotes para não sobrecarregar o banco
+    for (let i = 0; i < resultadosComEmail.length; i += this.DB_BATCH_SIZE) {
+      const batch = resultadosComEmail.slice(i, i + this.DB_BATCH_SIZE);
+
+      const batchUpdates = await Promise.all(
+        batch.map(async (resultado) => {
+          try {
+            const cnpjLimpo = resultado.cnpj.replace(/[^\d]/g, '');
+            const devedor = await this.devedorRepository.findOne({
+              where: { doc_devedor: cnpjLimpo },
+            });
+
+            if (devedor) {
+              await this.devedorRepository.update(
+                { id: devedor.id },
+                { email: resultado.email, email_searched: true },
+              );
+
+              return {
+                id: devedor.id,
+                cnpj: devedor.doc_devedor,
+                email: resultado.email,
+              };
+            } else {
+              this.logger.warn(
+                `Devedor não encontrado para CNPJ: ${resultado.cnpj}`,
+              );
+              return null;
+            }
+          } catch (error) {
+            this.logger.error(
+              `Erro ao atualizar email para CNPJ ${resultado.cnpj}:`,
+              error,
+            );
+            return null;
+          }
+        }),
+      );
+
+      updates.push(...batchUpdates.filter((u) => u !== null));
+
+      // Log de progresso
+      this.logger.log(
+        `Salvos ${updates.length}/${resultadosComEmail.length} emails no banco`,
+      );
+    }
+
+    this.logger.log(`Total de ${updates.length} emails atualizados`);
+    return updates;
+  }
+
+  // 🔄 FUNÇÃO AUXILIAR: Marca devedores como pesquisados em LOTES
+  // Nome anterior: N/A (nova função para otimização)
+  private async markAsSearchedInBatches(
+    devedores: Devedor[],
+    cnpjsProcessados: Set<string>,
+  ): Promise<void> {
+    const devedoresProcessados = devedores.filter((d) =>
+      cnpjsProcessados.has(d.doc_devedor.replace(/[^\d]/g, '')),
+    );
+
+    this.logger.log(
+      `Marcando ${devedoresProcessados.length} devedores como pesquisados`,
+    );
+
+    // Processa em lotes
+    for (let i = 0; i < devedoresProcessados.length; i += this.DB_BATCH_SIZE) {
+      const batch = devedoresProcessados.slice(i, i + this.DB_BATCH_SIZE);
+
+      await Promise.all(
+        batch.map((devedor) => this.updateEmailSearched(devedor.id)),
+      );
+
+      this.logger.log(
+        `Marcados ${Math.min(i + this.DB_BATCH_SIZE, devedoresProcessados.length)}/${devedoresProcessados.length} devedores`,
+      );
+    }
+  }
+
+  // ⚠️ FUNÇÃO ANTIGA (mantida para compatibilidade, mas NÃO RECOMENDADA)
+  // Nome anterior: updateEmail
+  // AVISO: Esta função não usa batching e pode causar problemas de memória
   async updateEmail(
     resultadosEmails: EmailResult[],
   ): Promise<EmailUpdateResult[]> {
@@ -289,7 +384,25 @@ export class DevedorService {
     return updates;
   }
 
-  // Versão principal com suporte a cancelamento e progresso -----------------------------------------------
+  // 🔄 FUNÇÃO AUXILIAR: Divide array em lotes menores
+  // Nome anterior: N/A (nova função utilitária)
+  private chunkArray<T>(array: T[], chunkSize: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
+  // 🔄 FUNÇÃO AUXILIAR: Adiciona delay entre processamentos
+  // Nome anterior: N/A (nova função utilitária)
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // ✅ VERSÃO OTIMIZADA COM PROCESSAMENTO EM LOTES (STREAMING/BATCHING)
+  // Nome anterior: buscarEmailsDevedores
+  // NOVA IMPLEMENTAÇÃO: Processa CNPJs em pequenos lotes para economizar memória
   async buscarEmailsDevedores(
     sessionId?: string,
     progressCallback?: (progress: SearchProgress) => void,
@@ -298,9 +411,10 @@ export class DevedorService {
 
     try {
       this.logger.log(
-        `Iniciando busca de emails para devedores (sessão: ${searchSessionId})`,
+        `[OTIMIZADO] Iniciando busca de emails em lotes (sessão: ${searchSessionId})`,
       );
 
+      // 1️⃣ Busca devedores pendentes
       const devedores = await this.findAllByPjNotSearched();
 
       if (!devedores || devedores.length === 0) {
@@ -318,90 +432,163 @@ export class DevedorService {
         };
       }
 
-      this.logger.log(`${devedores.length} devedores pendentes de busca`);
+      this.logger.log(
+        `[OTIMIZADO] ${devedores.length} devedores pendentes | Batch size: ${this.BATCH_SIZE}`,
+      );
 
+      // 2️⃣ Extrai CNPJs únicos
       const cnpjs = [...new Set(devedores.map((d) => d.doc_devedor))];
-      const cancellationToken = () => this.isSessionCancelled(searchSessionId);
+      const totalCnpjs = cnpjs.length;
 
-      const wrappedProgressCallback = (progress: SearchProgress) => {
+      // 3️⃣ Divide CNPJs em lotes menores
+      const cnpjBatches = this.chunkArray(cnpjs, this.BATCH_SIZE);
+      const totalBatches = cnpjBatches.length;
+
+      this.logger.log(
+        `[OTIMIZADO] ${totalCnpjs} CNPJs divididos em ${totalBatches} lotes de até ${this.BATCH_SIZE}`,
+      );
+
+      // 4️⃣ Variáveis para acumular resultados
+      const todosResultados: EmailResult[] = [];
+      let processedCount = 0;
+      let cancelled = false;
+
+      const cancellationToken = () => this.isSessionCancelled(searchSessionId);
+      const logCallback = this.getSessionLogCallback(searchSessionId);
+
+      // 5️⃣ PROCESSA CADA LOTE SEPARADAMENTE (streaming/batching)
+      for (let batchIndex = 0; batchIndex < cnpjBatches.length; batchIndex++) {
+        // Verifica cancelamento ANTES de cada lote
+        if (cancellationToken()) {
+          this.logger.log(
+            `[OTIMIZADO] Busca CANCELADA no lote ${batchIndex + 1}/${totalBatches}`,
+          );
+          cancelled = true;
+          break;
+        }
+
+        const currentBatch = cnpjBatches[batchIndex];
+        const batchNumber = batchIndex + 1;
+
+        this.logger.log(
+          `[OTIMIZADO] Processando lote ${batchNumber}/${totalBatches} (${currentBatch.length} CNPJs)`,
+        );
+
+        // Atualiza progresso
+        const progress: SearchProgress = {
+          currentBatch: batchNumber,
+          totalBatches: totalBatches,
+          currentCnpj: currentBatch[0],
+          processedCount,
+          totalCount: totalCnpjs,
+          message: `Processando lote ${batchNumber}/${totalBatches}`,
+          timestamp: new Date(),
+        };
+
         this.updateSessionProgress(searchSessionId, progress);
         if (progressCallback) {
           progressCallback(progress);
         }
-      };
 
-      const logCallback = this.getSessionLogCallback(searchSessionId);
+        try {
+          // 🔥 BUSCA EMAILS DESTE LOTE (libera memória após cada lote)
+          const resultadosBatch =
+            await this.emailLookupService.buscarEmailsPorCNPJs(
+              currentBatch,
+              cancellationToken,
+              (batchProgress) => {
+                // Ajusta progresso do lote para progresso global
+                const globalProgress: SearchProgress = {
+                  ...batchProgress,
+                  currentBatch: batchNumber,
+                  totalBatches: totalBatches,
+                  processedCount:
+                    processedCount + (batchProgress.processedCount || 0),
+                  totalCount: totalCnpjs,
+                };
+                this.updateSessionProgress(searchSessionId, globalProgress);
+                if (progressCallback) {
+                  progressCallback(globalProgress);
+                }
+              },
+              logCallback,
+            );
 
-      // ✅ REMOVE O TRY-CATCH que descartava resultados
-      const resultadosEmails =
-        await this.emailLookupService.buscarEmailsPorCNPJs(
-          cnpjs,
-          cancellationToken,
-          wrappedProgressCallback,
-          logCallback,
-        );
+          // Verifica se foi cancelado DURANTE o processamento do lote
+          if (resultadosBatch.length < currentBatch.length) {
+            this.logger.log(
+              `[OTIMIZADO] Lote ${batchNumber} CANCELADO (processados ${resultadosBatch.length}/${currentBatch.length})`,
+            );
+            cancelled = true;
 
-      // ✅ Verifica se foi cancelado baseado na quantidade de resultados
-      const cancelled = resultadosEmails.length < cnpjs.length;
+            // Ainda assim salva o que foi processado
+            if (resultadosBatch.length > 0) {
+              todosResultados.push(...resultadosBatch);
+              processedCount += resultadosBatch.length;
+            }
+            break;
+          }
 
-      this.logger.log(
-        `Busca ${cancelled ? 'CANCELADA' : 'CONCLUÍDA'} - Processados: ${resultadosEmails.length}/${cnpjs.length}`,
-      );
+          // Acumula resultados do lote
+          todosResultados.push(...resultadosBatch);
+          processedCount += resultadosBatch.length;
 
-      let emailsAtualizados: EmailUpdateResult[] = [];
+          this.logger.log(
+            `[OTIMIZADO] Lote ${batchNumber} CONCLUÍDO | Total processado: ${processedCount}/${totalCnpjs}`,
+          );
 
-      // ✅ SALVA TUDO QUE FOI ENCONTRADO, mesmo que cancelado
-      if (resultadosEmails?.length > 0) {
-        const resultadosComEmail = resultadosEmails.filter((r) => r.email);
+          // 💾 SALVA RESULTADOS DESTE LOTE IMEDIATAMENTE (libera memória)
+          const resultadosComEmail = resultadosBatch.filter((r) => r.email);
+          if (resultadosComEmail.length > 0) {
+            this.logger.log(
+              `[OTIMIZADO] Salvando ${resultadosComEmail.length} emails do lote ${batchNumber}`,
+            );
 
-        this.logger.log(
-          `Salvando ${resultadosComEmail.length} emails encontrados`,
-        );
+            // Usa função otimizada de salvamento em lotes
+            await this.updateEmailInBatches(resultadosComEmail);
 
-        if (resultadosComEmail.length > 0) {
-          emailsAtualizados = await this.updateEmail(resultadosComEmail);
-        }
+            // Marca CNPJs processados como pesquisados
+            const cnpjsProcessados = new Set(
+              resultadosBatch.map((r) => r.cnpj.replace(/[^\d]/g, '')),
+            );
+            await this.markAsSearchedInBatches(devedores, cnpjsProcessados);
+          }
 
-        // Marca como pesquisado apenas os CNPJs que foram processados
-        const cnpjsProcessados = new Set(
-          resultadosEmails.map((r) => r.cnpj.replace(/[^\d]/g, '')),
-        );
-        const devedoresProcessados = devedores.filter((d) =>
-          cnpjsProcessados.has(d.doc_devedor.replace(/[^\d]/g, '')),
-        );
-
-        this.logger.log(
-          `Marcando ${devedoresProcessados.length} devedores como pesquisados`,
-        );
-
-        for (const devedor of devedoresProcessados) {
-          await this.updateEmailSearched(devedor.id);
+          // ⏱️ Delay opcional entre lotes (para não sobrecarregar APIs)
+          if (this.BATCH_DELAY_MS > 0 && batchIndex < cnpjBatches.length - 1) {
+            await this.delay(this.BATCH_DELAY_MS);
+          }
+        } catch (error) {
+          this.logger.error(`[OTIMIZADO] Erro no lote ${batchNumber}:`, error);
+          // Continua com próximo lote mesmo em caso de erro
+          continue;
         }
       }
 
+      // 6️⃣ Combina resultados finais
       const devedoresComEmail = this.combinarDevedoresComEmails(
         devedores,
-        resultadosEmails || [],
+        todosResultados,
       );
 
-      const estatisticas = this.emailLookupService.gerarEstatisticas(
-        resultadosEmails || [],
-      );
+      // 7️⃣ Gera estatísticas
+      const estatisticas =
+        this.emailLookupService.gerarEstatisticas(todosResultados);
 
       this.logger.log(
-        `RESUMO - Total: ${estatisticas.total}, Encontrados: ${estatisticas.encontrados}, Salvos: ${emailsAtualizados.length}, Cancelado: ${cancelled}`,
+        `[OTIMIZADO] RESUMO - Total: ${estatisticas.total}, Encontrados: ${estatisticas.encontrados}, Cancelado: ${cancelled}`,
       );
 
       return {
         sessionId: searchSessionId,
         emails: devedoresComEmail,
-        emailsAtualizados,
+        emailsAtualizados: [], // Já foram salvos incrementalmente
         estatisticas,
         cancelled,
       };
     } catch (error) {
       this.logger.error(
-        `Erro na busca de emails (sessão: ${searchSessionId}):`,
+        `[OTIMIZADO] Erro na busca de emails (sessão: ${searchSessionId}):`,
         error,
       );
       throw error;
