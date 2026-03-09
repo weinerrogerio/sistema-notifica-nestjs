@@ -23,6 +23,7 @@ import { GlobalQueryFailedExceptionFilter } from '@app/common/filters/query-fail
 import { ScheduleModule } from '@nestjs/schedule';
 import { CleanupTask } from '@app/schedule-module/cleanup.task';
 import { TemplateModule } from '@app/template/template.module';
+import { PersonalConfigModule } from '@app/config/config.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { TemplateModule } from '@app/template/template.module';
     NotificationModule,
     TrackingPixelModule,
     TemplateModule,
+    PersonalConfigModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   TransactionalEmailsApi,
@@ -8,19 +8,28 @@ import {
 import { NotificationData } from '@app/common/interfaces/notification-data.interface';
 import { TemplateService } from '@app/template/template.service';
 import { NotificacaoStatus } from '@app/log-notificacao/entities/log-notificacao.entity';
+import { PersonalConfigService } from '@app/config/config.service';
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private brevoApiInstance: TransactionalEmailsApi;
 
   constructor(
     private configService: ConfigService,
+    private personalConfigService: PersonalConfigService,
     private readonly templateService: TemplateService,
   ) {
-    // Configuração do Brevo
+    // Configuração do Brevo ou outro serviço
     this.brevoApiInstance = new TransactionalEmailsApi();
-    const apiKey = this.configService.get<string>('BREVO_API_KEY');
+  }
+
+  async onModuleInit() {
+    const configDb = await this.personalConfigService.findOne(1);
+
+    const apiKey =
+      configDb?.EXTERNAL_SERVICE_API_KEY ??
+      this.configService.get<string>('EXTERNAL_SERVICE_API_KEY');
 
     if (apiKey) {
       this.brevoApiInstance.setApiKey(
@@ -29,8 +38,8 @@ export class EmailService {
       );
       this.logger.log('✅ Brevo API configurada com sucesso');
     } else {
-      this.logger.error('❌ BREVO_API_KEY não configurada!');
-      throw new Error('BREVO_API_KEY não configurada');
+      this.logger.error('❌ EXTERNAL_SERVICE_API_KEY não configurada!');
+      // por enquanto apenas loga, sem travar - podemos tratar depois
     }
   }
 
